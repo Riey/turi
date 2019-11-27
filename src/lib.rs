@@ -14,7 +14,7 @@ use crossterm::{
 };
 use derive_more::{Add, From};
 use enumflags2::BitFlags;
-use std::io::{self, Write};
+use std::io::Write;
 use std::marker::PhantomData;
 use std::time::Duration;
 use unicode_width::UnicodeWidthStr;
@@ -179,25 +179,28 @@ where
     }
 }
 
-pub trait EventHandler<E, M> {
-    fn on_event(&mut self, e: E) -> Option<M>;
+pub trait EventHandler {
+    type Event;
+    type Message;
+
+    fn on_event(&mut self, e: Self::Event) -> Option<Self::Message>;
 }
 
-pub trait Widget<E, M>
+pub trait Widget
 where
-    Self: View + EventHandler<E, M>,
+    Self: View + EventHandler,
 {
 }
 
-impl<T, E, M> Widget<E, M> for T where T: View + EventHandler<E, M> {}
+impl<T> Widget for T where T: View + EventHandler {}
 
-pub struct Map<E, M, U, W, F> {
+pub struct Map<U, W, F> {
     inner: W,
     f: F,
-    _marker: PhantomData<(E, M, U)>,
+    _marker: PhantomData<U>,
 }
 
-impl<E, M, U, W, F> Map<E, M, U, W, F> {
+impl<U, W, F> Map<U, W, F> {
     pub fn new(inner: W, f: F) -> Self {
         Self {
             inner,
@@ -207,18 +210,21 @@ impl<E, M, U, W, F> Map<E, M, U, W, F> {
     }
 }
 
-impl<E, M, U, W, F> EventHandler<E, U> for Map<E, M, U, W, F>
+impl<U, W, F> EventHandler for Map<U, W, F>
 where
-    W: Widget<E, M>,
-    F: Fn(M) -> U,
+    W: Widget,
+    F: FnMut(W::Message) -> U,
 {
-    fn on_event(&mut self, e: E) -> Option<U> {
+    type Event = W::Event;
+    type Message = U;
+
+    fn on_event(&mut self, e: W::Event) -> Option<U> {
         let f = &mut self.f;
         self.inner.on_event(e).map(|m| f(m))
     }
 }
 
-impl<E, M, U, W, F> ViewProxy for Map<E, M, U, W, F>
+impl<U, W, F> ViewProxy for Map<U, W, F>
 where
     W: View,
 {
@@ -232,23 +238,21 @@ where
     }
 }
 
-pub struct Source<E, M, W, SE, S> {
+pub struct Source<W, S> {
     inner: W,
     source: S,
-    _marker: PhantomData<(SE, E, M)>,
 }
 
-impl<E, M, W, SE, S> Source<E, M, W, SE, S> {
+impl<W, S> Source<W, S> {
     pub fn new(inner: W, source: S) -> Self {
         Self {
             inner,
             source,
-            _marker: PhantomData,
         }
     }
 }
 
-impl<E, M, W, SE, S> ViewProxy for Source<E, M, W, SE, S>
+impl<W, S> ViewProxy for Source<W, S>
 where
     W: View,
 {
@@ -262,12 +266,15 @@ where
     }
 }
 
-impl<E, M, W, SE, S> EventHandler<SE, M> for Source<E, M, W, SE, S>
+impl<W, S> EventHandler for Source<W, S>
 where
-    W: Widget<E, M>,
-    S: EventHandler<SE, E>,
+    W: Widget,
+    S: EventHandler<Message = W::Event>,
 {
-    fn on_event(&mut self, e: SE) -> Option<M> {
+    type Event = S::Event;
+    type Message = W::Message;
+    
+    fn on_event(&mut self, e: S::Event) -> Option<Self::Message> {
         let se = self.source.on_event(e);
         se.and_then(move |e| self.inner.on_event(e))
     }
@@ -281,7 +288,7 @@ pub trait Runner {
 
     fn run<T>(&mut self, inner: T, printer: &mut PrinterGuard) -> Self::Result
     where
-        T: Widget<(), Self::Arg>;
+        T: Widget<Event = (), Message = Self::Arg>;
 }
 
 pub struct BasicRunner;
@@ -292,7 +299,7 @@ impl Runner for BasicRunner {
 
     fn run<T>(&mut self, mut inner: T, printer: &mut PrinterGuard)
     where
-        T: Widget<(), Self::Arg>,
+        T: Widget<Event = (), Message = Self::Arg>
     {
         let printer = printer.as_printer();
         printer.clear();
@@ -409,7 +416,10 @@ impl View for EditView {
     }
 }
 
-impl EventHandler<Event, String> for EditView {
+impl EventHandler for EditView {
+    type Event = Event;
+    type Message = String;
+
     fn on_event(&mut self, e: Event) -> Option<String> {
         match e {
             // TODO: mouse
@@ -489,7 +499,10 @@ impl View for ButtonView {
     }
 }
 
-impl EventHandler<Event, ()> for ButtonView {
+impl EventHandler for ButtonView {
+    type Event = Event;
+    type Message = ();
+
     fn on_event(&mut self, e: Event) -> Option<()> {
         match e {
             // TODO: mouse
@@ -504,7 +517,10 @@ impl EventHandler<Event, ()> for ButtonView {
 
 pub struct TermEventSource(pub Duration);
 
-impl EventHandler<(), Event> for TermEventSource {
+impl EventHandler for TermEventSource {
+    type Event = ();
+    type Message = Event;
+
     fn on_event(&mut self, _: ()) -> Option<Event> {
         match crossterm::event::poll(self.0).unwrap() {
             true => Some(crossterm::event::read().unwrap()),
