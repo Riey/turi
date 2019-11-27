@@ -1,25 +1,33 @@
-pub use crossterm::style::Color;
-pub use crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers, MouseButton, MouseEvent};
-use crossterm::{queue, Output, cursor::MoveTo, style::{SetForegroundColor, SetBackgroundColor}};
+pub use crossterm;
+use crossterm::event::{
+    DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEvent, KeyModifiers, MouseButton,
+    MouseEvent,
+};
+use crossterm::screen::{EnterAlternateScreen, LeaveAlternateScreen, RawScreen};
+use crossterm::style::Color;
+use crossterm::{
+    cursor::MoveTo,
+    execute, queue,
+    style::{SetBackgroundColor, SetForegroundColor},
+    terminal::{Clear, ClearType},
+    Output,
+};
 use derive_more::{Add, From};
 use enumflags2::BitFlags;
-use unicode_width::UnicodeWidthStr;
 use std::io::{self, Write};
 use std::marker::PhantomData;
 use std::time::Duration;
+use unicode_width::UnicodeWidthStr;
 
 #[derive(Add, Debug, From, Clone, Copy)]
 pub struct Vec2<T = usize> {
     pub x: T,
-    pub y: T
+    pub y: T,
 }
 
 impl<T> Vec2<T> {
     pub const fn new(x: T, y: T) -> Self {
-        Self {
-            x,
-            y,
-        }
+        Self { x, y }
     }
 }
 
@@ -46,6 +54,41 @@ impl Default for Style {
     }
 }
 
+pub struct PrinterGuard<'a> {
+    printer: Printer<'a>,
+    _raw: RawScreen,
+    alternative: bool,
+}
+
+impl<'a> Drop for PrinterGuard<'a> {
+    fn drop(&mut self) {
+        execute!(self.printer.out, DisableMouseCapture).unwrap();
+        if self.alternative {
+            execute!(self.printer.out, LeaveAlternateScreen).unwrap()
+        }
+    }
+}
+
+impl<'a> PrinterGuard<'a> {
+    pub fn new(printer: Printer<'a>, alternative: bool) -> Self {
+        execute!(printer.out, EnableMouseCapture,).unwrap();
+
+        if alternative {
+            execute!(printer.out, EnterAlternateScreen).unwrap()
+        }
+
+        Self {
+            printer,
+            alternative,
+            _raw: RawScreen::into_raw_mode().unwrap(),
+        }
+    }
+
+    pub fn as_printer(&mut self) -> &mut Printer<'a> {
+        &mut self.printer
+    }
+}
+
 pub struct Printer<'a> {
     offset: Vec2<u16>,
     bound: Vec2<u16>,
@@ -63,6 +106,19 @@ impl<'a> Printer<'a> {
         }
     }
 
+    pub fn refresh(&mut self) {
+        self.out.flush().unwrap();
+    }
+
+    pub fn clear(&mut self) {
+        queue!(
+            self.out,
+            SetBackgroundColor(self.style.bg),
+            Clear(ClearType::All)
+        )
+        .unwrap();
+    }
+
     pub fn print(&mut self, start: Vec2<u16>, text: &str) {
         self.print_with_style(start, text, self.style);
     }
@@ -75,7 +131,14 @@ impl<'a> Printer<'a> {
 
     fn raw_print_with_style(&mut self, start: Vec2<u16>, text: &str, style: Style) {
         let start = self.offset + start;
-        queue!(self.out, MoveTo(start.x, start.y), SetForegroundColor(style.fg), SetBackgroundColor(style.bg), Output(text)).unwrap();
+        queue!(
+            self.out,
+            MoveTo(start.x, start.y),
+            SetForegroundColor(style.fg),
+            SetBackgroundColor(style.bg),
+            Output(text)
+        )
+        .unwrap();
     }
 
     pub fn print_styled(&mut self, mut start: Vec2<u16>, text: &StyledText) {
@@ -101,7 +164,10 @@ pub trait ViewProxy {
     fn inner_view_mut(&mut self) -> &mut Self::Inner;
 }
 
-impl<V> View for V where V: ViewProxy {
+impl<V> View for V
+where
+    V: ViewProxy,
+{
     fn render(&self, printer: &mut Printer) {
         self.inner_view().render(printer);
     }
@@ -113,15 +179,17 @@ impl<V> View for V where V: ViewProxy {
     }
 }
 
-pub trait EventHandler<'e, E, M> {
-    fn on_event(&'e mut self, e: E) -> Option<M>;
+pub trait EventHandler<E, M> {
+    fn on_event(&mut self, e: E) -> Option<M>;
 }
 
-pub trait Widget<'w, E, M> where Self: View + EventHandler<'w, E, M> {
+pub trait Widget<E, M>
+where
+    Self: View + EventHandler<E, M>,
+{
 }
 
-impl<'w, T, E, M> Widget<'w, E, M> for T where T: View + EventHandler<'w, E, M> {
-}
+impl<T, E, M> Widget<E, M> for T where T: View + EventHandler<E, M> {}
 
 pub struct Map<E, M, U, W, F> {
     inner: W,
@@ -139,18 +207,29 @@ impl<E, M, U, W, F> Map<E, M, U, W, F> {
     }
 }
 
-impl<'e, E, M, U, W, F> EventHandler<'e, E, U> for Map<E, M, U, W, F> where W: Widget<'e, E, M>, F: FnMut(M) -> U {
-    fn on_event(&'e mut self, e: E) -> Option<U> {
+impl<E, M, U, W, F> EventHandler<E, U> for Map<E, M, U, W, F>
+where
+    W: Widget<E, M>,
+    F: Fn(M) -> U,
+{
+    fn on_event(&mut self, e: E) -> Option<U> {
         let f = &mut self.f;
         self.inner.on_event(e).map(|m| f(m))
     }
 }
 
-impl<E, M, U, W, F> ViewProxy for Map<E, M, U, W, F> where W: View {
+impl<E, M, U, W, F> ViewProxy for Map<E, M, U, W, F>
+where
+    W: View,
+{
     type Inner = W;
 
-    fn inner_view(&self) -> &W { &self.inner }
-    fn inner_view_mut(&mut self) -> &mut W { &mut self.inner }
+    fn inner_view(&self) -> &W {
+        &self.inner
+    }
+    fn inner_view_mut(&mut self) -> &mut W {
+        &mut self.inner
+    }
 }
 
 pub struct Source<E, M, W, SE, S> {
@@ -169,15 +248,26 @@ impl<E, M, W, SE, S> Source<E, M, W, SE, S> {
     }
 }
 
-impl<E, M, W, SE, S> ViewProxy for Source<E, M, W, SE, S> where W: View {
+impl<E, M, W, SE, S> ViewProxy for Source<E, M, W, SE, S>
+where
+    W: View,
+{
     type Inner = W;
 
-    fn inner_view(&self) -> &W { &self.inner }
-    fn inner_view_mut(&mut self) -> &mut W { &mut self.inner }
+    fn inner_view(&self) -> &W {
+        &self.inner
+    }
+    fn inner_view_mut(&mut self) -> &mut W {
+        &mut self.inner
+    }
 }
 
-impl<'e, E, M, W, SE, S> EventHandler<'e, SE, M> for Source<E, M, W, SE, S> where W: Widget<'e, E, M>, for<'a> S: EventHandler<'a, SE, E> {
-    fn on_event(&'e mut self, e: SE) -> Option<M> {
+impl<E, M, W, SE, S> EventHandler<SE, M> for Source<E, M, W, SE, S>
+where
+    W: Widget<E, M>,
+    S: EventHandler<SE, E>,
+{
+    fn on_event(&mut self, e: SE) -> Option<M> {
         let se = self.source.on_event(e);
         se.and_then(move |e| self.inner.on_event(e))
     }
@@ -189,7 +279,9 @@ pub trait Runner {
     type Arg;
     type Result;
 
-    fn run<T>(&mut self, inner: T, printer: &mut Printer) -> Self::Result where for<'a> T: Widget<'a, (), Self::Arg>;
+    fn run<T>(&mut self, inner: T, printer: &mut PrinterGuard) -> Self::Result
+    where
+        T: Widget<(), Self::Arg>;
 }
 
 pub struct BasicRunner;
@@ -198,12 +290,18 @@ impl Runner for BasicRunner {
     type Arg = bool;
     type Result = ();
 
-    fn run<T>(&mut self, mut inner: T, printer: &mut Printer) where for<'a> T: Widget<'a, (), Self::Arg> {
+    fn run<T>(&mut self, mut inner: T, printer: &mut PrinterGuard)
+    where
+        T: Widget<(), Self::Arg>,
+    {
+        let printer = printer.as_printer();
+        printer.clear();
         loop {
             inner.render(printer);
+            printer.refresh();
             match inner.on_event(()) {
                 Some(true) => return,
-                _ => {},
+                _ => {}
             }
         }
     }
@@ -252,9 +350,7 @@ pub struct TextView {
 
 impl TextView {
     pub fn new(text: StyledText) -> Self {
-        Self {
-            text,
-        }
+        Self { text }
     }
 }
 
@@ -313,12 +409,18 @@ impl View for EditView {
     }
 }
 
-impl<'e> EventHandler<'e, Event, &'e str> for EditView {
-    fn on_event(&'e mut self, e: Event) -> Option<&'e str> {
+impl EventHandler<Event, String> for EditView {
+    fn on_event(&mut self, e: Event) -> Option<String> {
         match e {
             // TODO: mouse
-            Event::Key(KeyEvent { code: KeyCode::Enter, .. }) => Some(&self.text),
-            Event::Key(KeyEvent { code: KeyCode::Char(ch), modifiers }) if modifiers.is_empty() => {
+            Event::Key(KeyEvent {
+                code: KeyCode::Enter,
+                ..
+            }) => Some(self.text.clone()),
+            Event::Key(KeyEvent {
+                code: KeyCode::Char(ch),
+                modifiers,
+            }) if modifiers.is_empty() => {
                 self.text.push(ch);
                 None
             }
@@ -337,7 +439,7 @@ impl ButtonDecoration {
     #[inline]
     fn decoration(&self, text: &mut String) {
         match self {
-            ButtonDecoration::NoDecoration => {},
+            ButtonDecoration::NoDecoration => {}
             ButtonDecoration::Angle => {
                 text.insert(0, '<');
                 text.push('>');
@@ -387,11 +489,14 @@ impl View for ButtonView {
     }
 }
 
-impl<'e> EventHandler<'e, Event, ()> for ButtonView {
-    fn on_event(&'e mut self, e: Event) -> Option<()> {
+impl EventHandler<Event, ()> for ButtonView {
+    fn on_event(&mut self, e: Event) -> Option<()> {
         match e {
             // TODO: mouse
-            Event::Key(KeyEvent { code: KeyCode::Enter, .. }) => Some(()),
+            Event::Key(KeyEvent {
+                code: KeyCode::Enter,
+                ..
+            }) => Some(()),
             _ => None,
         }
     }
@@ -399,12 +504,11 @@ impl<'e> EventHandler<'e, Event, ()> for ButtonView {
 
 pub struct TermEventSource(pub Duration);
 
-impl<'e> EventHandler<'e, (), Event> for TermEventSource {
-    fn on_event(&'e mut self, _: ()) -> Option<Event> {
+impl EventHandler<(), Event> for TermEventSource {
+    fn on_event(&mut self, _: ()) -> Option<Event> {
         match crossterm::event::poll(self.0).unwrap() {
             true => Some(crossterm::event::read().unwrap()),
             false => None,
         }
     }
 }
-

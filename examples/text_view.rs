@@ -1,23 +1,17 @@
-use turi::*;
 use std::time::Duration;
+use turi::*;
 
 fn main() {
     let mut out = std::io::stdout();
-    let mut printer = Printer::new(Vec2::new(100, 100), &mut out);
+    let mut printer = PrinterGuard::new(Printer::new(Vec2::new(100, 100), &mut out), false);
     let view = EditView::new();
-    let mut inner = Map::new(Source::new(view, TermEventSource(Duration::from_millis(100))), |text| {
-        println!("text: {}", text);
-        true
-    });
+    let inner = Map::new(
+        Source::new(view, TermEventSource(Duration::from_millis(100))),
+        |text| {
+            println!("\r\ntext: {}\r", text);
+            true
+        },
+    );
 
-    loop {
-        //inner.render(&mut printer);
-        let ret = inner.on_event(());
-
-        match ret {
-            Some(true) => return,
-            _ => continue,
-        }
-    }
+    BasicRunner.run(inner, &mut printer);
 }
-
