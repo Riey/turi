@@ -16,7 +16,6 @@ use derive_more::{Add, From};
 use enumflags2::BitFlags;
 use std::io::Write;
 use std::marker::PhantomData;
-use std::time::Duration;
 use unicode_width::UnicodeWidthStr;
 
 #[derive(Add, Debug, From, Clone, Copy)]
@@ -152,166 +151,72 @@ impl<'a> Printer<'a> {
 }
 
 pub trait View {
+    type Message;
+
     fn render(&self, printer: &mut Printer);
     fn layout(&mut self, max: Vec2<u16>) -> Vec2<u16>;
     fn desired_size(&self) -> Vec2<u16>;
+    fn on_event(&mut self, e: Event) -> Option<Self::Message>;
 }
 
-pub trait ViewProxy {
-    type Inner: View;
-
-    fn inner_view(&self) -> &Self::Inner;
-    fn inner_view_mut(&mut self) -> &mut Self::Inner;
-}
-
-impl<V> View for V
-where
-    V: ViewProxy,
-{
-    fn render(&self, printer: &mut Printer) {
-        self.inner_view().render(printer);
-    }
-    fn layout(&mut self, max: Vec2<u16>) -> Vec2<u16> {
-        self.inner_view_mut().layout(max)
-    }
-    fn desired_size(&self) -> Vec2<u16> {
-        self.inner_view().desired_size()
-    }
-}
-
-pub trait EventHandler {
-    type Event;
-    type Message;
-
-    fn on_event(&mut self, e: Self::Event) -> Option<Self::Message>;
-}
-
-pub trait Widget
-where
-    Self: View + EventHandler,
-{
-}
-
-impl<T> Widget for T where T: View + EventHandler {}
-
-pub struct Map<U, W, F> {
-    inner: W,
-    f: F,
-    _marker: PhantomData<U>,
-}
-
-impl<U, W, F> Map<U, W, F> {
-    pub fn new(inner: W, f: F) -> Self {
-        Self {
-            inner,
+pub trait ViewExt: View + Sized {
+    fn map<F, U>(self, f: F) -> Map<Self, F, U> where F: FnMut(&mut Self, Self::Message) -> U {
+        Map {
+            inner: self,
             f,
             _marker: PhantomData,
         }
     }
 }
 
-impl<U, W, F> EventHandler for Map<U, W, F>
+impl<V> ViewExt for V where V: View {
+}
+
+pub trait ViewProxy {
+    type Inner: View;
+    type Message;
+
+    fn inner_view(&self) -> &Self::Inner;
+    fn inner_view_mut(&mut self) -> &mut Self::Inner;
+
+    fn proxy_render(&self, printer: &mut Printer) {
+        self.inner_view().render(printer);
+    }
+    fn proxy_layout(&mut self, max: Vec2<u16>) -> Vec2<u16> {
+        self.inner_view_mut().layout(max)
+    }
+    fn proxy_desired_size(&self) -> Vec2<u16> {
+        self.inner_view().desired_size()
+    }
+    fn proxy_on_event(&mut self, e: Event) -> Option<Self::Message>;
+}
+
+impl<V> View for V
 where
-    W: Widget,
-    F: FnMut(W::Message) -> U,
+    V: ViewProxy,
 {
-    type Event = W::Event;
-    type Message = U;
+    type Message = V::Message;
 
-    fn on_event(&mut self, e: W::Event) -> Option<U> {
-        let f = &mut self.f;
-        self.inner.on_event(e).map(|m| f(m))
+    fn render(&self, printer: &mut Printer) {
+        self.proxy_render(printer);
+    }
+    fn layout(&mut self, max: Vec2<u16>) -> Vec2<u16> {
+        self.proxy_layout(max)
+    }
+    fn desired_size(&self) -> Vec2<u16> {
+        self.proxy_desired_size()
+    }
+    fn on_event(&mut self, e: Event) -> Option<Self::Message> {
+        self.proxy_on_event(e)
     }
 }
 
-impl<U, W, F> ViewProxy for Map<U, W, F>
-where
-    W: View,
-{
-    type Inner = W;
+pub trait Sandbox {
+    type Message;
+    type View: View<Message = Self::Message>;
 
-    fn inner_view(&self) -> &W {
-        &self.inner
-    }
-    fn inner_view_mut(&mut self) -> &mut W {
-        &mut self.inner
-    }
-}
-
-pub struct Source<W, S> {
-    inner: W,
-    source: S,
-}
-
-impl<W, S> Source<W, S> {
-    pub fn new(inner: W, source: S) -> Self {
-        Self {
-            inner,
-            source,
-        }
-    }
-}
-
-impl<W, S> ViewProxy for Source<W, S>
-where
-    W: View,
-{
-    type Inner = W;
-
-    fn inner_view(&self) -> &W {
-        &self.inner
-    }
-    fn inner_view_mut(&mut self) -> &mut W {
-        &mut self.inner
-    }
-}
-
-impl<W, S> EventHandler for Source<W, S>
-where
-    W: Widget,
-    S: EventHandler<Message = W::Event>,
-{
-    type Event = S::Event;
-    type Message = W::Message;
-    
-    fn on_event(&mut self, e: S::Event) -> Option<Self::Message> {
-        let se = self.source.on_event(e);
-        se.and_then(move |e| self.inner.on_event(e))
-    }
-}
-
-//impl<'w, E, M, W, SE, S> Widget<'w, SE, M> for Source<E, M, W, SE, S> {}
-
-pub trait Runner {
-    type Arg;
-    type Result;
-
-    fn run<T>(&mut self, inner: T, printer: &mut PrinterGuard) -> Self::Result
-    where
-        T: Widget<Event = (), Message = Self::Arg>;
-}
-
-pub struct BasicRunner;
-
-impl Runner for BasicRunner {
-    type Arg = bool;
-    type Result = ();
-
-    fn run<T>(&mut self, mut inner: T, printer: &mut PrinterGuard)
-    where
-        T: Widget<Event = (), Message = Self::Arg>
-    {
-        let printer = printer.as_printer();
-        printer.clear();
-        loop {
-            inner.render(printer);
-            printer.refresh();
-            match inner.on_event(()) {
-                Some(true) => return,
-                _ => {}
-            }
-        }
-    }
+    fn update(&mut self, msg: Self::Message) -> bool;
+    fn view(&self) -> Self::View;
 }
 
 pub struct StyledText {
@@ -362,6 +267,8 @@ impl TextView {
 }
 
 impl View for TextView {
+    type Message = ();
+
     fn desired_size(&self) -> Vec2<u16> {
         Vec2::new(self.text.width() as u16, 1)
     }
@@ -372,6 +279,10 @@ impl View for TextView {
 
     fn render(&self, printer: &mut Printer) {
         printer.print_styled(Vec2::new(0, 0), &self.text);
+    }
+
+    fn on_event(&mut self, _event: Event) -> Option<Self::Message> {
+        None
     }
 }
 
@@ -402,7 +313,14 @@ impl EditView {
     }
 }
 
+pub enum EditViewEvent {
+    Edit,
+    Submit,
+}
+
 impl View for EditView {
+    type Message = EditViewEvent;
+
     fn desired_size(&self) -> Vec2<u16> {
         Vec2::new(self.text.width() as u16, 1)
     }
@@ -414,25 +332,20 @@ impl View for EditView {
     fn render(&self, printer: &mut Printer) {
         printer.print_with_style(Vec2::new(0, 0), &self.text, self.style);
     }
-}
 
-impl EventHandler for EditView {
-    type Event = Event;
-    type Message = String;
-
-    fn on_event(&mut self, e: Event) -> Option<String> {
+    fn on_event(&mut self, e: Event) -> Option<Self::Message> {
         match e {
             // TODO: mouse
             Event::Key(KeyEvent {
                 code: KeyCode::Enter,
                 ..
-            }) => Some(self.text.clone()),
+            }) => Some(EditViewEvent::Submit),
             Event::Key(KeyEvent {
                 code: KeyCode::Char(ch),
                 modifiers,
             }) if modifiers.is_empty() => {
                 self.text.push(ch);
-                None
+                Some(EditViewEvent::Edit)
             }
             _ => None,
         }
@@ -485,7 +398,13 @@ impl ButtonView {
     }
 }
 
+pub enum ButtonEvent {
+    Click,
+}
+
 impl View for ButtonView {
+    type Message = ButtonEvent;
+
     fn desired_size(&self) -> Vec2<u16> {
         Vec2::new(self.text.width() as u16, 1)
     }
@@ -497,34 +416,61 @@ impl View for ButtonView {
     fn render(&self, printer: &mut Printer) {
         printer.print_with_style(Vec2::new(0, 0), &self.text, self.style);
     }
-}
 
-impl EventHandler for ButtonView {
-    type Event = Event;
-    type Message = ();
-
-    fn on_event(&mut self, e: Event) -> Option<()> {
+    fn on_event(&mut self, e: Event) -> Option<Self::Message> {
         match e {
             // TODO: mouse
             Event::Key(KeyEvent {
                 code: KeyCode::Enter,
                 ..
-            }) => Some(()),
+            }) => Some(ButtonEvent::Click),
             _ => None,
         }
     }
 }
 
-pub struct TermEventSource(pub Duration);
+pub struct Map<V, F, U> {
+    inner: V,
+    f: F,
+    _marker: PhantomData<U>,
+}
 
-impl EventHandler for TermEventSource {
-    type Event = ();
-    type Message = Event;
+impl<V, F, U> ViewProxy for Map<V, F, U> where V: View, F: FnMut(&mut V, V::Message) -> U {
+    type Inner = V;
+    type Message = U;
 
-    fn on_event(&mut self, _: ()) -> Option<Event> {
-        match crossterm::event::poll(self.0).unwrap() {
-            true => Some(crossterm::event::read().unwrap()),
-            false => None,
+    fn inner_view(&self) -> &Self::Inner {
+        &self.inner
+    }
+
+    fn inner_view_mut(&mut self) -> &mut Self::Inner {
+        &mut self.inner
+    }
+
+    fn proxy_on_event(&mut self, e: Event) -> Option<U> {
+        let msg = self.inner.on_event(e);
+        msg.map(|msg| (self.f)(&mut self.inner, msg))
+    }
+}
+
+pub fn run(view: &mut impl View<Message = bool>, printer: &mut Printer) {
+    printer.clear();
+    printer.refresh();
+
+    loop {
+        let event = if crossterm::event::poll(std::time::Duration::from_millis(100)).unwrap() {
+            crossterm::event::read().unwrap()
+        } else {
+            continue;
+        };
+
+        view.render(printer);
+        printer.refresh();
+
+        match view.on_event(event) {
+            Some(true) => break,
+            _ => {}
         }
     }
 }
+
