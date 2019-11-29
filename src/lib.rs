@@ -342,6 +342,13 @@ impl View for EditView {
                 ..
             }) => Some(EditViewEvent::Submit),
             Event::Key(KeyEvent {
+                code: KeyCode::Backspace,
+                ..
+            }) => {
+                self.text.pop();
+                Some(EditViewEvent::Edit)
+            }
+            Event::Key(KeyEvent {
                 code: KeyCode::Char(ch),
                 modifiers,
             }) if modifiers.is_empty() => {
