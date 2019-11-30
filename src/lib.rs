@@ -1,7 +1,6 @@
 pub use crossterm;
 use crossterm::event::{
-    DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEvent,
-    MouseEvent,
+    DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEvent, MouseEvent,
 };
 use crossterm::screen::{EnterAlternateScreen, LeaveAlternateScreen, RawScreen};
 use crossterm::style::Color;
@@ -51,7 +50,10 @@ pub struct Rect {
 
 impl Rect {
     pub fn new(start: impl Into<Vec2<u16>>, size: impl Into<Vec2<u16>>) -> Self {
-        Self { start: start.into(), size: size.into(), }
+        Self {
+            start: start.into(),
+            size: size.into(),
+        }
     }
 
     pub fn contains(self, p: impl Into<Vec2<u16>>) -> bool {
@@ -638,10 +640,20 @@ impl<M> View for LinearView<M> {
     }
 
     fn desired_size(&self) -> Vec2<u16> {
-        self.children
-            .iter()
-            .map(|c| c.0.desired_size())
-            .fold(Vec2::new(0, 0), |acc, x| acc + x)
+        match self.orientation {
+            Orientation::Vertical => {
+                self.children
+                    .iter()
+                    .map(|c| c.0.desired_size())
+                    .fold(Vec2::new(0, 0), |acc, x| Vec2::new(acc.x.max(x.x), acc.y + x.y))
+            }
+            Orientation::Horizontal => {
+                self.children
+                    .iter()
+                    .map(|c| c.0.desired_size())
+                    .fold(Vec2::new(0, 0), |acc, x| Vec2::new(acc.x + x.x, acc.y.max(x.y)))
+            }
+        }
     }
 
     fn layout(&mut self, max: Vec2<u16>) -> Vec2<u16> {
@@ -742,13 +754,16 @@ where
     fn render(&self, printer: &mut Printer) {
         printer.print_rect();
         printer.print((0, 0), &self.title);
-        printer.with_bound(printer.bound().add_start((1, 1)).sub_size((1, 1)), |printer| {
-            self.content.render(printer);
-            let bound = printer.bound();
-            printer.with_bound(bound.add_start((0, bound.h() - 1)), |printer| {
-                self.buttons.render(printer);
-            });
-        });
+        printer.with_bound(
+            printer.bound().add_start((1, 1)).sub_size((1, 1)),
+            |printer| {
+                self.content.render(printer);
+                let bound = printer.bound();
+                printer.with_bound(bound.add_start((0, bound.h() - 1)), |printer| {
+                    self.buttons.render(printer);
+                });
+            },
+        );
     }
 
     fn on_event(&mut self, _e: Event) -> Option<M> {
