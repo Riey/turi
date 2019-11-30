@@ -356,14 +356,6 @@ where
     }
 }
 
-pub trait Sandbox {
-    type Message;
-    type View: View<Message = Self::Message>;
-
-    fn update(&mut self, msg: Self::Message) -> bool;
-    fn view(&self) -> Self::View;
-}
-
 pub struct StyledText {
     spans: Vec<(String, Style)>,
     width: usize,
