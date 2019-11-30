@@ -178,7 +178,7 @@ pub struct Printer<'a> {
 impl<'a> Printer<'a> {
     pub fn new(size: Vec2<u16>, out: &'a mut dyn Write) -> Self {
         Self {
-            bound: Rect::new(Vec2::new(0, 0), size),
+            bound: Rect::new((0, 0), size),
             style: Style::default(),
             out,
         }
@@ -415,7 +415,7 @@ impl View for TextView {
     }
 
     fn render(&self, printer: &mut Printer) {
-        printer.print_styled(Vec2::new(0, 0), &self.text);
+        printer.print_styled((0, 0), &self.text);
     }
 
     fn on_event(&mut self, _event: Event) -> Option<Self::Message> {
@@ -468,7 +468,7 @@ impl View for EditView {
 
     fn render(&self, printer: &mut Printer) {
         printer.with_style(self.style, |printer| {
-            printer.print(Vec2::new(0, 0), &self.text);
+            printer.print((0, 0), &self.text);
         });
     }
 
@@ -561,7 +561,7 @@ impl View for ButtonView {
 
     fn render(&self, printer: &mut Printer) {
         printer.with_style(self.style, |printer| {
-            printer.print(Vec2::new(0, 0), &self.text);
+            printer.print((0, 0), &self.text);
         });
     }
 
@@ -619,7 +619,7 @@ impl<M> View for LinearView<M> {
             Orientation::Horizontal => {
                 let mut x = 0;
                 for child in self.children.iter() {
-                    printer.with_bound(printer.bound().add_start(Vec2::new(x, 0)), |printer| {
+                    printer.with_bound(printer.bound().add_start((x, 0)), |printer| {
                         child.0.render(printer)
                     });
                     x += child.1.x;
@@ -628,7 +628,7 @@ impl<M> View for LinearView<M> {
             Orientation::Vertical => {
                 let mut y = 0;
                 for child in self.children.iter() {
-                    printer.with_bound(printer.bound().add_start(Vec2::new(0, y)), |printer| {
+                    printer.with_bound(printer.bound().add_start((0, y)), |printer| {
                         child.0.render(printer);
                     });
                     y += child.1.y;
