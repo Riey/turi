@@ -1,6 +1,6 @@
 pub use crossterm;
 use crossterm::event::{
-    DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEvent, KeyModifiers, MouseButton,
+    DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEvent,
     MouseEvent,
 };
 use crossterm::screen::{EnterAlternateScreen, LeaveAlternateScreen, RawScreen};
@@ -12,13 +12,26 @@ use crossterm::{
     terminal::{Clear, ClearType},
     Output,
 };
-use derive_more::{Add, From};
+use derive_more::{Add, AddAssign, From, Sub, SubAssign};
 use enumflags2::BitFlags;
 use std::io::Write;
 use std::marker::PhantomData;
+use std::mem::replace;
 use unicode_width::UnicodeWidthStr;
 
-#[derive(Add, Debug, From, Clone, Copy)]
+fn get_pos_from_me(me: MouseEvent) -> Vec2<u16> {
+    match me {
+        MouseEvent::Up(_, x, y, _)
+        | MouseEvent::Down(_, x, y, _)
+        | MouseEvent::Drag(_, x, y, _)
+        | MouseEvent::ScrollUp(x, y, _)
+        | MouseEvent::ScrollDown(x, y, _) => Vec2::new(x, y),
+    }
+}
+
+#[derive(
+    Add, AddAssign, Sub, SubAssign, Debug, From, Clone, Copy, Ord, PartialOrd, Eq, PartialEq,
+)]
 pub struct Vec2<T = usize> {
     pub x: T,
     pub y: T,
@@ -27,6 +40,72 @@ pub struct Vec2<T = usize> {
 impl<T> Vec2<T> {
     pub const fn new(x: T, y: T) -> Self {
         Self { x, y }
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq, From)]
+pub struct Rect {
+    start: Vec2<u16>,
+    size: Vec2<u16>,
+}
+
+impl Rect {
+    pub fn new(start: impl Into<Vec2<u16>>, size: impl Into<Vec2<u16>>) -> Self {
+        Self { start: start.into(), size: size.into(), }
+    }
+
+    pub fn contains(self, p: impl Into<Vec2<u16>>) -> bool {
+        let p = p.into();
+        p.x >= self.x()
+            && p.x <= (self.x() + self.w())
+            && p.y >= self.y()
+            && p.y <= (self.y() + self.h())
+    }
+
+    pub fn add_start(self, add: impl Into<Vec2<u16>>) -> Self {
+        let add = add.into();
+        Self {
+            start: self.start + add,
+            size: self.size - add,
+        }
+    }
+
+    pub fn sub_size(self, sub: impl Into<Vec2<u16>>) -> Self {
+        let sub = sub.into();
+        Self {
+            start: self.start,
+            size: self.size - sub,
+        }
+    }
+
+    #[inline(always)]
+    pub fn start(self) -> Vec2<u16> {
+        self.start
+    }
+
+    #[inline(always)]
+    pub fn size(self) -> Vec2<u16> {
+        self.size
+    }
+
+    #[inline(always)]
+    pub fn x(self) -> u16 {
+        self.start.x
+    }
+
+    #[inline(always)]
+    pub fn y(self) -> u16 {
+        self.start.y
+    }
+
+    #[inline(always)]
+    pub fn w(self) -> u16 {
+        self.size.x
+    }
+
+    #[inline(always)]
+    pub fn h(self) -> u16 {
+        self.size.y
     }
 }
 
@@ -84,30 +163,48 @@ impl<'a> PrinterGuard<'a> {
         }
     }
 
+    #[inline(always)]
     pub fn as_printer(&mut self) -> &mut Printer<'a> {
         &mut self.printer
     }
 }
 
 pub struct Printer<'a> {
-    offset: Vec2<u16>,
-    bound: Vec2<u16>,
+    bound: Rect,
     style: Style,
     out: &'a mut dyn Write,
 }
 
 impl<'a> Printer<'a> {
-    pub fn new(bound: Vec2<u16>, out: &'a mut dyn Write) -> Self {
+    pub fn new(size: Vec2<u16>, out: &'a mut dyn Write) -> Self {
         Self {
-            offset: Vec2::new(0, 0),
-            bound,
+            bound: Rect::new(Vec2::new(0, 0), size),
             style: Style::default(),
             out,
         }
     }
 
+    pub fn with_bound<T>(&mut self, bound: Rect, f: impl FnOnce(&mut Self) -> T) -> T {
+        let old_bound = replace(&mut self.bound, bound);
+        let ret = f(self);
+        self.bound = old_bound;
+        ret
+    }
+
+    pub fn with_style<T>(&mut self, style: Style, f: impl FnOnce(&mut Self) -> T) -> T {
+        let old_style = replace(&mut self.style, style);
+        let ret = f(self);
+        self.style = old_style;
+        ret
+    }
+
     pub fn refresh(&mut self) {
         self.out.flush().unwrap();
+    }
+
+    #[inline(always)]
+    pub fn bound(&self) -> Rect {
+        self.bound
     }
 
     pub fn clear(&mut self) {
@@ -119,35 +216,80 @@ impl<'a> Printer<'a> {
         .unwrap();
     }
 
-    pub fn print(&mut self, start: Vec2<u16>, text: &str) {
-        self.print_with_style(start, text, self.style);
+    pub fn print(&mut self, start: impl Into<Vec2<u16>>, text: &str) {
+        //TODO: check bound
+        self.raw_print(start.into(), text);
     }
 
-    pub fn print_with_style(&mut self, start: Vec2<u16>, text: &str, style: Style) {
-        // TODO: cut text when out of bound
-        // let width = text.width();
-        self.raw_print_with_style(start, text, style);
-    }
-
-    fn raw_print_with_style(&mut self, start: Vec2<u16>, text: &str, style: Style) {
-        let start = self.offset + start;
+    fn raw_print(&mut self, start: Vec2<u16>, text: &str) {
+        let start = self.bound.start() + start;
         queue!(
             self.out,
             MoveTo(start.x, start.y),
-            SetForegroundColor(style.fg),
-            SetBackgroundColor(style.bg),
+            SetForegroundColor(self.style.fg),
+            SetBackgroundColor(self.style.bg),
             Output(text)
         )
         .unwrap();
     }
 
-    pub fn print_styled(&mut self, mut start: Vec2<u16>, text: &StyledText) {
+    pub fn print_styled(&mut self, start: impl Into<Vec2<u16>>, text: &StyledText) {
+        let mut start = start.into();
         // TODO: cut text when out of bound
         for span in text.spans() {
             let text = &span.0;
-            self.raw_print_with_style(start, text, span.1);
+            self.style = span.1;
+            self.raw_print(start, text);
             start.x += text.width() as u16;
         }
+    }
+
+    pub fn print_vertical_line(&mut self, pos: u16) {
+        const VLINE_CHAR: char = '|';
+
+        let pos = self.bound.x() + pos;
+
+        // TODO: check bound
+        queue!(
+            self.out,
+            SetForegroundColor(self.style.fg),
+            SetBackgroundColor(self.style.bg),
+        )
+        .unwrap();
+
+        for i in 0..self.bound.h() {
+            queue!(
+                self.out,
+                MoveTo(pos, self.bound.y() + i),
+                Output(VLINE_CHAR),
+            )
+            .unwrap();
+        }
+    }
+
+    pub fn print_horizontal_line(&mut self, pos: u16) {
+        const HLINE_STR: &str = "―";
+
+        let size = self.bound.w();
+        let pos = self.bound.y() + pos;
+        let bar = HLINE_STR.repeat(size as usize);
+
+        // TODO: check bound
+        queue!(
+            self.out,
+            SetForegroundColor(self.style.fg),
+            SetBackgroundColor(self.style.bg),
+            MoveTo(self.bound.x(), pos),
+            Output(bar),
+        )
+        .unwrap();
+    }
+
+    pub fn print_rect(&mut self) {
+        self.print_horizontal_line(0);
+        self.print_horizontal_line(self.bound.h() - 1);
+        self.print_vertical_line(0);
+        self.print_vertical_line(self.bound.w() - 1);
     }
 }
 
@@ -161,7 +303,10 @@ pub trait View {
 }
 
 pub trait ViewExt: View + Sized {
-    fn map<F, U>(self, f: F) -> Map<Self, F, U> where F: FnMut(&mut Self, Self::Message) -> U {
+    fn map<F, U>(self, f: F) -> Map<Self, F, U>
+    where
+        F: FnMut(&mut Self, Self::Message) -> U,
+    {
         Map {
             inner: self,
             f,
@@ -170,8 +315,7 @@ pub trait ViewExt: View + Sized {
     }
 }
 
-impl<V> ViewExt for V where V: View {
-}
+impl<V> ViewExt for V where V: View {}
 
 pub trait ViewProxy {
     type Inner: View;
@@ -331,7 +475,9 @@ impl View for EditView {
     }
 
     fn render(&self, printer: &mut Printer) {
-        printer.print_with_style(Vec2::new(0, 0), &self.text, self.style);
+        printer.with_style(self.style, |printer| {
+            printer.print(Vec2::new(0, 0), &self.text);
+        });
     }
 
     fn on_event(&mut self, e: Event) -> Option<Self::Message> {
@@ -422,7 +568,9 @@ impl View for ButtonView {
     }
 
     fn render(&self, printer: &mut Printer) {
-        printer.print_with_style(Vec2::new(0, 0), &self.text, self.style);
+        printer.with_style(self.style, |printer| {
+            printer.print(Vec2::new(0, 0), &self.text);
+        });
     }
 
     fn on_event(&mut self, e: Event) -> Option<Self::Message> {
@@ -437,13 +585,204 @@ impl View for ButtonView {
     }
 }
 
+pub enum Orientation {
+    Horizontal,
+    Vertical,
+}
+
+pub struct LinearView<M> {
+    children: Vec<(Box<dyn View<Message = M>>, Vec2<u16>)>,
+    orientation: Orientation,
+    focus: Option<usize>,
+}
+
+impl<M> LinearView<M> {
+    pub fn new() -> Self {
+        Self {
+            children: Vec::with_capacity(10),
+            orientation: Orientation::Horizontal,
+            focus: None,
+        }
+    }
+
+    pub fn with_orientation(mut self, orientation: Orientation) -> Self {
+        self.set_orientation(orientation);
+        self
+    }
+
+    pub fn set_orientation(&mut self, orientation: Orientation) {
+        self.orientation = orientation;
+    }
+
+    pub fn add_child(&mut self, v: impl View<Message = M> + 'static) {
+        self.children.push((Box::new(v), Vec2::new(0, 0)));
+    }
+}
+
+impl<M> View for LinearView<M> {
+    type Message = M;
+
+    fn render(&self, printer: &mut Printer) {
+        match self.orientation {
+            Orientation::Horizontal => {
+                let mut x = 0;
+                for child in self.children.iter() {
+                    printer.with_bound(printer.bound().add_start(Vec2::new(x, 0)), |printer| {
+                        child.0.render(printer)
+                    });
+                    x += child.1.x;
+                }
+            }
+            Orientation::Vertical => {
+                let mut y = 0;
+                for child in self.children.iter() {
+                    printer.with_bound(printer.bound().add_start(Vec2::new(0, y)), |printer| {
+                        child.0.render(printer);
+                    });
+                    y += child.1.y;
+                }
+            }
+        }
+    }
+
+    fn desired_size(&self) -> Vec2<u16> {
+        self.children
+            .iter()
+            .map(|c| c.0.desired_size())
+            .fold(Vec2::new(0, 0), |acc, x| acc + x)
+    }
+
+    fn layout(&mut self, max: Vec2<u16>) -> Vec2<u16> {
+        let mut actual = Vec2::new(0, 0);
+        let mut left = max;
+        for (child, size_cache) in self.children.iter_mut() {
+            let size = child.layout(left);
+            *size_cache = size;
+            left -= size;
+
+            match self.orientation {
+                Orientation::Vertical => {
+                    actual.x = actual.x.max(size.x);
+                    actual.y += size.y;
+                }
+                Orientation::Horizontal => {
+                    actual.x += size.x;
+                    actual.y = actual.y.max(size.y);
+                }
+            }
+        }
+        actual.min(max)
+    }
+
+    fn on_event(&mut self, e: Event) -> Option<Self::Message> {
+        match e {
+            Event::Key(_) => {
+                if let Some(focus) = self.focus {
+                    self.children[focus].0.on_event(e)
+                } else {
+                    None
+                }
+            }
+            Event::Mouse(me) => {
+                let mut pos = get_pos_from_me(me);
+
+                for (child, size) in self.children.iter_mut() {
+                    match self.orientation {
+                        Orientation::Vertical => {
+                            if pos.y < size.y {
+                                return child.on_event(e);
+                            }
+                            pos.y -= size.y;
+                        }
+                        Orientation::Horizontal => {
+                            if pos.x < size.x {
+                                return child.on_event(e);
+                            }
+                            pos.x -= size.x;
+                        }
+                    }
+                }
+
+                None
+            }
+            Event::Resize(_, _) => None,
+        }
+    }
+}
+
+pub struct Dialog<M, C> {
+    title: String,
+    content: C,
+    buttons: LinearView<M>,
+}
+
+impl<M, C> Dialog<M, C>
+where
+    M: 'static,
+{
+    pub fn new(content: C) -> Self {
+        Self {
+            title: String::new(),
+            content,
+            buttons: LinearView::new(),
+        }
+    }
+
+    pub fn set_title(&mut self, title: String) {
+        self.title = title;
+    }
+
+    pub fn add_button(
+        &mut self,
+        btn: ButtonView,
+        mapper: impl FnMut(&mut ButtonView, ButtonEvent) -> M + 'static,
+    ) {
+        self.buttons.add_child(btn.map(mapper));
+    }
+}
+
+impl<M, C> View for Dialog<M, C>
+where
+    C: View,
+{
+    type Message = M;
+
+    fn render(&self, printer: &mut Printer) {
+        printer.print_rect();
+        printer.print((0, 0), &self.title);
+        printer.with_bound(printer.bound().add_start((1, 1)).sub_size((1, 1)), |printer| {
+            self.content.render(printer);
+            let bound = printer.bound();
+            printer.with_bound(bound.add_start((0, bound.h() - 1)), |printer| {
+                self.buttons.render(printer);
+            });
+        });
+    }
+
+    fn on_event(&mut self, _e: Event) -> Option<M> {
+        unimplemented!()
+    }
+
+    fn desired_size(&self) -> Vec2<u16> {
+        unimplemented!()
+    }
+
+    fn layout(&mut self, _max: Vec2<u16>) -> Vec2<u16> {
+        unimplemented!()
+    }
+}
+
 pub struct Map<V, F, U> {
     inner: V,
     f: F,
     _marker: PhantomData<U>,
 }
 
-impl<V, F, U> ViewProxy for Map<V, F, U> where V: View, F: FnMut(&mut V, V::Message) -> U {
+impl<V, F, U> ViewProxy for Map<V, F, U>
+where
+    V: View,
+    F: FnMut(&mut V, V::Message) -> U,
+{
     type Inner = V;
     type Message = U;
 
@@ -463,6 +802,7 @@ impl<V, F, U> ViewProxy for Map<V, F, U> where V: View, F: FnMut(&mut V, V::Mess
 
 pub fn run(view: &mut impl View<Message = bool>, printer: &mut Printer) {
     printer.clear();
+    view.render(printer);
     printer.refresh();
 
     loop {
@@ -472,13 +812,13 @@ pub fn run(view: &mut impl View<Message = bool>, printer: &mut Printer) {
             continue;
         };
 
-        view.render(printer);
-        printer.refresh();
-
         match view.on_event(event) {
             Some(true) => break,
             _ => {}
         }
+
+        printer.clear();
+        view.render(printer);
+        printer.refresh();
     }
 }
-

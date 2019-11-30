@@ -2,9 +2,9 @@ use turi::*;
 
 fn main() {
     let mut out = std::io::stdout();
-    let mut printer = PrinterGuard::new(Printer::new(Vec2::new(100, 100), &mut out), false);
-    let mut view =
-        EditView::new().map(|v, e| {
+    let mut printer = PrinterGuard::new(Printer::new(Vec2::new(100, 100), &mut out), true);
+    let mut dialog =
+        Dialog::new(EditView::new().map(|v, e| {
             match e {
                 EditViewEvent::Edit => false,
                 EditViewEvent::Submit => {
@@ -12,7 +12,15 @@ fn main() {
                     true
                 },
             }
-        });
+        }));
 
-    run(&mut view, printer.as_printer());
+    dialog.set_title("TITLE".into());
+
+    dialog.add_button(ButtonView::new("Click".into(), ButtonDecoration::Angle), |_, e| {
+        match e {
+            ButtonEvent::Click => true,
+        }
+    });
+
+    run(&mut dialog, printer.as_printer());
 }
