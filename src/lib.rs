@@ -13,6 +13,7 @@ use crossterm::{
 };
 use derive_more::{Add, AddAssign, From, Sub, SubAssign};
 use enumflags2::BitFlags;
+use std::cell::Cell;
 use std::io::Write;
 use std::marker::PhantomData;
 use std::mem::replace;
@@ -304,6 +305,23 @@ pub trait View {
     fn on_event(&mut self, e: Event) -> Option<Self::Message>;
 }
 
+impl<M> View for Box<dyn View<Message = M>> {
+    type Message = M;
+
+    fn render(&self, printer: &mut Printer) {
+        (**self).render(printer)
+    }
+    fn layout(&mut self, max: Vec2<u16>) -> Vec2<u16> {
+        (**self).layout(max)
+    }
+    fn desired_size(&self) -> Vec2<u16> {
+        (**self).desired_size()
+    }
+    fn on_event(&mut self, e: Event) -> Option<Self::Message> {
+        (**self).on_event(e)
+    }
+}
+
 pub trait ViewExt: View + Sized {
     fn map<F, U>(self, f: F) -> Map<Self, F, U>
     where
@@ -585,7 +603,7 @@ pub enum Orientation {
 }
 
 pub struct LinearView<M> {
-    children: Vec<(Box<dyn View<Message = M>>, Vec2<u16>)>,
+    children: Vec<(BoundChecker<Box<dyn View<Message = M>>>, Vec2<u16>)>,
     orientation: Orientation,
     focus: Option<usize>,
 }
@@ -609,7 +627,8 @@ impl<M> LinearView<M> {
     }
 
     pub fn add_child(&mut self, v: impl View<Message = M> + 'static) {
-        self.children.push((Box::new(v), Vec2::new(0, 0)));
+        self.children
+            .push((BoundChecker::new(Box::new(v)), Vec2::new(0, 0)));
     }
 }
 
@@ -641,18 +660,20 @@ impl<M> View for LinearView<M> {
 
     fn desired_size(&self) -> Vec2<u16> {
         match self.orientation {
-            Orientation::Vertical => {
-                self.children
-                    .iter()
-                    .map(|c| c.0.desired_size())
-                    .fold(Vec2::new(0, 0), |acc, x| Vec2::new(acc.x.max(x.x), acc.y + x.y))
-            }
-            Orientation::Horizontal => {
-                self.children
-                    .iter()
-                    .map(|c| c.0.desired_size())
-                    .fold(Vec2::new(0, 0), |acc, x| Vec2::new(acc.x + x.x, acc.y.max(x.y)))
-            }
+            Orientation::Vertical => self
+                .children
+                .iter()
+                .map(|c| c.0.desired_size())
+                .fold(Vec2::new(0, 0), |acc, x| {
+                    Vec2::new(acc.x.max(x.x), acc.y + x.y)
+                }),
+            Orientation::Horizontal => self
+                .children
+                .iter()
+                .map(|c| c.0.desired_size())
+                .fold(Vec2::new(0, 0), |acc, x| {
+                    Vec2::new(acc.x + x.x, acc.y.max(x.y))
+                }),
         }
     }
 
@@ -688,9 +709,11 @@ impl<M> View for LinearView<M> {
                 }
             }
             Event::Mouse(me) => {
-                let mut pos = get_pos_from_me(me);
-
-                for (child, size) in self.children.iter_mut() {
+                for (child, _size) in self.children.iter_mut() {
+                    if child.contains_cursor(me) {
+                        return child.on_event(e);
+                    }
+                    /*
                     match self.orientation {
                         Orientation::Vertical => {
                             if pos.y < size.y {
@@ -705,6 +728,7 @@ impl<M> View for LinearView<M> {
                             pos.x -= size.x;
                         }
                     }
+                    */
                 }
 
                 None
@@ -714,10 +738,17 @@ impl<M> View for LinearView<M> {
     }
 }
 
+#[derive(Clone, Copy, Debug)]
+enum DialogFocus {
+    Content,
+    Buttons,
+}
+
 pub struct Dialog<M, C> {
     title: String,
-    content: C,
-    buttons: LinearView<M>,
+    content: BoundChecker<C>,
+    buttons: BoundChecker<LinearView<M>>,
+    focus: Option<DialogFocus>,
 }
 
 impl<M, C> Dialog<M, C>
@@ -727,8 +758,9 @@ where
     pub fn new(content: C) -> Self {
         Self {
             title: String::new(),
-            content,
-            buttons: LinearView::new(),
+            content: BoundChecker::new(content),
+            buttons: BoundChecker::new(LinearView::new()),
+            focus: None,
         }
     }
 
@@ -741,13 +773,13 @@ where
         btn: ButtonView,
         mapper: impl FnMut(&mut ButtonView, ButtonEvent) -> M + 'static,
     ) {
-        self.buttons.add_child(btn.map(mapper));
+        self.buttons.inner_view_mut().add_child(btn.map(mapper));
     }
 }
 
 impl<M, C> View for Dialog<M, C>
 where
-    C: View,
+    C: View<Message = M>,
 {
     type Message = M;
 
@@ -766,16 +798,34 @@ where
         );
     }
 
-    fn on_event(&mut self, _e: Event) -> Option<M> {
-        unimplemented!()
+    fn on_event(&mut self, e: Event) -> Option<M> {
+        match e {
+            Event::Key(_) => self.focus.and_then(|focus| match focus {
+                DialogFocus::Buttons => self.buttons.on_event(e),
+                DialogFocus::Content => self.content.on_event(e),
+            }),
+            Event::Mouse(me) => {
+                if self.content.contains_cursor(me) {
+                    self.content.on_event(e)
+                } else if self.buttons.contains_cursor(me) {
+                    self.buttons.on_event(e)
+                } else {
+                    None
+                }
+            }
+            _ => None,
+        }
     }
 
     fn desired_size(&self) -> Vec2<u16> {
-        unimplemented!()
+        let content = self.content.desired_size();
+        let buttons = self.buttons.desired_size();
+        Vec2::new(content.x.max(buttons.x), content.y + buttons.y) + Vec2::new(2, 2)
     }
 
-    fn layout(&mut self, _max: Vec2<u16>) -> Vec2<u16> {
-        unimplemented!()
+    fn layout(&mut self, max: Vec2<u16>) -> Vec2<u16> {
+        //TODO: implement
+        max
     }
 }
 
@@ -804,6 +854,52 @@ where
     fn proxy_on_event(&mut self, e: Event) -> Option<U> {
         let msg = self.inner.on_event(e);
         msg.map(|msg| (self.f)(&mut self.inner, msg))
+    }
+}
+
+pub struct BoundChecker<T>
+{
+    inner: T,
+    bound: Cell<Rect>,
+}
+
+impl<T> BoundChecker<T>
+{
+    pub fn new(inner: T) -> Self {
+        Self {
+            inner,
+            bound: Cell::new(Rect::new((0, 0), (0, 0))),
+        }
+    }
+
+    pub fn contains(&self, p: Vec2<u16>) -> bool {
+        self.bound.get().contains(p)
+    }
+
+    pub fn contains_cursor(&self, me: MouseEvent) -> bool {
+        self.contains(get_pos_from_me(me))
+    }
+}
+
+impl<T> ViewProxy for BoundChecker<T>
+where
+    T: View,
+{
+    type Inner = T;
+    type Message = T::Message;
+
+    fn inner_view(&self) -> &T {
+        &self.inner
+    }
+    fn inner_view_mut(&mut self) -> &mut T {
+        &mut self.inner
+    }
+    fn proxy_render(&self, printer: &mut Printer) {
+        self.bound.set(printer.bound());
+        self.inner.render(printer);
+    }
+    fn proxy_on_event(&mut self, e: Event) -> Option<T::Message> {
+        self.inner.on_event(e)
     }
 }
 
