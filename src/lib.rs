@@ -300,7 +300,7 @@ pub trait View {
     type Message;
 
     fn render(&self, printer: &mut Printer);
-    fn layout(&mut self, max: Vec2<u16>) -> Vec2<u16>;
+    fn layout(&mut self, size: Vec2<u16>);
     fn desired_size(&self) -> Vec2<u16>;
     fn on_event(&mut self, e: Event) -> Option<Self::Message>;
 }
@@ -311,8 +311,8 @@ impl<M> View for Box<dyn View<Message = M>> {
     fn render(&self, printer: &mut Printer) {
         (**self).render(printer)
     }
-    fn layout(&mut self, max: Vec2<u16>) -> Vec2<u16> {
-        (**self).layout(max)
+    fn layout(&mut self, size: Vec2<u16>) {
+        (**self).layout(size)
     }
     fn desired_size(&self) -> Vec2<u16> {
         (**self).desired_size()
@@ -347,8 +347,8 @@ pub trait ViewProxy {
     fn proxy_render(&self, printer: &mut Printer) {
         self.inner_view().render(printer);
     }
-    fn proxy_layout(&mut self, max: Vec2<u16>) -> Vec2<u16> {
-        self.inner_view_mut().layout(max)
+    fn proxy_layout(&mut self, size: Vec2<u16>) {
+        self.inner_view_mut().layout(size);
     }
     fn proxy_desired_size(&self) -> Vec2<u16> {
         self.inner_view().desired_size()
@@ -365,8 +365,8 @@ where
     fn render(&self, printer: &mut Printer) {
         self.proxy_render(printer);
     }
-    fn layout(&mut self, max: Vec2<u16>) -> Vec2<u16> {
-        self.proxy_layout(max)
+    fn layout(&mut self, size: Vec2<u16>) {
+        self.proxy_layout(size);
     }
     fn desired_size(&self) -> Vec2<u16> {
         self.proxy_desired_size()
@@ -430,9 +430,7 @@ impl View for TextView {
         Vec2::new(self.text.width() as u16, 1)
     }
 
-    fn layout(&mut self, max: Vec2<u16>) -> Vec2<u16> {
-        max
-    }
+    fn layout(&mut self, size: Vec2<u16>) {}
 
     fn render(&self, printer: &mut Printer) {
         printer.print_styled((0, 0), &self.text);
@@ -482,9 +480,7 @@ impl View for EditView {
         Vec2::new(self.text.width() as u16, 1)
     }
 
-    fn layout(&mut self, max: Vec2<u16>) -> Vec2<u16> {
-        max
-    }
+    fn layout(&mut self, _size: Vec2<u16>) {}
 
     fn render(&self, printer: &mut Printer) {
         printer.with_style(self.style, |printer| {
@@ -575,9 +571,7 @@ impl View for ButtonView {
         Vec2::new(self.text.width() as u16, 1)
     }
 
-    fn layout(&mut self, max: Vec2<u16>) -> Vec2<u16> {
-        max
-    }
+    fn layout(&mut self, _size: Vec2<u16>) {}
 
     fn render(&self, printer: &mut Printer) {
         printer.with_style(self.style, |printer| {
@@ -603,7 +597,7 @@ pub enum Orientation {
 }
 
 pub struct LinearView<M> {
-    children: Vec<(BoundChecker<Box<dyn View<Message = M>>>, Vec2<u16>)>,
+    children: Vec<SizeCacher<BoundChecker<Box<dyn View<Message = M>>>>>,
     orientation: Orientation,
     focus: Option<usize>,
 }
@@ -628,7 +622,7 @@ impl<M> LinearView<M> {
 
     pub fn add_child(&mut self, v: impl View<Message = M> + 'static) {
         self.children
-            .push((BoundChecker::new(Box::new(v)), Vec2::new(0, 0)));
+            .push(SizeCacher::new(BoundChecker::new(Box::new(v))));
     }
 }
 
@@ -641,18 +635,18 @@ impl<M> View for LinearView<M> {
                 let mut x = 0;
                 for child in self.children.iter() {
                     printer.with_bound(printer.bound().add_start((x, 0)), |printer| {
-                        child.0.render(printer)
+                        child.render(printer)
                     });
-                    x += child.1.x;
+                    x += child.prev_size().x;
                 }
             }
             Orientation::Vertical => {
                 let mut y = 0;
                 for child in self.children.iter() {
                     printer.with_bound(printer.bound().add_start((0, y)), |printer| {
-                        child.0.render(printer);
+                        child.render(printer);
                     });
-                    y += child.1.y;
+                    y += child.prev_size().y;
                 }
             }
         }
@@ -663,72 +657,50 @@ impl<M> View for LinearView<M> {
             Orientation::Vertical => self
                 .children
                 .iter()
-                .map(|c| c.0.desired_size())
+                .map(|c| c.desired_size())
                 .fold(Vec2::new(0, 0), |acc, x| {
                     Vec2::new(acc.x.max(x.x), acc.y + x.y)
                 }),
             Orientation::Horizontal => self
                 .children
                 .iter()
-                .map(|c| c.0.desired_size())
+                .map(|c| c.desired_size())
                 .fold(Vec2::new(0, 0), |acc, x| {
                     Vec2::new(acc.x + x.x, acc.y.max(x.y))
                 }),
         }
     }
 
-    fn layout(&mut self, max: Vec2<u16>) -> Vec2<u16> {
-        let mut actual = Vec2::new(0, 0);
-        let mut left = max;
-        for (child, size_cache) in self.children.iter_mut() {
-            let size = child.layout(left);
-            *size_cache = size;
-            left -= size;
+    fn layout(&mut self, mut size: Vec2<u16>) {
+        for child in self.children.iter_mut() {
+            let child_size = child.prev_size();
+            child.layout(size.min(child_size));
 
             match self.orientation {
                 Orientation::Vertical => {
-                    actual.x = actual.x.max(size.x);
-                    actual.y += size.y;
+                    size.y = size.y.saturating_sub(child_size.y);
                 }
                 Orientation::Horizontal => {
-                    actual.x += size.x;
-                    actual.y = actual.y.max(size.y);
+                    size.x = size.x.saturating_sub(child_size.x);
                 }
             }
         }
-        actual.min(max)
     }
 
     fn on_event(&mut self, e: Event) -> Option<Self::Message> {
         match e {
             Event::Key(_) => {
                 if let Some(focus) = self.focus {
-                    self.children[focus].0.on_event(e)
+                    self.children[focus].on_event(e)
                 } else {
                     None
                 }
             }
             Event::Mouse(me) => {
-                for (child, _size) in self.children.iter_mut() {
-                    if child.contains_cursor(me) {
+                for child in self.children.iter_mut() {
+                    if child.inner_view().contains_cursor(me) {
                         return child.on_event(e);
                     }
-                    /*
-                    match self.orientation {
-                        Orientation::Vertical => {
-                            if pos.y < size.y {
-                                return child.on_event(e);
-                            }
-                            pos.y -= size.y;
-                        }
-                        Orientation::Horizontal => {
-                            if pos.x < size.x {
-                                return child.on_event(e);
-                            }
-                            pos.x -= size.x;
-                        }
-                    }
-                    */
                 }
 
                 None
@@ -823,9 +795,8 @@ where
         Vec2::new(content.x.max(buttons.x), content.y + buttons.y) + Vec2::new(2, 2)
     }
 
-    fn layout(&mut self, max: Vec2<u16>) -> Vec2<u16> {
+    fn layout(&mut self, _size: Vec2<u16>) {
         //TODO: implement
-        max
     }
 }
 
@@ -857,14 +828,55 @@ where
     }
 }
 
-pub struct BoundChecker<T>
+pub struct SizeCacher<T> {
+    inner: T,
+    prev_size: Cell<Vec2<u16>>,
+}
+
+impl<T> SizeCacher<T> {
+    pub fn new(inner: T) -> Self {
+        Self {
+            inner,
+            prev_size: Cell::new(Vec2::new(0, 0)),
+        }
+    }
+
+    #[inline]
+    pub fn prev_size(&self) -> Vec2<u16> {
+        self.prev_size.get()
+    }
+}
+
+impl<T> ViewProxy for SizeCacher<T>
+where
+    T: View,
 {
+    type Inner = T;
+    type Message = T::Message;
+
+    fn inner_view(&self) -> &T {
+        &self.inner
+    }
+    fn inner_view_mut(&mut self) -> &mut T {
+        &mut self.inner
+    }
+
+    fn proxy_desired_size(&self) -> Vec2<u16> {
+        self.prev_size.set(self.inner.desired_size());
+        self.prev_size()
+    }
+
+    fn proxy_on_event(&mut self, e: Event) -> Option<T::Message> {
+        self.inner_view_mut().on_event(e)
+    }
+}
+
+pub struct BoundChecker<T> {
     inner: T,
     bound: Cell<Rect>,
 }
 
-impl<T> BoundChecker<T>
-{
+impl<T> BoundChecker<T> {
     pub fn new(inner: T) -> Self {
         Self {
             inner,
