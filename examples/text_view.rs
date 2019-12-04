@@ -1,4 +1,12 @@
 use turi::*;
+use crossterm::event::{Event, KeyEvent, KeyCode, KeyModifiers};
+
+fn quit_check(e: Event) -> Option<bool> {
+    match e {
+        Event::Key(KeyEvent { code: KeyCode::Char('c'), modifiers: KeyModifiers::CONTROL }) => Some(true),
+        _ => None,
+    }
+}
 
 fn main() {
     let mut out = std::io::stdout();
@@ -21,6 +29,8 @@ fn main() {
             ButtonEvent::Click => true,
         }
     });
+
+    let mut dialog = dialog.map_e(quit_check);
 
     run(&mut dialog, printer.as_printer());
 }

@@ -333,6 +333,16 @@ pub trait ViewExt: View + Sized {
             _marker: PhantomData,
         }
     }
+
+    fn map_e<F>(self, f: F) -> MapE<Self, F>
+    where
+        F: FnMut(Event) -> Option<Self::Message>,
+    {
+        MapE {
+            inner: self,
+            f,
+        }
+    }
 }
 
 impl<V> ViewExt for V where V: View {}
@@ -825,6 +835,32 @@ where
     fn proxy_on_event(&mut self, e: Event) -> Option<U> {
         let msg = self.inner.on_event(e);
         msg.map(|msg| (self.f)(&mut self.inner, msg))
+    }
+}
+
+pub struct MapE<V, F> {
+    inner: V,
+    f: F,
+}
+
+impl<V, F> ViewProxy for MapE<V, F>
+where
+    V: View,
+    F: FnMut(Event) -> Option<V::Message>
+{
+    type Inner = V;
+    type Message = V::Message;
+
+    fn inner_view(&self) -> &Self::Inner {
+        &self.inner
+    }
+
+    fn inner_view_mut(&mut self) -> &mut Self::Inner {
+        &mut self.inner
+    }
+
+    fn proxy_on_event(&mut self, e: Event) -> Option<V::Message> {
+        (self.f)(e).or_else(|| self.inner.on_event(e))
     }
 }
 
