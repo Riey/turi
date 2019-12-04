@@ -440,7 +440,7 @@ impl View for TextView {
         Vec2::new(self.text.width() as u16, 1)
     }
 
-    fn layout(&mut self, size: Vec2<u16>) {}
+    fn layout(&mut self, _size: Vec2<u16>) {}
 
     fn render(&self, printer: &mut Printer) {
         printer.print_styled((0, 0), &self.text);
@@ -709,6 +709,7 @@ impl<M> View for LinearView<M> {
             Event::Mouse(me) => {
                 for child in self.children.iter_mut() {
                     if child.inner_view().contains_cursor(me) {
+                        log::trace!("child clicked!");
                         return child.on_event(e);
                     }
                 }
@@ -788,8 +789,10 @@ where
             }),
             Event::Mouse(me) => {
                 if self.content.contains_cursor(me) {
+                    log::trace!("content clicked");
                     self.content.on_event(e)
                 } else if self.buttons.contains_cursor(me) {
+                    log::trace!("buttons clicked");
                     self.buttons.on_event(e)
                 } else {
                     None

@@ -9,10 +9,13 @@ fn quit_check(e: Event) -> Option<bool> {
 }
 
 fn main() {
+    log4rs::init_file("log4rs.yaml", Default::default()).unwrap();
+
     let mut out = std::io::stdout();
     let mut printer = PrinterGuard::new(Printer::new(crossterm::terminal::size().unwrap().into(), &mut out), true);
     let mut dialog =
         Dialog::new(EditView::new().map(|v, e| {
+            log::trace!("edit event: {}", v.text());
             match e {
                 EditViewEvent::Edit => false,
                 EditViewEvent::Submit => {
@@ -25,6 +28,7 @@ fn main() {
     dialog.set_title("TITLE".into());
 
     dialog.add_button(ButtonView::new("Click".into(), ButtonDecoration::Angle), |_, e| {
+        log::trace!("btn click");
         match e {
             ButtonEvent::Click => true,
         }
