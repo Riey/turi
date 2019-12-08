@@ -179,7 +179,7 @@ pub struct Printer<'a> {
 }
 
 impl<'a> Printer<'a> {
-    pub fn new(size: Vec2<u16>, out: &'a mut dyn Write) -> Self {
+    pub fn new(size: impl Into<Vec2<u16>>, out: &'a mut dyn Write) -> Self {
         Self {
             bound: Rect::new((0, 0), size),
             style: Style::default(),
@@ -338,10 +338,7 @@ pub trait ViewExt: View + Sized {
     where
         F: FnMut(Event) -> Option<Self::Message>,
     {
-        MapE {
-            inner: self,
-            f,
-        }
+        MapE { inner: self, f }
     }
 }
 
@@ -849,7 +846,7 @@ pub struct MapE<V, F> {
 impl<V, F> ViewProxy for MapE<V, F>
 where
     V: View,
-    F: FnMut(Event) -> Option<V::Message>
+    F: FnMut(Event) -> Option<V::Message>,
 {
     type Inner = V;
     type Message = V::Message;
@@ -974,5 +971,32 @@ pub fn run(view: &mut impl View<Message = bool>, printer: &mut Printer) {
         printer.clear();
         view.render(printer);
         printer.refresh();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crossterm::event::KeyModifiers;
+
+    #[test]
+    fn interrupt() {
+        let mut view = Dialog::new(
+            TextView::new(StyledText::styled("ABC".into(), Style::default())).map(|_, _| true),
+        )
+        .map_e(|e| match e {
+            Event::Key(KeyEvent {
+                code: KeyCode::Char('c'),
+                modifiers: KeyModifiers::CONTROL,
+            }) => Some(true),
+            _ => None,
+        });
+
+        let ret = view.on_event(Event::Key(KeyEvent {
+            code: KeyCode::Char('c'),
+            modifiers: KeyModifiers::CONTROL,
+        }));
+
+        assert_eq!(ret, Some(true));
     }
 }
