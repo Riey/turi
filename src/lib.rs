@@ -15,10 +15,9 @@ use std::cell::Cell;
 use std::io::Write;
 use std::marker::PhantomData;
 use std::mem::replace;
-use std::ops::{Add, Sub};
 use unicode_width::UnicodeWidthStr;
 
-fn get_pos_from_me(me: MouseEvent) -> Vec2<u16> {
+fn get_pos_from_me(me: MouseEvent) -> Vec2 {
     match me {
         MouseEvent::Up(_, x, y, _)
         | MouseEvent::Down(_, x, y, _)
@@ -31,42 +30,95 @@ fn get_pos_from_me(me: MouseEvent) -> Vec2<u16> {
 #[derive(
     Add, AddAssign, Sub, SubAssign, Debug, From, Clone, Copy, Ord, PartialOrd, Eq, PartialEq,
 )]
-pub struct Vec2<T = usize>
-where
-    T: Add<Output = T> + Sub<Output = T>,
+pub struct Vec2
 {
-    pub x: T,
-    pub y: T,
+    pub x: u16,
+    pub y: u16,
 }
 
-impl<T> Vec2<T>
-where
-    T: Add<Output = T> + Sub<Output = T>,
+impl Vec2
 {
-    pub fn new(x: T, y: T) -> Self {
+    pub const fn new(x: u16, y: u16) -> Self {
         Self { x, y }
     }
-    pub fn add_x(self, x: T) -> Self {
+
+    pub const fn add_x(self, x: u16) -> Self {
         Self {
             x: self.x + x,
             ..self
         }
     }
-    pub fn add_y(self, y: T) -> Self {
+    pub const fn add_y(self, y: u16) -> Self {
         Self {
             y: self.y + y,
             ..self
         }
     }
-    pub fn sub_x(self, x: T) -> Self {
+    pub const fn sub_x(self, x: u16) -> Self {
         Self {
             x: self.x - x,
             ..self
         }
     }
-    pub fn sub_y(self, y: T) -> Self {
+    pub const fn sub_y(self, y: u16) -> Self {
         Self {
             y: self.y - y,
+            ..self
+        }
+    }
+
+    pub fn saturating_add_x(self, x: u16) -> Self {
+        Self {
+            x: self.x.saturating_add(x),
+            ..self
+        }
+    }
+
+    pub fn saturating_add_y(self, y: u16) -> Self {
+        Self {
+            y: self.y.saturating_add(y),
+            ..self
+        }
+    }
+
+    pub fn saturating_sub_x(self, x: u16) -> Self {
+        Self {
+            x: self.x.saturating_sub(x),
+            ..self
+        }
+    }
+
+    pub fn saturating_sub_y(self, y: u16) -> Self {
+        Self {
+            y: self.y.saturating_sub(y),
+            ..self
+        }
+    }
+
+    pub fn max_x(self, x: u16) -> Self {
+        Self {
+            x: self.x.max(x),
+            ..self
+        }
+    }
+
+    pub fn max_y(self, y: u16) -> Self {
+        Self {
+            y: self.y.max(y),
+            ..self
+        }
+    }
+
+    pub fn min_x(self, x: u16) -> Self {
+        Self {
+            x: self.x.min(x),
+            ..self
+        }
+    }
+
+    pub fn min_y(self, y: u16) -> Self {
+        Self {
+            y: self.y.min(y),
             ..self
         }
     }
@@ -74,19 +126,19 @@ where
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, From)]
 pub struct Rect {
-    start: Vec2<u16>,
-    size: Vec2<u16>,
+    start: Vec2,
+    size: Vec2,
 }
 
 impl Rect {
-    pub fn new(start: impl Into<Vec2<u16>>, size: impl Into<Vec2<u16>>) -> Self {
+    pub fn new(start: impl Into<Vec2>, size: impl Into<Vec2>) -> Self {
         Self {
             start: start.into(),
             size: size.into(),
         }
     }
 
-    pub fn contains(self, p: impl Into<Vec2<u16>>) -> bool {
+    pub fn contains(self, p: impl Into<Vec2>) -> bool {
         let p = p.into();
         p.x >= self.x()
             && p.x <= (self.x() + self.w())
@@ -94,7 +146,7 @@ impl Rect {
             && p.y <= (self.y() + self.h())
     }
 
-    pub fn add_start(self, add: impl Into<Vec2<u16>>) -> Self {
+    pub fn add_start(self, add: impl Into<Vec2>) -> Self {
         let add = add.into();
         Self {
             start: self.start + add,
@@ -102,7 +154,7 @@ impl Rect {
         }
     }
 
-    pub fn sub_size(self, sub: impl Into<Vec2<u16>>) -> Self {
+    pub fn sub_size(self, sub: impl Into<Vec2>) -> Self {
         let sub = sub.into();
         Self {
             start: self.start,
@@ -137,17 +189,17 @@ impl Rect {
     }
 
     #[inline(always)]
-    pub fn end(self) -> Vec2<u16> {
+    pub fn end(self) -> Vec2 {
         self.start + self.size
     }
 
     #[inline(always)]
-    pub const fn start(self) -> Vec2<u16> {
+    pub const fn start(self) -> Vec2 {
         self.start
     }
 
     #[inline(always)]
-    pub const fn size(self) -> Vec2<u16> {
+    pub const fn size(self) -> Vec2 {
         self.size
     }
 
@@ -240,7 +292,7 @@ pub struct Printer<'a> {
 }
 
 impl<'a> Printer<'a> {
-    pub fn new(size: impl Into<Vec2<u16>>, out: &'a mut dyn Write) -> Self {
+    pub fn new(size: impl Into<Vec2>, out: &'a mut dyn Write) -> Self {
         Self {
             bound: Rect::new((0, 0), size),
             style: Style::default(),
@@ -280,12 +332,12 @@ impl<'a> Printer<'a> {
         .unwrap();
     }
 
-    pub fn print(&mut self, start: impl Into<Vec2<u16>>, text: &str) {
+    pub fn print(&mut self, start: impl Into<Vec2>, text: &str) {
         //TODO: check bound
         self.raw_print(start.into(), text);
     }
 
-    fn raw_print(&mut self, start: Vec2<u16>, text: &str) {
+    fn raw_print(&mut self, start: Vec2, text: &str) {
         let start = self.bound.start() + start;
         queue!(
             self.out,
@@ -297,7 +349,7 @@ impl<'a> Printer<'a> {
         .unwrap();
     }
 
-    pub fn print_styled(&mut self, start: impl Into<Vec2<u16>>, text: &StyledText) {
+    pub fn print_styled(&mut self, start: impl Into<Vec2>, text: &StyledText) {
         let mut start = start.into();
         // TODO: cut text when out of bound
         for span in text.spans() {
@@ -356,8 +408,8 @@ pub trait View {
     type Message;
 
     fn render(&self, printer: &mut Printer);
-    fn layout(&mut self, size: Vec2<u16>);
-    fn desired_size(&self) -> Vec2<u16>;
+    fn layout(&mut self, size: Vec2);
+    fn desired_size(&self) -> Vec2;
     fn on_event(&mut self, e: Event) -> Option<Self::Message>;
 }
 
@@ -367,10 +419,10 @@ impl<M> View for Box<dyn View<Message = M>> {
     fn render(&self, printer: &mut Printer) {
         (**self).render(printer)
     }
-    fn layout(&mut self, size: Vec2<u16>) {
+    fn layout(&mut self, size: Vec2) {
         (**self).layout(size)
     }
-    fn desired_size(&self) -> Vec2<u16> {
+    fn desired_size(&self) -> Vec2 {
         (**self).desired_size()
     }
     fn on_event(&mut self, e: Event) -> Option<Self::Message> {
@@ -410,10 +462,10 @@ pub trait ViewProxy {
     fn proxy_render(&self, printer: &mut Printer) {
         self.inner_view().render(printer);
     }
-    fn proxy_layout(&mut self, size: Vec2<u16>) {
+    fn proxy_layout(&mut self, size: Vec2) {
         self.inner_view_mut().layout(size);
     }
-    fn proxy_desired_size(&self) -> Vec2<u16> {
+    fn proxy_desired_size(&self) -> Vec2 {
         self.inner_view().desired_size()
     }
     fn proxy_on_event(&mut self, e: Event) -> Option<Self::Message>;
@@ -428,10 +480,10 @@ where
     fn render(&self, printer: &mut Printer) {
         self.proxy_render(printer);
     }
-    fn layout(&mut self, size: Vec2<u16>) {
+    fn layout(&mut self, size: Vec2) {
         self.proxy_layout(size);
     }
-    fn desired_size(&self) -> Vec2<u16> {
+    fn desired_size(&self) -> Vec2 {
         self.proxy_desired_size()
     }
     fn on_event(&mut self, e: Event) -> Option<Self::Message> {
@@ -489,11 +541,11 @@ impl TextView {
 impl View for TextView {
     type Message = ();
 
-    fn desired_size(&self) -> Vec2<u16> {
+    fn desired_size(&self) -> Vec2 {
         Vec2::new(self.text.width() as u16, 1)
     }
 
-    fn layout(&mut self, _size: Vec2<u16>) {}
+    fn layout(&mut self, _size: Vec2) {}
 
     fn render(&self, printer: &mut Printer) {
         printer.print_styled((0, 0), &self.text);
@@ -539,11 +591,11 @@ pub enum EditViewEvent {
 impl View for EditView {
     type Message = EditViewEvent;
 
-    fn desired_size(&self) -> Vec2<u16> {
+    fn desired_size(&self) -> Vec2 {
         Vec2::new(self.text.width() as u16, 1)
     }
 
-    fn layout(&mut self, _size: Vec2<u16>) {}
+    fn layout(&mut self, _size: Vec2) {}
 
     fn render(&self, printer: &mut Printer) {
         printer.with_style(self.style, |printer| {
@@ -630,11 +682,11 @@ pub enum ButtonEvent {
 impl View for ButtonView {
     type Message = ButtonEvent;
 
-    fn desired_size(&self) -> Vec2<u16> {
+    fn desired_size(&self) -> Vec2 {
         Vec2::new(self.text.width() as u16, 1)
     }
 
-    fn layout(&mut self, _size: Vec2<u16>) {}
+    fn layout(&mut self, _size: Vec2) {}
 
     fn render(&self, printer: &mut Printer) {
         printer.with_style(self.style, |printer| {
@@ -715,7 +767,7 @@ impl<M> View for LinearView<M> {
         }
     }
 
-    fn desired_size(&self) -> Vec2<u16> {
+    fn desired_size(&self) -> Vec2 {
         match self.orientation {
             Orientation::Vertical => self
                 .children
@@ -734,17 +786,17 @@ impl<M> View for LinearView<M> {
         }
     }
 
-    fn layout(&mut self, mut size: Vec2<u16>) {
+    fn layout(&mut self, mut size: Vec2) {
         for child in self.children.iter_mut() {
-            let child_size = child.prev_size();
+            let child_size = child.desired_size();
             child.layout(size.min(child_size));
 
             match self.orientation {
                 Orientation::Vertical => {
-                    size.y = size.y.saturating_sub(child_size.y);
+                    size = size.saturating_sub_y(child_size.y);
                 }
                 Orientation::Horizontal => {
-                    size.x = size.x.saturating_sub(child_size.x);
+                    size = size.saturating_sub_x(child_size.x);
                 }
             }
         }
@@ -867,14 +919,14 @@ where
         }
     }
 
-    fn desired_size(&self) -> Vec2<u16> {
+    fn desired_size(&self) -> Vec2 {
         let content = self.content.desired_size();
         let buttons = self.buttons.desired_size();
         Vec2::new(content.x.max(buttons.x), content.y + buttons.y) + Vec2::new(2, 2)
     }
 
-    fn layout(&mut self, _size: Vec2<u16>) {
-        //TODO: implement
+    fn layout(&mut self, size: Vec2) {
+        let mut btn_size = self.buttons.desired_size();
     }
 }
 
@@ -934,7 +986,7 @@ where
 
 pub struct SizeCacher<T> {
     inner: T,
-    prev_size: Cell<Vec2<u16>>,
+    prev_size: Cell<Vec2>,
 }
 
 impl<T> SizeCacher<T> {
@@ -946,7 +998,7 @@ impl<T> SizeCacher<T> {
     }
 
     #[inline]
-    pub fn prev_size(&self) -> Vec2<u16> {
+    pub fn prev_size(&self) -> Vec2 {
         self.prev_size.get()
     }
 }
@@ -965,7 +1017,7 @@ where
         &mut self.inner
     }
 
-    fn proxy_desired_size(&self) -> Vec2<u16> {
+    fn proxy_desired_size(&self) -> Vec2 {
         // TODO: move this to layout
         self.prev_size.set(self.inner.desired_size());
         self.prev_size()
@@ -989,7 +1041,7 @@ impl<T> BoundChecker<T> {
         }
     }
 
-    pub fn contains(&self, p: Vec2<u16>) -> bool {
+    pub fn contains(&self, p: Vec2) -> bool {
         self.bound.get().contains(p)
     }
 
