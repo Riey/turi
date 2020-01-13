@@ -67,6 +67,20 @@ impl Vec2
         }
     }
 
+    pub fn saturating_add(self, other: Self) -> Self {
+        Self {
+            x: self.x.saturating_add(other.x),
+            y: self.y.saturating_add(other.y),
+        }
+    }
+
+    pub fn saturating_sub(self, other: Self) -> Self {
+        Self {
+            x: self.x.saturating_sub(other.x),
+            y: self.y.saturating_sub(other.y),
+        }
+    }
+
     pub fn saturating_add_x(self, x: u16) -> Self {
         Self {
             x: self.x.saturating_add(x),
@@ -926,7 +940,11 @@ where
     }
 
     fn layout(&mut self, size: Vec2) {
-        let mut btn_size = self.buttons.desired_size();
+        let btn_size = self.buttons.desired_size().min(size);
+        let content_size = size.saturating_sub(btn_size);
+
+        self.content.layout(content_size);
+        self.buttons.layout(btn_size);
     }
 }
 
