@@ -1,15 +1,12 @@
 pub use crossterm;
-use crossterm::event::{
-    DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEvent, MouseEvent,
-};
-use crossterm::screen::{EnterAlternateScreen, LeaveAlternateScreen, RawScreen};
-use crossterm::style::Color;
 use crossterm::{
+    event::{
+        DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEvent, MouseEvent,
+    },
     cursor::MoveTo,
     execute, queue,
-    style::{SetBackgroundColor, SetForegroundColor},
-    terminal::{Clear, ClearType},
-    Output,
+    style::{Color, SetBackgroundColor, SetForegroundColor, Print, },
+    terminal::{Clear, ClearType, EnterAlternateScreen, LeaveAlternateScreen, enable_raw_mode, disable_raw_mode},
 };
 use derive_more::{Add, AddAssign, From, Sub, SubAssign};
 use enumflags2::BitFlags;
@@ -138,13 +135,14 @@ impl Default for Style {
 
 pub struct PrinterGuard<'a> {
     printer: Printer<'a>,
-    _raw: RawScreen,
     alternative: bool,
 }
 
 impl<'a> Drop for PrinterGuard<'a> {
     fn drop(&mut self) {
+        disable_raw_mode().unwrap();
         execute!(self.printer.out, DisableMouseCapture).unwrap();
+
         if self.alternative {
             execute!(self.printer.out, LeaveAlternateScreen).unwrap()
         }
@@ -153,6 +151,7 @@ impl<'a> Drop for PrinterGuard<'a> {
 
 impl<'a> PrinterGuard<'a> {
     pub fn new(printer: Printer<'a>, alternative: bool) -> Self {
+        enable_raw_mode().unwrap();
         execute!(printer.out, EnableMouseCapture,).unwrap();
 
         if alternative {
@@ -162,7 +161,6 @@ impl<'a> PrinterGuard<'a> {
         Self {
             printer,
             alternative,
-            _raw: RawScreen::into_raw_mode().unwrap(),
         }
     }
 
@@ -231,7 +229,7 @@ impl<'a> Printer<'a> {
             MoveTo(start.x, start.y),
             SetForegroundColor(self.style.fg),
             SetBackgroundColor(self.style.bg),
-            Output(text)
+            Print(text)
         )
         .unwrap();
     }
@@ -264,7 +262,7 @@ impl<'a> Printer<'a> {
             queue!(
                 self.out,
                 MoveTo(pos, self.bound.y() + i),
-                Output(VLINE_CHAR),
+                Print(VLINE_CHAR),
             )
             .unwrap();
         }
@@ -283,7 +281,7 @@ impl<'a> Printer<'a> {
             SetForegroundColor(self.style.fg),
             SetBackgroundColor(self.style.bg),
             MoveTo(self.bound.x(), pos),
-            Output(bar),
+            Print(bar),
         )
         .unwrap();
     }
