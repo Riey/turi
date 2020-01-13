@@ -1,12 +1,13 @@
 pub use crossterm;
 use crossterm::{
-    event::{
-        DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEvent, MouseEvent,
-    },
     cursor::MoveTo,
+    event::{DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEvent, MouseEvent},
     execute, queue,
-    style::{Color, SetBackgroundColor, SetForegroundColor, Print, },
-    terminal::{Clear, ClearType, EnterAlternateScreen, LeaveAlternateScreen, enable_raw_mode, disable_raw_mode},
+    style::{Color, Print, SetBackgroundColor, SetForegroundColor},
+    terminal::{
+        disable_raw_mode, enable_raw_mode, Clear, ClearType, EnterAlternateScreen,
+        LeaveAlternateScreen,
+    },
 };
 use derive_more::{Add, AddAssign, From, Sub, SubAssign};
 use enumflags2::BitFlags;
@@ -14,6 +15,7 @@ use std::cell::Cell;
 use std::io::Write;
 use std::marker::PhantomData;
 use std::mem::replace;
+use std::ops::{Add, Sub};
 use unicode_width::UnicodeWidthStr;
 
 fn get_pos_from_me(me: MouseEvent) -> Vec2<u16> {
@@ -29,14 +31,44 @@ fn get_pos_from_me(me: MouseEvent) -> Vec2<u16> {
 #[derive(
     Add, AddAssign, Sub, SubAssign, Debug, From, Clone, Copy, Ord, PartialOrd, Eq, PartialEq,
 )]
-pub struct Vec2<T = usize> {
+pub struct Vec2<T = usize>
+where
+    T: Add<Output = T> + Sub<Output = T>,
+{
     pub x: T,
     pub y: T,
 }
 
-impl<T> Vec2<T> {
-    pub const fn new(x: T, y: T) -> Self {
+impl<T> Vec2<T>
+where
+    T: Add<Output = T> + Sub<Output = T>,
+{
+    pub fn new(x: T, y: T) -> Self {
         Self { x, y }
+    }
+    pub fn add_x(self, x: T) -> Self {
+        Self {
+            x: self.x + x,
+            ..self
+        }
+    }
+    pub fn add_y(self, y: T) -> Self {
+        Self {
+            y: self.y + y,
+            ..self
+        }
+    }
+    pub fn sub_x(self, x: T) -> Self {
+        Self {
+            x: self.x - x,
+            ..self
+        }
+    }
+    pub fn sub_y(self, y: T) -> Self {
+        Self {
+            y: self.y - y,
+            ..self
+        }
     }
 }
 
@@ -78,33 +110,64 @@ impl Rect {
         }
     }
 
+    pub fn with_margin(self, margin: u16) -> Self {
+        self.add_start((margin, margin)).sub_size((margin, margin))
+    }
+
+    pub fn split_vertical(self, pos: u16) -> (Self, Self) {
+        let up = Self {
+            start: self.start,
+            size: Vec2 {
+                y: pos,
+                ..self.size
+            },
+        };
+        let down = Self {
+            start: self.start.add_y(pos),
+            size: Vec2 {
+                y: self.size.y - pos,
+                ..self.size
+            },
+        };
+
+        debug_assert!(self.contains(down.start()));
+        debug_assert!(self.contains(down.end()));
+
+        (up, down)
+    }
+
     #[inline(always)]
-    pub fn start(self) -> Vec2<u16> {
+    pub fn end(self) -> Vec2<u16> {
+        self.start + self.size
+    }
+
+    #[inline(always)]
+    pub const fn start(self) -> Vec2<u16> {
         self.start
     }
 
     #[inline(always)]
-    pub fn size(self) -> Vec2<u16> {
+    pub const fn size(self) -> Vec2<u16> {
         self.size
     }
 
     #[inline(always)]
-    pub fn x(self) -> u16 {
+    pub const fn x(self) -> u16 {
         self.start.x
     }
 
     #[inline(always)]
-    pub fn y(self) -> u16 {
+    pub const fn y(self) -> u16 {
         self.start.y
     }
 
     #[inline(always)]
-    pub fn w(self) -> u16 {
+    pub const fn w(self) -> u16 {
         self.size.x
     }
 
     #[inline(always)]
-    pub fn h(self) -> u16 {
+    pub const fn h(self) -> u16 {
         self.size.y
     }
 }
@@ -259,12 +322,7 @@ impl<'a> Printer<'a> {
         .unwrap();
 
         for i in 0..self.bound.h() {
-            queue!(
-                self.out,
-                MoveTo(pos, self.bound.y() + i),
-                Print(VLINE_CHAR),
-            )
-            .unwrap();
+            queue!(self.out, MoveTo(pos, self.bound.y() + i), Print(VLINE_CHAR),).unwrap();
         }
     }
 
@@ -724,8 +782,8 @@ enum DialogFocus {
 
 pub struct Dialog<M, C> {
     title: String,
-    content: BoundChecker<C>,
-    buttons: BoundChecker<LinearView<M>>,
+    content: SizeCacher<BoundChecker<C>>,
+    buttons: SizeCacher<BoundChecker<LinearView<M>>>,
     focus: Option<DialogFocus>,
 }
 
@@ -736,8 +794,8 @@ where
     pub fn new(content: C) -> Self {
         Self {
             title: String::new(),
-            content: BoundChecker::new(content),
-            buttons: BoundChecker::new(LinearView::new()),
+            content: SizeCacher::new(BoundChecker::new(content)),
+            buttons: SizeCacher::new(BoundChecker::new(LinearView::new())),
             focus: None,
         }
     }
@@ -751,7 +809,10 @@ where
         btn: ButtonView,
         mapper: impl FnMut(&mut ButtonView, ButtonEvent) -> M + 'static,
     ) {
-        self.buttons.inner_view_mut().add_child(btn.map(mapper));
+        self.buttons
+            .inner_view_mut()
+            .inner_view_mut()
+            .add_child(btn.map(mapper));
     }
 }
 
@@ -762,18 +823,27 @@ where
     type Message = M;
 
     fn render(&self, printer: &mut Printer) {
+        log::trace!("Dialog bound: {:?}", printer.bound());
         printer.print_rect();
         printer.print((0, 0), &self.title);
-        printer.with_bound(
-            printer.bound().add_start((1, 1)).sub_size((1, 1)),
-            |printer| {
+        printer.with_bound(printer.bound().with_margin(1), |printer| {
+            let btn_height = self.buttons.prev_size.get().y;
+            log::trace!("btn_height: {}", btn_height);
+            let bound = printer.bound();
+            let (content_bound, btns_bound) = printer
+                .bound()
+                .split_vertical(bound.h() - btn_height);
+            log::trace!("Content bound: {:?}", content_bound);
+            log::trace!("Buttons bound: {:?}", btns_bound);
+
+            printer.with_bound(content_bound, |printer| {
                 self.content.render(printer);
-                let bound = printer.bound();
-                printer.with_bound(bound.add_start((0, bound.h() - 1)), |printer| {
-                    self.buttons.render(printer);
-                });
-            },
-        );
+            });
+
+            printer.with_bound(btns_bound, |printer| {
+                self.buttons.render(printer);
+            });
+        });
     }
 
     fn on_event(&mut self, e: Event) -> Option<M> {
@@ -783,10 +853,10 @@ where
                 DialogFocus::Content => self.content.on_event(e),
             }),
             Event::Mouse(me) => {
-                if self.content.contains_cursor(me) {
+                if self.content.inner_view_mut().contains_cursor(me) {
                     log::trace!("content clicked");
                     self.content.on_event(e)
-                } else if self.buttons.contains_cursor(me) {
+                } else if self.buttons.inner_view_mut().contains_cursor(me) {
                     log::trace!("buttons clicked");
                     self.buttons.on_event(e)
                 } else {
@@ -896,6 +966,7 @@ where
     }
 
     fn proxy_desired_size(&self) -> Vec2<u16> {
+        // TODO: move this to layout
         self.prev_size.set(self.inner.desired_size());
         self.prev_size()
     }
@@ -923,6 +994,11 @@ impl<T> BoundChecker<T> {
     }
 
     pub fn contains_cursor(&self, me: MouseEvent) -> bool {
+        log::trace!(
+            "check contains_cursor from {:?} in {:?}",
+            get_pos_from_me(me),
+            self.bound
+        );
         self.contains(get_pos_from_me(me))
     }
 }
