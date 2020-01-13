@@ -12,6 +12,7 @@ fn quit_check(e: Event) -> Option<bool> {
 }
 
 fn main() {
+    log_panics::init();
     log4rs::init_file("log4rs.yaml", Default::default()).unwrap();
 
     let mut out = std::io::stdout();
