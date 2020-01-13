@@ -1043,6 +1043,7 @@ pub fn run(view: &mut impl View<Message = bool>, printer: &mut Printer) {
         }
 
         printer.clear();
+        view.layout(crossterm::terminal::size().unwrap().into());
         view.render(printer);
         printer.refresh();
     }
