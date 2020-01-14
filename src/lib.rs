@@ -46,8 +46,15 @@ pub fn run(view: &mut impl View<Message = bool>, printer_guard: &mut PrinterGuar
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crossterm::event::KeyModifiers;
+    use crossterm::event::{
+        KeyModifiers,
+        Event,
+        KeyEvent,
+        KeyCode,
+    };
+    use crate::views::*;
+    use crate::view::*;
+    use crate::style::Style;
 
     #[test]
     fn interrupt() {

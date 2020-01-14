@@ -99,3 +99,21 @@ impl Rect {
         self.size.y
     }
 }
+
+#[test]
+fn zero_contains_test() {
+    let rect = Rect::new((0, 0), (0, 0));
+    assert!(!rect.contains((0, 0)));
+}
+
+#[test]
+fn contains_test() {
+    let rect = Rect::new((0, 0), (2, 2));
+    assert!(rect.contains((0, 0)));
+    assert!(rect.contains((0, 1)));
+    assert!(rect.contains((1, 0)));
+    assert!(rect.contains((1, 1)));
+    assert!(!rect.contains((0, 2)));
+    assert!(!rect.contains((2, 0)));
+    assert!(!rect.contains((2, 2)));
+}
