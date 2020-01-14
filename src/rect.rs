@@ -18,9 +18,9 @@ impl Rect {
     pub fn contains(self, p: impl Into<Vec2>) -> bool {
         let p = p.into();
         p.x >= self.x()
-            && p.x <= (self.x() + self.w())
+            && p.x < (self.x() + self.w())
             && p.y >= self.y()
-            && p.y <= (self.y() + self.h())
+            && p.y < (self.y() + self.h())
     }
 
     pub fn add_start(self, add: impl Into<Vec2>) -> Self {
@@ -60,7 +60,6 @@ impl Rect {
         };
 
         debug_assert!(self.contains(down.start()));
-        debug_assert!(self.contains(down.end()));
 
         (up, down)
     }
