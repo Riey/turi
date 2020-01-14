@@ -327,7 +327,6 @@ impl<M> View for LinearView<M> {
             Event::Mouse(me) => {
                 for child in self.children.iter_mut() {
                     if child.inner_view().contains_cursor(me) {
-                        log::trace!("child clicked!");
                         return child.on_event(e);
                     }
                 }
@@ -388,17 +387,13 @@ where
     type Message = M;
 
     fn render(&self, printer: &mut Printer) {
-        log::trace!("Dialog bound: {:?}", printer.bound());
         printer.print_rect();
         printer.print((0, 0), &self.title);
         printer.with_bound(printer.bound().with_margin(1), |printer| {
             let btn_height = self.buttons.prev_size().y;
-            log::trace!("btn_height: {}", btn_height);
             let bound = printer.bound();
             let (content_bound, btns_bound) =
                 printer.bound().split_vertical(bound.h() - btn_height);
-            log::trace!("Content bound: {:?}", content_bound);
-            log::trace!("Buttons bound: {:?}", btns_bound);
 
             printer.with_bound(content_bound, |printer| {
                 self.content.render(printer);
@@ -418,10 +413,8 @@ where
             }),
             Event::Mouse(me) => {
                 if self.content.inner_view_mut().contains_cursor(me) {
-                    log::trace!("content clicked");
                     self.content.on_event(e)
                 } else if self.buttons.inner_view_mut().contains_cursor(me) {
-                    log::trace!("buttons clicked");
                     self.buttons.on_event(e)
                 } else {
                     None

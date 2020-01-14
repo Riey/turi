@@ -69,11 +69,6 @@ impl<T> BoundChecker<T> {
     }
 
     pub fn contains_cursor(&self, me: MouseEvent) -> bool {
-        log::trace!(
-            "check contains_cursor from {:?} in {:?}",
-            get_pos_from_me(me),
-            self.bound
-        );
         self.contains(get_pos_from_me(me))
     }
 }
