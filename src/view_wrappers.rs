@@ -9,20 +9,20 @@ use std::cell::Cell;
 
 pub struct SizeCacher<T> {
     inner: T,
-    prev_size: Cell<Vec2>,
+    prev_size: Vec2,
 }
 
 impl<T> SizeCacher<T> {
     pub fn new(inner: T) -> Self {
         Self {
             inner,
-            prev_size: Cell::new(Vec2::new(0, 0)),
+            prev_size: Vec2::new(0, 0),
         }
     }
 
     #[inline]
     pub fn prev_size(&self) -> Vec2 {
-        self.prev_size.get()
+        self.prev_size
     }
 }
 
@@ -40,10 +40,9 @@ where
         &mut self.inner
     }
 
-    fn proxy_desired_size(&self) -> Vec2 {
-        // TODO: move this to layout
-        self.prev_size.set(self.inner.desired_size());
-        self.prev_size()
+    fn proxy_layout(&mut self, size: Vec2) {
+        self.prev_size = size;
+        self.inner.layout(size);
     }
 
     fn proxy_on_event(&mut self, e: Event) -> Option<T::Message> {
