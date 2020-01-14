@@ -1,3 +1,5 @@
 /target
+/.idea
+/turi.log
 **/*.rs.bk
 Cargo.lock
