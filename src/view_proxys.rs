@@ -1,5 +1,3 @@
-use crate::printer::Printer;
-use crate::vec2::Vec2;
 use crate::view::{View, ViewProxy};
 use crossterm::event::Event;
 use std::marker::PhantomData;

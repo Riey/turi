@@ -4,7 +4,6 @@ use crate::{
     view_proxys::{Map, MapE},
 };
 use crossterm::event::Event;
-use std::marker::PhantomData;
 
 pub trait View {
     type Message;

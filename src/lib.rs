@@ -10,8 +10,7 @@ pub mod view_proxys;
 pub mod view_wrappers;
 pub mod views;
 
-use crate::printer::{Printer, PrinterGuard};
-use crate::rect::Rect;
+use crate::printer::PrinterGuard;
 use crate::view::View;
 
 pub fn run(view: &mut impl View<Message = bool>, printer_guard: &mut PrinterGuard) {
@@ -46,15 +45,10 @@ pub fn run(view: &mut impl View<Message = bool>, printer_guard: &mut PrinterGuar
 
 #[cfg(test)]
 mod tests {
-    use crossterm::event::{
-        KeyModifiers,
-        Event,
-        KeyEvent,
-        KeyCode,
-    };
-    use crate::views::*;
-    use crate::view::*;
     use crate::style::Style;
+    use crate::view::*;
+    use crate::views::*;
+    use crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
 
     #[test]
     fn interrupt() {

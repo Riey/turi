@@ -1,7 +1,7 @@
 use crate::view::{ViewExt, ViewProxy};
 use crate::view_wrappers::{BoundChecker, SizeCacher};
 use crate::{printer::Printer, style::Style, vec2::Vec2, view::View};
-use crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
+use crossterm::event::{Event, KeyCode, KeyEvent};
 use unicode_width::UnicodeWidthStr;
 
 pub struct StyledText {

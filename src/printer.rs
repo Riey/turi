@@ -185,6 +185,7 @@ impl<'a> Printer<'a> {
             Print(LEFT_BOTTOM),
             MoveTo(end.x, end.y),
             Print(RIGHT_BOTTOM),
-        ).unwrap();
+        )
+        .unwrap();
     }
 }
