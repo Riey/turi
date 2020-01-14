@@ -144,7 +144,7 @@ impl<'a> Printer<'a> {
     }
 
     pub fn print_horizontal_line(&mut self, pos: u16) {
-        const HLINE_STR: &str = "―";
+        const HLINE_STR: &str = "─";
 
         let size = self.bound.w();
         let pos = self.bound.y() + pos;
