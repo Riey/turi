@@ -1,5 +1,9 @@
 use crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
-use turi::*;
+use turi::view::ViewExt;
+use turi::{
+    printer::PrinterGuard,
+    views::{ButtonDecoration, ButtonEvent, ButtonView, Dialog, EditView, EditViewEvent},
+};
 
 fn quit_check(e: Event) -> Option<bool> {
     match e {
@@ -16,10 +20,7 @@ fn main() {
     log4rs::init_file("log4rs.yaml", Default::default()).unwrap();
 
     let mut out = std::io::stdout();
-    let mut printer = PrinterGuard::new(
-        Printer::new(crossterm::terminal::size().unwrap(), &mut out),
-        true,
-    );
+    let mut printer_guard = PrinterGuard::new(&mut out, true);
     let mut dialog = Dialog::new(EditView::new().map(|v, e| {
         log::trace!("edit event: {}", v.text());
         match e {
@@ -45,5 +46,5 @@ fn main() {
 
     let mut dialog = dialog.map_e(quit_check);
 
-    run(&mut dialog, printer.as_printer());
+    turi::run(&mut dialog, &mut printer_guard);
 }
