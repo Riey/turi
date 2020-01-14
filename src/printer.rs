@@ -126,7 +126,7 @@ impl<'a> Printer<'a> {
     }
 
     pub fn print_vertical_line(&mut self, pos: u16) {
-        const VLINE_CHAR: char = '|';
+        const VLINE_CHAR: &str = "│";
 
         let pos = self.bound.x() + pos;
 
@@ -144,7 +144,7 @@ impl<'a> Printer<'a> {
     }
 
     pub fn print_horizontal_line(&mut self, pos: u16) {
-        const HLINE_STR: &str = "―";
+        const HLINE_STR: &str = "─";
 
         let size = self.bound.w();
         let pos = self.bound.y() + pos;
@@ -166,5 +166,25 @@ impl<'a> Printer<'a> {
         self.print_horizontal_line(self.bound.h() - 1);
         self.print_vertical_line(0);
         self.print_vertical_line(self.bound.w() - 1);
+
+        const LEFT_TOP: &str = "┌";
+        const RIGHT_TOP: &str = "┐";
+        const LEFT_BOTTOM: &str = "└";
+        const RIGHT_BOTTOM: &str = "┘";
+
+        let start = self.bound.start();
+        let end = self.bound.end();
+
+        queue!(
+            self.out,
+            MoveTo(start.x, start.y),
+            Print(LEFT_TOP),
+            MoveTo(end.x, start.y),
+            Print(RIGHT_TOP),
+            MoveTo(start.x, end.y),
+            Print(LEFT_BOTTOM),
+            MoveTo(end.x, end.y),
+            Print(RIGHT_BOTTOM),
+        ).unwrap();
     }
 }
