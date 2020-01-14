@@ -126,7 +126,7 @@ impl<'a> Printer<'a> {
     }
 
     pub fn print_vertical_line(&mut self, pos: u16) {
-        const VLINE_CHAR: char = '│';
+        const VLINE_CHAR: &str = "│";
 
         let pos = self.bound.x() + pos;
 
