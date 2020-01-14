@@ -4,9 +4,9 @@ use crate::vec2::Vec2;
 use crate::views::StyledText;
 use crossterm::{
     cursor::MoveTo,
-    event::{DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEvent, MouseEvent},
+    event::{DisableMouseCapture, EnableMouseCapture},
     execute, queue,
-    style::{Color, Print, SetBackgroundColor, SetForegroundColor},
+    style::{Print, SetBackgroundColor, SetForegroundColor},
     terminal::{
         disable_raw_mode, enable_raw_mode, Clear, ClearType, EnterAlternateScreen,
         LeaveAlternateScreen,

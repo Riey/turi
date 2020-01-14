@@ -338,17 +338,11 @@ impl<M> View for LinearView<M> {
     }
 }
 
-#[derive(Clone, Copy, Debug)]
-enum DialogFocus {
-    Content,
-    Buttons,
-}
-
 pub struct Dialog<M, C> {
     title: String,
     content: SizeCacher<BoundChecker<C>>,
     buttons: SizeCacher<BoundChecker<LinearView<M>>>,
-    focus: Option<DialogFocus>,
+    content_focus: bool,
 }
 
 impl<M, C> Dialog<M, C>
@@ -360,7 +354,7 @@ where
             title: String::new(),
             content: SizeCacher::new(BoundChecker::new(content)),
             buttons: SizeCacher::new(BoundChecker::new(LinearView::new())),
-            focus: None,
+            content_focus: true,
         }
     }
 
@@ -378,11 +372,16 @@ where
             .inner_view_mut()
             .add_child(btn.map(mapper));
     }
+
+    fn tab(&mut self) {
+        self.content_focus = !self.content_focus;
+    }
 }
 
 impl<M, C> View for Dialog<M, C>
 where
     C: View<Message = M>,
+    M: 'static,
 {
     type Message = M;
 
@@ -407,10 +406,19 @@ where
 
     fn on_event(&mut self, e: Event) -> Option<M> {
         match e {
-            Event::Key(_) => self.focus.and_then(|focus| match focus {
-                DialogFocus::Buttons => self.buttons.on_event(e),
-                DialogFocus::Content => self.content.on_event(e),
-            }),
+            Event::Key(KeyEvent {
+                code: KeyCode::Tab, ..
+            }) => {
+                self.tab();
+                None
+            }
+            Event::Key(_) => {
+                if self.content_focus {
+                    self.content.on_event(e)
+                } else {
+                    self.buttons.on_event(e)
+                }
+            }
             Event::Mouse(me) => {
                 if self.content.inner_view_mut().contains_cursor(me) {
                     self.content.on_event(e)
