@@ -14,7 +14,7 @@ pub trait View {
     fn on_event(&mut self, e: Event) -> Option<Self::Message>;
 }
 
-impl<M> View for Box<dyn View<Message = M>> {
+impl<'a, M> View for Box<dyn View<Message = M> + 'a> {
     type Message = M;
 
     fn render(&self, printer: &mut Printer) {
