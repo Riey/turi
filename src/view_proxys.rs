@@ -1,6 +1,8 @@
-use crate::view::{View, ViewProxy};
+use crate::view::{View, };
 use crossterm::event::Event;
 use std::marker::PhantomData;
+use crate::vec2::Vec2;
+use crate::printer::Printer;
 
 pub struct Map<V, F, U> {
     inner: V,
@@ -18,25 +20,28 @@ impl<V, F, U> Map<V, F, U> {
     }
 }
 
-impl<'a, V, F, U> ViewProxy for Map<V, F, U>
+impl<'a, S, V, F, U> View<S> for Map<V, F, U>
 where
-    V: View,
-    F: FnMut(&mut V, V::Message) -> U + 'a,
+    V: View<S>,
+    F: FnMut(&mut V, &mut S, V::Message) -> U + 'a,
 {
-    type Inner = V;
     type Message = U;
 
-    fn inner_view(&self) -> &Self::Inner {
-        &self.inner
+    fn render(&self, printer: &mut Printer) {
+        self.inner.render(printer);
     }
 
-    fn inner_view_mut(&mut self) -> &mut Self::Inner {
-        &mut self.inner
+    fn layout(&mut self, size: Vec2) {
+        self.inner.layout(size);
     }
 
-    fn proxy_on_event(&mut self, e: Event) -> Option<U> {
-        let msg = self.inner.on_event(e);
-        msg.map(|msg| (self.f)(&mut self.inner, msg))
+    fn desired_size(&self) -> Vec2 {
+        self.inner.desired_size()
+    }
+
+    fn on_event(&mut self, state: &mut S, e: Event) -> Option<U> {
+        let msg = self.inner.on_event(state, e);
+        msg.map(|msg| (self.f)(&mut self.inner, state, msg))
     }
 }
 
@@ -51,23 +56,26 @@ impl<V, F> MapE<V, F> {
     }
 }
 
-impl<'a, V, F> ViewProxy for MapE<V, F>
+impl<'a, S, V, F> View<S> for MapE<V, F>
 where
-    V: View,
-    F: FnMut(Event) -> Option<V::Message> + 'a,
+    V: View<S>,
+    F: FnMut(&mut S, Event) -> Option<V::Message> + 'a,
 {
-    type Inner = V;
     type Message = V::Message;
 
-    fn inner_view(&self) -> &Self::Inner {
-        &self.inner
+    fn render(&self, printer: &mut Printer) {
+        self.inner.render(printer);
     }
 
-    fn inner_view_mut(&mut self) -> &mut Self::Inner {
-        &mut self.inner
+    fn layout(&mut self, size: Vec2) {
+        self.inner.layout(size);
     }
 
-    fn proxy_on_event(&mut self, e: Event) -> Option<V::Message> {
-        (self.f)(e).or_else(|| self.inner.on_event(e))
+    fn desired_size(&self) -> Vec2 {
+        self.inner.desired_size()
+    }
+
+    fn on_event(&mut self, state: &mut S, e: Event) -> Option<V::Message> {
+        (self.f)(state, e).or_else(|| self.inner.on_event(state, e))
     }
 }

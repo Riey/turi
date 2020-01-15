@@ -1,4 +1,9 @@
+#![feature(specialization)]
+
 pub use crossterm;
+
+#[macro_use]
+pub mod macros;
 
 pub mod modifires;
 pub mod printer;
@@ -13,7 +18,7 @@ pub mod views;
 use crate::printer::PrinterGuard;
 use crate::view::View;
 
-pub fn run(view: &mut impl View<Message = bool>, printer_guard: &mut PrinterGuard) {
+pub fn run<S>(state: &mut S, view: &mut impl View<S, Message = bool>, printer_guard: &mut PrinterGuard) {
     let mut printer = printer_guard.make_printer(crossterm::terminal::size().unwrap());
     printer.clear();
     view.layout(printer.bound().size());
@@ -31,7 +36,7 @@ pub fn run(view: &mut impl View<Message = bool>, printer_guard: &mut PrinterGuar
             printer = printer_guard.make_printer((x, y));
         }
 
-        match view.on_event(event) {
+        match view.on_event(state, event) {
             Some(true) => break,
             _ => {}
         }
