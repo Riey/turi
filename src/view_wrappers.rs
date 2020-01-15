@@ -2,10 +2,13 @@ use crate::rect::Rect;
 use crate::{
     printer::Printer,
     vec2::Vec2,
-    view::{View, ViewProxy},
+    view::{View, },
 };
 use crossterm::event::{Event, MouseEvent};
 use std::cell::Cell;
+
+impl_deref_for_generic_inner!(SizeCacher => inner);
+impl_deref_for_generic_inner!(BoundChecker => inner);
 
 pub struct SizeCacher<T> {
     inner: T,
@@ -26,27 +29,27 @@ impl<T> SizeCacher<T> {
     }
 }
 
-impl<T> ViewProxy for SizeCacher<T>
+impl<S, T> View<S> for SizeCacher<T>
 where
-    T: View,
+    T: View<S>,
 {
-    type Inner = T;
     type Message = T::Message;
 
-    fn inner_view(&self) -> &T {
-        &self.inner
-    }
-    fn inner_view_mut(&mut self) -> &mut T {
-        &mut self.inner
+    fn render(&self, printer: &mut Printer) {
+        self.inner.render(printer);
     }
 
-    fn proxy_layout(&mut self, size: Vec2) {
+    fn desired_size(&self) -> Vec2 {
+        self.inner.desired_size()
+    }
+
+    fn layout(&mut self, size: Vec2) {
         self.prev_size = size;
         self.inner.layout(size);
     }
 
-    fn proxy_on_event(&mut self, e: Event) -> Option<T::Message> {
-        self.inner_view_mut().on_event(e)
+    fn on_event(&mut self, state: &mut S, e: Event) -> Option<T::Message> {
+        self.inner.on_event(state, e)
     }
 }
 
@@ -72,25 +75,27 @@ impl<T> BoundChecker<T> {
     }
 }
 
-impl<T> ViewProxy for BoundChecker<T>
+impl<S, T> View<S> for BoundChecker<T>
 where
-    T: View,
+    T: View<S>,
 {
-    type Inner = T;
     type Message = T::Message;
 
-    fn inner_view(&self) -> &T {
-        &self.inner
-    }
-    fn inner_view_mut(&mut self) -> &mut T {
-        &mut self.inner
-    }
-    fn proxy_render(&self, printer: &mut Printer) {
+    fn render(&self, printer: &mut Printer) {
         self.bound.set(printer.bound());
         self.inner.render(printer);
     }
-    fn proxy_on_event(&mut self, e: Event) -> Option<T::Message> {
-        self.inner.on_event(e)
+
+    fn desired_size(&self) -> Vec2 {
+        self.inner.desired_size()
+    }
+
+    fn layout(&mut self, size: Vec2) {
+        self.inner.layout(size);
+    }
+
+    fn on_event(&mut self, state: &mut S, e: Event) -> Option<T::Message> {
+        self.inner.on_event(state, e)
     }
 }
 

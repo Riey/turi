@@ -1,4 +1,4 @@
-use crate::view::{ViewExt, ViewProxy};
+use crate::view::{ViewExt, };
 use crate::view_wrappers::{BoundChecker, SizeCacher};
 use crate::{printer::Printer, style::Style, vec2::Vec2, view::View};
 use crossterm::event::{Event, KeyCode, KeyEvent};
@@ -51,7 +51,7 @@ impl TextView {
     }
 }
 
-impl View for TextView {
+impl<S> View<S> for TextView {
     type Message = ();
 
     fn desired_size(&self) -> Vec2 {
@@ -64,7 +64,7 @@ impl View for TextView {
         printer.print_styled((0, 0), &self.text);
     }
 
-    fn on_event(&mut self, _event: Event) -> Option<Self::Message> {
+    fn on_event(&mut self, _state: &mut S, _event: Event) -> Option<Self::Message> {
         None
     }
 }
@@ -101,7 +101,7 @@ pub enum EditViewEvent {
     Submit,
 }
 
-impl View for EditView {
+impl<S> View<S> for EditView {
     type Message = EditViewEvent;
 
     fn desired_size(&self) -> Vec2 {
@@ -116,7 +116,7 @@ impl View for EditView {
         });
     }
 
-    fn on_event(&mut self, e: Event) -> Option<Self::Message> {
+    fn on_event(&mut self, _state: &mut S, e: Event) -> Option<Self::Message> {
         match e {
             // TODO: mouse
             Event::Key(KeyEvent {
@@ -192,7 +192,7 @@ pub enum ButtonEvent {
     Click,
 }
 
-impl View for ButtonView {
+impl<S> View<S> for ButtonView {
     type Message = ButtonEvent;
 
     fn desired_size(&self) -> Vec2 {
@@ -207,7 +207,7 @@ impl View for ButtonView {
         });
     }
 
-    fn on_event(&mut self, e: Event) -> Option<Self::Message> {
+    fn on_event(&mut self, _state: &mut S, e: Event) -> Option<Self::Message> {
         match e {
             // TODO: mouse
             Event::Key(KeyEvent {
@@ -224,13 +224,13 @@ pub enum Orientation {
     Vertical,
 }
 
-pub struct LinearView<'a, M> {
-    children: Vec<SizeCacher<BoundChecker<Box<dyn View<Message = M> + 'a>>>>,
+pub struct LinearView<'a, S, M> {
+    children: Vec<SizeCacher<BoundChecker<Box<dyn View<S, Message = M> + 'a>>>>,
     orientation: Orientation,
     focus: Option<usize>,
 }
 
-impl<'a, M> LinearView<'a, M> {
+impl<'a, S, M> LinearView<'a, S, M> {
     pub fn new() -> Self {
         Self {
             children: Vec::with_capacity(10),
@@ -248,13 +248,13 @@ impl<'a, M> LinearView<'a, M> {
         self.orientation = orientation;
     }
 
-    pub fn add_child(&mut self, v: impl View<Message = M> + 'a) {
+    pub fn add_child(&mut self, v: impl View<S, Message = M> + 'a) {
         self.children
             .push(SizeCacher::new(BoundChecker::new(Box::new(v))));
     }
 }
 
-impl<'a, M> View for LinearView<'a, M> {
+impl<'a, S, M> View<S> for LinearView<'a, S, M> {
     type Message = M;
 
     fn render(&self, printer: &mut Printer) {
@@ -315,19 +315,19 @@ impl<'a, M> View for LinearView<'a, M> {
         }
     }
 
-    fn on_event(&mut self, e: Event) -> Option<Self::Message> {
+    fn on_event(&mut self, state: &mut S, e: Event) -> Option<Self::Message> {
         match e {
             Event::Key(_) => {
                 if let Some(focus) = self.focus {
-                    self.children[focus].on_event(e)
+                    self.children[focus].on_event(state, e)
                 } else {
                     None
                 }
             }
             Event::Mouse(me) => {
                 for child in self.children.iter_mut() {
-                    if child.inner_view().contains_cursor(me) {
-                        return child.on_event(e);
+                    if child.contains_cursor(me) {
+                        return child.on_event(state, e);
                     }
                 }
 
@@ -338,14 +338,14 @@ impl<'a, M> View for LinearView<'a, M> {
     }
 }
 
-pub struct Dialog<'a, M, C: 'a> {
+pub struct Dialog<'a, S, M, C: 'a> {
     title: String,
     content: SizeCacher<BoundChecker<C>>,
-    buttons: SizeCacher<BoundChecker<LinearView<'a, M>>>,
+    buttons: SizeCacher<BoundChecker<LinearView<'a, S, M>>>,
     content_focus: bool,
 }
 
-impl<'a, M, C> Dialog<'a, M, C>
+impl<'a, S, M, C> Dialog<'a, S, M, C>
 where
     M: 'static,
 {
@@ -365,11 +365,9 @@ where
     pub fn add_button(
         &mut self,
         btn: ButtonView,
-        mapper: impl FnMut(&mut ButtonView, ButtonEvent) -> M + 'a,
+        mapper: impl FnMut(&mut ButtonView, &mut S, ButtonEvent) -> M + 'a,
     ) {
         self.buttons
-            .inner_view_mut()
-            .inner_view_mut()
             .add_child(btn.map(mapper));
     }
 
@@ -378,9 +376,9 @@ where
     }
 }
 
-impl<'a, M, C> View for Dialog<'a, M, C>
+impl<'a, S, M, C> View<S> for Dialog<'a, S, M, C>
 where
-    C: View<Message = M>,
+    C: View<S, Message = M>,
     M: 'static,
 {
     type Message = M;
@@ -418,7 +416,7 @@ where
         Vec2::new(content.x.max(buttons.x), content.y + buttons.y) + Vec2::new(2, 2)
     }
 
-    fn on_event(&mut self, e: Event) -> Option<M> {
+    fn on_event(&mut self, state: &mut S, e: Event) -> Option<M> {
         match e {
             Event::Key(KeyEvent {
                 code: KeyCode::Tab, ..
@@ -428,16 +426,16 @@ where
             }
             Event::Key(_) => {
                 if self.content_focus {
-                    self.content.on_event(e)
+                    self.content.on_event(state, e)
                 } else {
-                    self.buttons.on_event(e)
+                    self.buttons.on_event(state, e)
                 }
             }
             Event::Mouse(me) => {
-                if self.content.inner_view_mut().contains_cursor(me) {
-                    self.content.on_event(e)
-                } else if self.buttons.inner_view_mut().contains_cursor(me) {
-                    self.buttons.on_event(e)
+                if self.content.contains_cursor(me) {
+                    self.content.on_event(state, e)
+                } else if self.buttons.contains_cursor(me) {
+                    self.buttons.on_event(state, e)
                 } else {
                     None
                 }
