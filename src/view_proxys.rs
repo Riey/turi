@@ -18,10 +18,10 @@ impl<V, F, U> Map<V, F, U> {
     }
 }
 
-impl<V, F, U> ViewProxy for Map<V, F, U>
+impl<'a, V, F, U> ViewProxy for Map<V, F, U>
 where
     V: View,
-    F: FnMut(&mut V, V::Message) -> U,
+    F: FnMut(&mut V, V::Message) -> U + 'a,
 {
     type Inner = V;
     type Message = U;
@@ -51,10 +51,10 @@ impl<V, F> MapE<V, F> {
     }
 }
 
-impl<V, F> ViewProxy for MapE<V, F>
+impl<'a, V, F> ViewProxy for MapE<V, F>
 where
     V: View,
-    F: FnMut(Event) -> Option<V::Message>,
+    F: FnMut(Event) -> Option<V::Message> + 'a,
 {
     type Inner = V;
     type Message = V::Message;

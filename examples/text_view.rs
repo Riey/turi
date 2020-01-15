@@ -19,6 +19,7 @@ fn main() {
     log_panics::init();
     log4rs::init_file("log4rs.yaml", Default::default()).unwrap();
 
+    let mut count = 0;
     let mut out = std::io::stdout();
     let mut printer_guard = PrinterGuard::new(&mut out, true);
     let mut dialog = Dialog::new(EditView::new().map(|v, e| {
@@ -37,7 +38,8 @@ fn main() {
     dialog.add_button(
         ButtonView::new("Click".into(), ButtonDecoration::Angle),
         |_, e| {
-            log::trace!("btn click");
+            count += 1;
+            log::trace!("btn click count: {}", count);
             match e {
                 ButtonEvent::Click => true,
             }

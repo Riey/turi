@@ -224,13 +224,13 @@ pub enum Orientation {
     Vertical,
 }
 
-pub struct LinearView<M> {
-    children: Vec<SizeCacher<BoundChecker<Box<dyn View<Message = M>>>>>,
+pub struct LinearView<'a, M> {
+    children: Vec<SizeCacher<BoundChecker<Box<dyn View<Message = M> + 'a>>>>,
     orientation: Orientation,
     focus: Option<usize>,
 }
 
-impl<M> LinearView<M> {
+impl<'a, M> LinearView<'a, M> {
     pub fn new() -> Self {
         Self {
             children: Vec::with_capacity(10),
@@ -248,13 +248,13 @@ impl<M> LinearView<M> {
         self.orientation = orientation;
     }
 
-    pub fn add_child(&mut self, v: impl View<Message = M> + 'static) {
+    pub fn add_child(&mut self, v: impl View<Message = M> + 'a) {
         self.children
             .push(SizeCacher::new(BoundChecker::new(Box::new(v))));
     }
 }
 
-impl<M> View for LinearView<M> {
+impl<'a, M> View for LinearView<'a, M> {
     type Message = M;
 
     fn render(&self, printer: &mut Printer) {
@@ -338,14 +338,14 @@ impl<M> View for LinearView<M> {
     }
 }
 
-pub struct Dialog<M, C> {
+pub struct Dialog<'a, M, C: 'a> {
     title: String,
     content: SizeCacher<BoundChecker<C>>,
-    buttons: SizeCacher<BoundChecker<LinearView<M>>>,
+    buttons: SizeCacher<BoundChecker<LinearView<'a, M>>>,
     content_focus: bool,
 }
 
-impl<M, C> Dialog<M, C>
+impl<'a, M, C> Dialog<'a, M, C>
 where
     M: 'static,
 {
@@ -365,7 +365,7 @@ where
     pub fn add_button(
         &mut self,
         btn: ButtonView,
-        mapper: impl FnMut(&mut ButtonView, ButtonEvent) -> M + 'static,
+        mapper: impl FnMut(&mut ButtonView, ButtonEvent) -> M + 'a,
     ) {
         self.buttons
             .inner_view_mut()
@@ -378,7 +378,7 @@ where
     }
 }
 
-impl<M, C> View for Dialog<M, C>
+impl<'a, M, C> View for Dialog<'a, M, C>
 where
     C: View<Message = M>,
     M: 'static,
@@ -402,6 +402,20 @@ where
                 self.buttons.render(printer);
             });
         });
+    }
+
+    fn layout(&mut self, size: Vec2) {
+        let btn_size = self.buttons.desired_size().min(size);
+        let content_size = size.saturating_sub(btn_size);
+
+        self.content.layout(content_size);
+        self.buttons.layout(btn_size);
+    }
+
+    fn desired_size(&self) -> Vec2 {
+        let content = self.content.desired_size();
+        let buttons = self.buttons.desired_size();
+        Vec2::new(content.x.max(buttons.x), content.y + buttons.y) + Vec2::new(2, 2)
     }
 
     fn on_event(&mut self, e: Event) -> Option<M> {
@@ -430,19 +444,5 @@ where
             }
             _ => None,
         }
-    }
-
-    fn desired_size(&self) -> Vec2 {
-        let content = self.content.desired_size();
-        let buttons = self.buttons.desired_size();
-        Vec2::new(content.x.max(buttons.x), content.y + buttons.y) + Vec2::new(2, 2)
-    }
-
-    fn layout(&mut self, size: Vec2) {
-        let btn_size = self.buttons.desired_size().min(size);
-        let content_size = size.saturating_sub(btn_size);
-
-        self.content.layout(content_size);
-        self.buttons.layout(btn_size);
     }
 }
