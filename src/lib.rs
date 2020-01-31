@@ -1,5 +1,3 @@
-#![feature(specialization)]
-
 pub use crossterm;
 
 #[macro_use]
