@@ -56,9 +56,9 @@ mod tests {
     #[test]
     fn interrupt() {
         let mut view = Dialog::new(
-            TextView::new(StyledText::styled("ABC".into(), Style::default())).map(|_, _| true),
+            TextView::new(StyledText::styled("ABC".into(), Style::default())).map(|_, _, _| true),
         )
-        .map_e(|e| match e {
+        .map_e(|_, e| match e {
             Event::Key(KeyEvent {
                 code: KeyCode::Char('c'),
                 modifiers: KeyModifiers::CONTROL,
@@ -66,10 +66,13 @@ mod tests {
             _ => None,
         });
 
-        let ret = view.on_event(Event::Key(KeyEvent {
-            code: KeyCode::Char('c'),
-            modifiers: KeyModifiers::CONTROL,
-        }));
+        let ret = view.on_event(
+            &mut (),
+            Event::Key(KeyEvent {
+                code: KeyCode::Char('c'),
+                modifiers: KeyModifiers::CONTROL,
+            }),
+        );
 
         assert_eq!(ret, Some(true));
     }
