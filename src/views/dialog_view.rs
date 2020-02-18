@@ -18,14 +18,14 @@ use crossterm::event::{
     KeyEvent,
 };
 
-pub struct Dialog<'a, S, M, C: 'a> {
+pub struct DialogView<'a, S, M, C: 'a> {
     title:         String,
     content:       SizeCacher<BoundChecker<C>>,
     buttons:       SizeCacher<BoundChecker<LinearView<'a, S, M>>>,
     content_focus: bool,
 }
 
-impl<'a, S, M, C> Dialog<'a, S, M, C>
+impl<'a, S, M, C> DialogView<'a, S, M, C>
 where
     M: 'static,
 {
@@ -58,7 +58,7 @@ where
     }
 }
 
-impl<'a, S, M, C> View<S> for Dialog<'a, S, M, C>
+impl<'a, S, M, C> View<S> for DialogView<'a, S, M, C>
 where
     C: View<S, Message = M>,
     M: 'static,

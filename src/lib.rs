@@ -64,7 +64,7 @@ mod tests {
 
     #[test]
     fn interrupt() {
-        let mut view = Dialog::new(
+        let mut view = DialogView::new(
             TextView::new(StyledText::styled("ABC".into(), Style::default())).map(|_, _, _| true),
         )
         .map_e(|_, e| {

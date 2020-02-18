@@ -13,7 +13,7 @@ use turi::{
         ButtonDecoration,
         ButtonViewEvent,
         ButtonView,
-        Dialog,
+        DialogView,
         EditView,
         EditViewEvent,
     },
@@ -45,7 +45,7 @@ fn main() {
     let out = out.lock();
     let mut out = BufWriter::with_capacity(1024 * 1024, out);
     let mut printer_guard = PrinterGuard::new(&mut out, true);
-    let mut dialog = Dialog::new(EditView::new().map(|v, _s, e| {
+    let mut dialog = DialogView::new(EditView::new().map(|v, _s, e| {
         match e {
             EditViewEvent::Edit => {
                 log::trace!("edit: {}", v.text());

@@ -1,5 +1,5 @@
 mod button_view;
-mod dialog;
+mod dialog_view;
 mod edit_view;
 mod linear_view;
 mod text_view;
@@ -10,7 +10,7 @@ pub use self::{
         ButtonViewEvent,
         ButtonView,
     },
-    dialog::Dialog,
+    dialog_view::DialogView,
     edit_view::{
         EditView,
         EditViewEvent,
