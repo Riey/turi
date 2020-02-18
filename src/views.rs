@@ -1,4 +1,4 @@
-use crate::view::{ViewExt, };
+use crate::view::ViewExt;
 use crate::view_wrappers::{BoundChecker, SizeCacher};
 use crate::{printer::Printer, style::Style, vec2::Vec2, view::View};
 use crossterm::event::{Event, KeyCode, KeyEvent};
@@ -213,7 +213,8 @@ impl<S> View<S> for ButtonView {
             Event::Key(KeyEvent {
                 code: KeyCode::Enter,
                 ..
-            }) => Some(ButtonEvent::Click),
+            })
+            | Event::Mouse(..) => Some(ButtonEvent::Click),
             _ => None,
         }
     }
@@ -367,8 +368,7 @@ where
         btn: ButtonView,
         mapper: impl FnMut(&mut ButtonView, &mut S, ButtonEvent) -> M + 'a,
     ) {
-        self.buttons
-            .add_child(btn.map(mapper));
+        self.buttons.add_child(btn.map(mapper));
     }
 
     fn tab(&mut self) {

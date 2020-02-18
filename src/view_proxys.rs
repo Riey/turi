@@ -1,8 +1,8 @@
-use crate::view::{View, };
+use crate::printer::Printer;
+use crate::vec2::Vec2;
+use crate::view::View;
 use crossterm::event::Event;
 use std::marker::PhantomData;
-use crate::vec2::Vec2;
-use crate::printer::Printer;
 
 pub struct Map<V, F, U> {
     inner: V,

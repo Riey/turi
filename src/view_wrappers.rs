@@ -1,9 +1,5 @@
 use crate::rect::Rect;
-use crate::{
-    printer::Printer,
-    vec2::Vec2,
-    view::{View, },
-};
+use crate::{printer::Printer, vec2::Vec2, view::View};
 use crossterm::event::{Event, MouseEvent};
 use std::cell::Cell;
 

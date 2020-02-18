@@ -1,4 +1,6 @@
 use crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
+use simplelog::*;
+use std::io::BufWriter;
 use turi::view::ViewExt;
 use turi::{
     printer::PrinterGuard,
@@ -16,10 +18,21 @@ fn quit_check<S>(_s: &mut S, e: Event) -> Option<bool> {
 }
 
 fn main() {
+    WriteLogger::init(
+        LevelFilter::Trace,
+        ConfigBuilder::new().add_filter_ignore_str("mio").build(),
+        std::fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open("turi.log")
+            .unwrap(),
+    )
+    .unwrap();
     log_panics::init();
-    log4rs::init_file("log4rs.yaml", Default::default()).unwrap();
 
-    let mut out = std::io::stdout();
+    let out = std::io::stdout();
+    let out = out.lock();
+    let mut out = BufWriter::with_capacity(1024 * 1024, out);
     let mut printer_guard = PrinterGuard::new(&mut out, true);
     let mut dialog = Dialog::new(EditView::new().map(|v, _s, e| {
         log::trace!("edit event: {}", v.text());

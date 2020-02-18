@@ -3,7 +3,7 @@ use crate::style::Style;
 use crate::vec2::Vec2;
 use crate::views::StyledText;
 use crossterm::{
-    cursor::MoveTo,
+    cursor::{Hide, MoveTo, Show},
     event::{DisableMouseCapture, EnableMouseCapture},
     execute, queue,
     style::{Print, SetBackgroundColor, SetForegroundColor},
@@ -24,7 +24,7 @@ pub struct PrinterGuard<'a> {
 impl<'a> Drop for PrinterGuard<'a> {
     fn drop(&mut self) {
         disable_raw_mode().unwrap();
-        execute!(self.out, DisableMouseCapture).unwrap();
+        execute!(self.out, DisableMouseCapture, Show).unwrap();
 
         if self.alternative {
             execute!(self.out, LeaveAlternateScreen).unwrap()
@@ -35,7 +35,7 @@ impl<'a> Drop for PrinterGuard<'a> {
 impl<'a> PrinterGuard<'a> {
     pub fn new(out: &'a mut dyn Write, alternative: bool) -> Self {
         enable_raw_mode().unwrap();
-        execute!(out, EnableMouseCapture,).unwrap();
+        execute!(out, EnableMouseCapture, Hide).unwrap();
 
         if alternative {
             execute!(out, EnterAlternateScreen).unwrap()

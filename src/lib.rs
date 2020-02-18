@@ -16,7 +16,11 @@ pub mod views;
 use crate::printer::PrinterGuard;
 use crate::view::View;
 
-pub fn run<S>(state: &mut S, view: &mut impl View<S, Message = bool>, printer_guard: &mut PrinterGuard) {
+pub fn run<S>(
+    state: &mut S,
+    view: &mut impl View<S, Message = bool>,
+    printer_guard: &mut PrinterGuard,
+) {
     let mut printer = printer_guard.make_printer(crossterm::terminal::size().unwrap());
     printer.clear();
     view.layout(printer.bound().size());
@@ -24,11 +28,7 @@ pub fn run<S>(state: &mut S, view: &mut impl View<S, Message = bool>, printer_gu
     printer.refresh();
 
     loop {
-        let event = if crossterm::event::poll(std::time::Duration::from_millis(100)).unwrap() {
-            crossterm::event::read().unwrap()
-        } else {
-            continue;
-        };
+        let event = crossterm::event::read().unwrap();
 
         if let crossterm::event::Event::Resize(x, y) = event {
             printer = printer_guard.make_printer((x, y));
