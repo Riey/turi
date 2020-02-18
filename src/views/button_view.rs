@@ -70,12 +70,12 @@ impl Default for ButtonDecoration {
     }
 }
 
-pub enum ButtonEvent {
+pub enum ButtonViewEvent {
     Click,
 }
 
 impl<S> View<S> for ButtonView {
-    type Message = ButtonEvent;
+    type Message = ButtonViewEvent;
 
     fn desired_size(&self) -> Vec2 {
         Vec2::new(self.text_width, 1)
@@ -107,7 +107,7 @@ impl<S> View<S> for ButtonView {
                 code: KeyCode::Enter,
                 ..
             })
-            | Event::Mouse(..) => Some(ButtonEvent::Click),
+            | Event::Mouse(..) => Some(ButtonViewEvent::Click),
             _ => None,
         }
     }

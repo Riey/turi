@@ -11,7 +11,7 @@ use turi::{
     view::View,
     views::{
         ButtonDecoration,
-        ButtonEvent,
+        ButtonViewEvent,
         ButtonView,
         Dialog,
         EditView,
@@ -66,7 +66,7 @@ fn main() {
             *s += 1;
             log::trace!("btn click count: {}", s);
             match e {
-                ButtonEvent::Click => false,
+                ButtonViewEvent::Click => false,
             }
         },
     );

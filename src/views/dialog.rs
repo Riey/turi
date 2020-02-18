@@ -7,7 +7,7 @@ use crate::{
         SizeCacher,
     },
     views::{
-        ButtonEvent,
+        ButtonViewEvent,
         ButtonView,
         LinearView,
     },
@@ -48,7 +48,7 @@ where
     pub fn add_button(
         &mut self,
         btn: ButtonView,
-        mapper: impl FnMut(&mut ButtonView, &mut S, ButtonEvent) -> M + 'a,
+        mapper: impl FnMut(&mut ButtonView, &mut S, ButtonViewEvent) -> M + 'a,
     ) {
         self.buttons.add_child(btn.map(mapper));
     }

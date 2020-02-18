@@ -7,7 +7,7 @@ mod text_view;
 pub use self::{
     button_view::{
         ButtonDecoration,
-        ButtonEvent,
+        ButtonViewEvent,
         ButtonView,
     },
     dialog::Dialog,
