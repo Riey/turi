@@ -46,3 +46,23 @@ impl<'a, S, M> View<S> for Box<dyn View<S, Message = M> + 'a> {
         (**self).on_event(state, e)
     }
 }
+
+impl<'a, S, M, V> View<S> for &'a mut V
+where
+    V: View<S, Message = M>,
+{
+    type Message = M;
+
+    fn render(&self, printer: &mut Printer) {
+        (**self).render(printer)
+    }
+    fn layout(&mut self, size: Vec2) {
+        (**self).layout(size)
+    }
+    fn desired_size(&self) -> Vec2 {
+        (**self).desired_size()
+    }
+    fn on_event(&mut self, state: &mut S, e: Event) -> Option<Self::Message> {
+        (**self).on_event(state, e)
+    }
+}
