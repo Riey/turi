@@ -1,4 +1,3 @@
-use crate::view::ViewExt;
 use crate::view_wrappers::{BoundChecker, SizeCacher};
 use crate::{printer::Printer, style::Style, vec2::Vec2, view::View};
 use crossterm::event::{Event, KeyCode, KeyEvent};

@@ -12,6 +12,22 @@ pub trait View<S> {
     fn layout(&mut self, size: Vec2);
     fn desired_size(&self) -> Vec2;
     fn on_event(&mut self, state: &mut S, e: Event) -> Option<Self::Message>;
+
+    fn map<F, U>(self, f: F) -> Map<Self, F, U>
+    where
+        Self: Sized,
+        F: FnMut(&mut Self, &mut S, Self::Message) -> U,
+    {
+        Map::new(self, f)
+    }
+
+    fn map_e<F>(self, f: F) -> MapE<Self, F>
+    where
+        Self: Sized,
+        F: FnMut(&mut S, Event) -> Option<Self::Message>,
+    {
+        MapE::new(self, f)
+    }
 }
 
 impl<'a, S, M> View<S> for Box<dyn View<S, Message = M> + 'a> {
@@ -30,21 +46,3 @@ impl<'a, S, M> View<S> for Box<dyn View<S, Message = M> + 'a> {
         (**self).on_event(state, e)
     }
 }
-
-pub trait ViewExt<S>: View<S> + Sized {
-    fn map<F, U>(self, f: F) -> Map<Self, F, U>
-    where
-        F: FnMut(&mut Self, &mut S, Self::Message) -> U,
-    {
-        Map::new(self, f)
-    }
-
-    fn map_e<F>(self, f: F) -> MapE<Self, F>
-    where
-        F: FnMut(&mut S, Event) -> Option<Self::Message>,
-    {
-        MapE::new(self, f)
-    }
-}
-
-impl<S, V> ViewExt<S> for V where V: View<S> {}
