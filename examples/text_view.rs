@@ -1,13 +1,28 @@
-use crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
+use crossterm::event::{
+    Event,
+    KeyCode,
+    KeyEvent,
+    KeyModifiers,
+};
 use simplelog::*;
 use std::io::BufWriter;
-use turi::view::View;
 use turi::{
     printer::PrinterGuard,
-    views::{ButtonDecoration, ButtonEvent, ButtonView, Dialog, EditView, EditViewEvent},
+    view::View,
+    views::{
+        ButtonDecoration,
+        ButtonEvent,
+        ButtonView,
+        Dialog,
+        EditView,
+        EditViewEvent,
+    },
 };
 
-fn quit_check<S>(_s: &mut S, e: Event) -> Option<bool> {
+fn quit_check<S>(
+    _s: &mut S,
+    e: Event,
+) -> Option<bool> {
     match e {
         Event::Key(KeyEvent {
             code: KeyCode::Char('c'),
@@ -30,14 +45,16 @@ fn main() {
     let out = out.lock();
     let mut out = BufWriter::with_capacity(1024 * 1024, out);
     let mut printer_guard = PrinterGuard::new(&mut out, true);
-    let mut dialog = Dialog::new(EditView::new().map(|v, _s, e| match e {
-        EditViewEvent::Edit => {
-            log::trace!("edit: {}", v.text());
-            false
-        }
-        EditViewEvent::Submit => {
-            log::trace!("submit: {}", v.text());
-            true
+    let mut dialog = Dialog::new(EditView::new().map(|v, _s, e| {
+        match e {
+            EditViewEvent::Edit => {
+                log::trace!("edit: {}", v.text());
+                false
+            }
+            EditViewEvent::Submit => {
+                log::trace!("submit: {}", v.text());
+                true
+            }
         }
     }));
 

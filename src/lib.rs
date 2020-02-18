@@ -13,8 +13,10 @@ pub mod view_proxys;
 pub mod view_wrappers;
 pub mod views;
 
-use crate::printer::PrinterGuard;
-use crate::view::View;
+use crate::{
+    printer::PrinterGuard,
+    view::View,
+};
 
 pub fn run<S>(
     state: &mut S,
@@ -48,28 +50,37 @@ pub fn run<S>(
 
 #[cfg(test)]
 mod tests {
-    use crate::style::Style;
-    use crate::view::*;
-    use crate::views::*;
-    use crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
+    use crate::{
+        style::Style,
+        view::*,
+        views::*,
+    };
+    use crossterm::event::{
+        Event,
+        KeyCode,
+        KeyEvent,
+        KeyModifiers,
+    };
 
     #[test]
     fn interrupt() {
         let mut view = Dialog::new(
             TextView::new(StyledText::styled("ABC".into(), Style::default())).map(|_, _, _| true),
         )
-        .map_e(|_, e| match e {
-            Event::Key(KeyEvent {
-                code: KeyCode::Char('c'),
-                modifiers: KeyModifiers::CONTROL,
-            }) => Some(true),
-            _ => None,
+        .map_e(|_, e| {
+            match e {
+                Event::Key(KeyEvent {
+                    code: KeyCode::Char('c'),
+                    modifiers: KeyModifiers::CONTROL,
+                }) => Some(true),
+                _ => None,
+            }
         });
 
         let ret = view.on_event(
             &mut (),
             Event::Key(KeyEvent {
-                code: KeyCode::Char('c'),
+                code:      KeyCode::Char('c'),
                 modifiers: KeyModifiers::CONTROL,
             }),
         );

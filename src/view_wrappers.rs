@@ -1,13 +1,20 @@
-use crate::rect::Rect;
-use crate::{printer::Printer, vec2::Vec2, view::View};
-use crossterm::event::{Event, MouseEvent};
+use crate::{
+    printer::Printer,
+    rect::Rect,
+    vec2::Vec2,
+    view::View,
+};
+use crossterm::event::{
+    Event,
+    MouseEvent,
+};
 use std::cell::Cell;
 
 impl_deref_for_generic_inner!(SizeCacher => inner);
 impl_deref_for_generic_inner!(BoundChecker => inner);
 
 pub struct SizeCacher<T> {
-    inner: T,
+    inner:     T,
     prev_size: Vec2,
 }
 
@@ -31,7 +38,10 @@ where
 {
     type Message = T::Message;
 
-    fn render(&self, printer: &mut Printer) {
+    fn render(
+        &self,
+        printer: &mut Printer,
+    ) {
         self.inner.render(printer);
     }
 
@@ -39,12 +49,19 @@ where
         self.inner.desired_size()
     }
 
-    fn layout(&mut self, size: Vec2) {
+    fn layout(
+        &mut self,
+        size: Vec2,
+    ) {
         self.prev_size = size;
         self.inner.layout(size);
     }
 
-    fn on_event(&mut self, state: &mut S, e: Event) -> Option<T::Message> {
+    fn on_event(
+        &mut self,
+        state: &mut S,
+        e: Event,
+    ) -> Option<T::Message> {
         self.inner.on_event(state, e)
     }
 }
@@ -62,11 +79,17 @@ impl<T> BoundChecker<T> {
         }
     }
 
-    pub fn contains(&self, p: Vec2) -> bool {
+    pub fn contains(
+        &self,
+        p: Vec2,
+    ) -> bool {
         self.bound.get().contains(p)
     }
 
-    pub fn contains_cursor(&self, me: MouseEvent) -> bool {
+    pub fn contains_cursor(
+        &self,
+        me: MouseEvent,
+    ) -> bool {
         self.contains(get_pos_from_me(me))
     }
 }
@@ -77,7 +100,10 @@ where
 {
     type Message = T::Message;
 
-    fn render(&self, printer: &mut Printer) {
+    fn render(
+        &self,
+        printer: &mut Printer,
+    ) {
         self.bound.set(printer.bound());
         self.inner.render(printer);
     }
@@ -86,11 +112,18 @@ where
         self.inner.desired_size()
     }
 
-    fn layout(&mut self, size: Vec2) {
+    fn layout(
+        &mut self,
+        size: Vec2,
+    ) {
         self.inner.layout(size);
     }
 
-    fn on_event(&mut self, state: &mut S, e: Event) -> Option<T::Message> {
+    fn on_event(
+        &mut self,
+        state: &mut S,
+        e: Event,
+    ) -> Option<T::Message> {
         self.inner.on_event(state, e)
     }
 }

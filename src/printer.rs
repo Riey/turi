@@ -1,24 +1,46 @@
-use crate::rect::Rect;
-use crate::style::Style;
-use crate::vec2::Vec2;
-use crate::views::StyledText;
+use crate::{
+    rect::Rect,
+    style::{
+        Style,
+        StyledText,
+    },
+    vec2::Vec2,
+};
 use crossterm::{
-    cursor::{Hide, MoveTo, Show},
-    event::{DisableMouseCapture, EnableMouseCapture},
-    execute, queue,
-    style::{Print, SetBackgroundColor, SetForegroundColor},
+    cursor::{
+        Hide,
+        MoveTo,
+        Show,
+    },
+    event::{
+        DisableMouseCapture,
+        EnableMouseCapture,
+    },
+    execute,
+    queue,
+    style::{
+        Print,
+        SetBackgroundColor,
+        SetForegroundColor,
+    },
     terminal::{
-        disable_raw_mode, enable_raw_mode, Clear, ClearType, EnterAlternateScreen,
+        disable_raw_mode,
+        enable_raw_mode,
+        Clear,
+        ClearType,
+        EnterAlternateScreen,
         LeaveAlternateScreen,
     },
 };
-use std::io::Write;
-use std::mem::replace;
+use std::{
+    io::Write,
+    mem::replace,
+};
 use unicode_width::UnicodeWidthStr;
 
 pub struct PrinterGuard<'a> {
     alternative: bool,
-    out: &'a mut dyn Write,
+    out:         &'a mut dyn Write,
 }
 
 impl<'a> Drop for PrinterGuard<'a> {
@@ -33,7 +55,10 @@ impl<'a> Drop for PrinterGuard<'a> {
 }
 
 impl<'a> PrinterGuard<'a> {
-    pub fn new(out: &'a mut dyn Write, alternative: bool) -> Self {
+    pub fn new(
+        out: &'a mut dyn Write,
+        alternative: bool,
+    ) -> Self {
         enable_raw_mode().unwrap();
         execute!(out, EnableMouseCapture, Hide).unwrap();
 
@@ -45,7 +70,10 @@ impl<'a> PrinterGuard<'a> {
     }
 
     #[inline(always)]
-    pub fn make_printer(&mut self, size: impl Into<Vec2>) -> Printer<'_> {
+    pub fn make_printer(
+        &mut self,
+        size: impl Into<Vec2>,
+    ) -> Printer<'_> {
         Printer::new(size, &mut self.out)
     }
 }
@@ -53,11 +81,14 @@ impl<'a> PrinterGuard<'a> {
 pub struct Printer<'a> {
     bound: Rect,
     style: Style,
-    out: &'a mut dyn Write,
+    out:   &'a mut dyn Write,
 }
 
 impl<'a> Printer<'a> {
-    pub fn new(size: impl Into<Vec2>, out: &'a mut dyn Write) -> Self {
+    pub fn new(
+        size: impl Into<Vec2>,
+        out: &'a mut dyn Write,
+    ) -> Self {
         Self {
             bound: Rect::new((0, 0), size),
             style: Style::default(),
@@ -65,14 +96,22 @@ impl<'a> Printer<'a> {
         }
     }
 
-    pub fn with_bound<T>(&mut self, bound: Rect, f: impl FnOnce(&mut Self) -> T) -> T {
+    pub fn with_bound<T>(
+        &mut self,
+        bound: Rect,
+        f: impl FnOnce(&mut Self) -> T,
+    ) -> T {
         let old_bound = replace(&mut self.bound, bound);
         let ret = f(self);
         self.bound = old_bound;
         ret
     }
 
-    pub fn with_style<T>(&mut self, style: Style, f: impl FnOnce(&mut Self) -> T) -> T {
+    pub fn with_style<T>(
+        &mut self,
+        style: Style,
+        f: impl FnOnce(&mut Self) -> T,
+    ) -> T {
         let old_style = replace(&mut self.style, style);
         let ret = f(self);
         self.style = old_style;
@@ -97,12 +136,20 @@ impl<'a> Printer<'a> {
         .unwrap();
     }
 
-    pub fn print(&mut self, start: impl Into<Vec2>, text: &str) {
+    pub fn print(
+        &mut self,
+        start: impl Into<Vec2>,
+        text: &str,
+    ) {
         //TODO: check bound
         self.raw_print(start.into(), text);
     }
 
-    fn raw_print(&mut self, start: Vec2, text: &str) {
+    fn raw_print(
+        &mut self,
+        start: Vec2,
+        text: &str,
+    ) {
         let start = self.bound.start() + start;
         queue!(
             self.out,
@@ -114,7 +161,11 @@ impl<'a> Printer<'a> {
         .unwrap();
     }
 
-    pub fn print_styled(&mut self, start: impl Into<Vec2>, text: &StyledText) {
+    pub fn print_styled(
+        &mut self,
+        start: impl Into<Vec2>,
+        text: &StyledText,
+    ) {
         let mut start = start.into();
         // TODO: cut text when out of bound
         for span in text.spans() {
@@ -125,7 +176,10 @@ impl<'a> Printer<'a> {
         }
     }
 
-    pub fn print_vertical_line(&mut self, pos: u16) {
+    pub fn print_vertical_line(
+        &mut self,
+        pos: u16,
+    ) {
         const VLINE_CHAR: &str = "│";
 
         let pos = self.bound.x() + pos;
@@ -143,7 +197,10 @@ impl<'a> Printer<'a> {
         }
     }
 
-    pub fn print_horizontal_line(&mut self, pos: u16) {
+    pub fn print_horizontal_line(
+        &mut self,
+        pos: u16,
+    ) {
         const HLINE_STR: &str = "─";
 
         let size = self.bound.w();

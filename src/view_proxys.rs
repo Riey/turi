@@ -1,17 +1,22 @@
-use crate::printer::Printer;
-use crate::vec2::Vec2;
-use crate::view::View;
+use crate::{
+    printer::Printer,
+    vec2::Vec2,
+    view::View,
+};
 use crossterm::event::Event;
 use std::marker::PhantomData;
 
 pub struct Map<V, F, U> {
-    inner: V,
-    f: F,
+    inner:   V,
+    f:       F,
     _marker: PhantomData<U>,
 }
 
 impl<V, F, U> Map<V, F, U> {
-    pub fn new(inner: V, f: F) -> Self {
+    pub fn new(
+        inner: V,
+        f: F,
+    ) -> Self {
         Self {
             inner,
             f,
@@ -27,11 +32,17 @@ where
 {
     type Message = U;
 
-    fn render(&self, printer: &mut Printer) {
+    fn render(
+        &self,
+        printer: &mut Printer,
+    ) {
         self.inner.render(printer);
     }
 
-    fn layout(&mut self, size: Vec2) {
+    fn layout(
+        &mut self,
+        size: Vec2,
+    ) {
         self.inner.layout(size);
     }
 
@@ -39,7 +50,11 @@ where
         self.inner.desired_size()
     }
 
-    fn on_event(&mut self, state: &mut S, e: Event) -> Option<U> {
+    fn on_event(
+        &mut self,
+        state: &mut S,
+        e: Event,
+    ) -> Option<U> {
         let msg = self.inner.on_event(state, e);
         msg.map(|msg| (self.f)(&mut self.inner, state, msg))
     }
@@ -47,11 +62,14 @@ where
 
 pub struct MapE<V, F> {
     inner: V,
-    f: F,
+    f:     F,
 }
 
 impl<V, F> MapE<V, F> {
-    pub fn new(inner: V, f: F) -> Self {
+    pub fn new(
+        inner: V,
+        f: F,
+    ) -> Self {
         Self { inner, f }
     }
 }
@@ -63,11 +81,17 @@ where
 {
     type Message = V::Message;
 
-    fn render(&self, printer: &mut Printer) {
+    fn render(
+        &self,
+        printer: &mut Printer,
+    ) {
         self.inner.render(printer);
     }
 
-    fn layout(&mut self, size: Vec2) {
+    fn layout(
+        &mut self,
+        size: Vec2,
+    ) {
         self.inner.layout(size);
     }
 
@@ -75,7 +99,11 @@ where
         self.inner.desired_size()
     }
 
-    fn on_event(&mut self, state: &mut S, e: Event) -> Option<V::Message> {
+    fn on_event(
+        &mut self,
+        state: &mut S,
+        e: Event,
+    ) -> Option<V::Message> {
         (self.f)(state, e).or_else(|| self.inner.on_event(state, e))
     }
 }

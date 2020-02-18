@@ -4,18 +4,24 @@ use derive_more::From;
 #[derive(Clone, Copy, Debug, Eq, PartialEq, From)]
 pub struct Rect {
     start: Vec2,
-    size: Vec2,
+    size:  Vec2,
 }
 
 impl Rect {
-    pub fn new(start: impl Into<Vec2>, size: impl Into<Vec2>) -> Self {
+    pub fn new(
+        start: impl Into<Vec2>,
+        size: impl Into<Vec2>,
+    ) -> Self {
         Self {
             start: start.into(),
-            size: size.into(),
+            size:  size.into(),
         }
     }
 
-    pub fn contains(self, p: impl Into<Vec2>) -> bool {
+    pub fn contains(
+        self,
+        p: impl Into<Vec2>,
+    ) -> bool {
         let p = p.into();
         p.x >= self.x()
             && p.x < (self.x() + self.w())
@@ -23,37 +29,49 @@ impl Rect {
             && p.y < (self.y() + self.h())
     }
 
-    pub fn add_start(self, add: impl Into<Vec2>) -> Self {
+    pub fn add_start(
+        self,
+        add: impl Into<Vec2>,
+    ) -> Self {
         let add = add.into();
         Self {
             start: self.start + add,
-            size: self.size - add,
+            size:  self.size - add,
         }
     }
 
-    pub fn sub_size(self, sub: impl Into<Vec2>) -> Self {
+    pub fn sub_size(
+        self,
+        sub: impl Into<Vec2>,
+    ) -> Self {
         let sub = sub.into();
         Self {
             start: self.start,
-            size: self.size - sub,
+            size:  self.size - sub,
         }
     }
 
-    pub fn with_margin(self, margin: u16) -> Self {
+    pub fn with_margin(
+        self,
+        margin: u16,
+    ) -> Self {
         self.add_start((margin, margin)).sub_size((margin, margin))
     }
 
-    pub fn split_vertical(self, pos: u16) -> (Self, Self) {
+    pub fn split_vertical(
+        self,
+        pos: u16,
+    ) -> (Self, Self) {
         let up = Self {
             start: self.start,
-            size: Vec2 {
+            size:  Vec2 {
                 y: pos,
                 ..self.size
             },
         };
         let down = Self {
             start: self.start.add_y(pos),
-            size: Vec2 {
+            size:  Vec2 {
                 y: self.size.y - pos,
                 ..self.size
             },
