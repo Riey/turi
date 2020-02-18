@@ -7,8 +7,8 @@ use crate::{
         SizeCacher,
     },
     views::{
-        ButtonViewEvent,
         ButtonView,
+        ButtonViewEvent,
         LinearView,
     },
 };

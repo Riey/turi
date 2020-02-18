@@ -11,8 +11,8 @@ use turi::{
     view::View,
     views::{
         ButtonDecoration,
-        ButtonViewEvent,
         ButtonView,
+        ButtonViewEvent,
         DialogView,
         EditView,
         EditViewEvent,
