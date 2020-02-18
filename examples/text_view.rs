@@ -1,7 +1,7 @@
 use crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
 use simplelog::*;
 use std::io::BufWriter;
-use turi::view::ViewExt;
+use turi::view::View;
 use turi::{
     printer::PrinterGuard,
     views::{ButtonDecoration, ButtonEvent, ButtonView, Dialog, EditView, EditViewEvent},
@@ -21,11 +21,7 @@ fn main() {
     WriteLogger::init(
         LevelFilter::Trace,
         ConfigBuilder::new().add_filter_ignore_str("mio").build(),
-        std::fs::OpenOptions::new()
-            .create(true)
-            .append(true)
-            .open("turi.log")
-            .unwrap(),
+        std::fs::File::create("turi.log").unwrap(),
     )
     .unwrap();
     log_panics::init();
@@ -34,14 +30,14 @@ fn main() {
     let out = out.lock();
     let mut out = BufWriter::with_capacity(1024 * 1024, out);
     let mut printer_guard = PrinterGuard::new(&mut out, true);
-    let mut dialog = Dialog::new(EditView::new().map(|v, _s, e| {
-        log::trace!("edit event: {}", v.text());
-        match e {
-            EditViewEvent::Edit => false,
-            EditViewEvent::Submit => {
-                println!("\r\ninput: [{}]\r", v.text());
-                true
-            }
+    let mut dialog = Dialog::new(EditView::new().map(|v, _s, e| match e {
+        EditViewEvent::Edit => {
+            log::trace!("edit: {}", v.text());
+            false
+        }
+        EditViewEvent::Submit => {
+            log::trace!("submit: {}", v.text());
+            true
         }
     }));
 
@@ -53,7 +49,7 @@ fn main() {
             *s += 1;
             log::trace!("btn click count: {}", s);
             match e {
-                ButtonEvent::Click => true,
+                ButtonEvent::Click => false,
             }
         },
     );
