@@ -1,35 +1,18 @@
-use crossterm::{
-    cursor::{
-        Hide,
-        Show,
-    },
-    event::{
-        DisableMouseCapture,
-        EnableMouseCapture,
-        Event,
-        KeyCode,
-        KeyEvent,
-        MouseButton,
-        MouseEvent,
-    },
-    terminal::{
-        disable_raw_mode,
-        enable_raw_mode,
-        EnterAlternateScreen,
-        LeaveAlternateScreen,
-    },
+use crossterm::event::{
+    Event,
+    KeyCode,
+    KeyEvent,
+    MouseButton,
+    MouseEvent,
 };
 use simplelog::*;
-use std::io::{
-    BufWriter,
-    Write,
-};
+use std::io::BufWriter;
 use turi::{
     backend::{
-        Backend,
+        crossterm_run,
         CrosstermBackend,
+        CrosstermBackendGuard,
     },
-    printer::Printer,
     view::View,
     views::{
         SelectView,
@@ -51,10 +34,8 @@ fn main() {
     let out = out.lock();
     let mut out = BufWriter::with_capacity(1024 * 1024, out);
 
-    enable_raw_mode().unwrap();
-    crossterm::execute!(out, Hide, EnterAlternateScreen, EnableMouseCapture).unwrap();
-
-    let mut backend = CrosstermBackend::new(&mut out, crossterm::terminal::size().unwrap().into());
+    let backend = CrosstermBackend::new(&mut out, crossterm::terminal::size().unwrap().into());
+    let mut guard = CrosstermBackendGuard::new(backend);
 
     let mut state = ();
 
@@ -86,40 +67,16 @@ fn main() {
                 }
                 _ => None,
             }
+        })
+        .or_else(|_view, _state, event| {
+            match event {
+                Event::Key(KeyEvent {
+                    code: KeyCode::Char('q'),
+                    ..
+                }) => Some(true),
+                _ => None,
+            }
         });
 
-    view.render(&mut Printer::new(&mut backend));
-    backend.flush();
-
-    loop {
-        let e = crossterm::event::read().unwrap();
-
-        match e {
-            Event::Key(KeyEvent {
-                code: KeyCode::Char('q'),
-                ..
-            }) => {
-                break;
-            }
-            Event::Resize(x, y) => {
-                backend.resize((x, y).into());
-            }
-            e => {
-                match view.on_event(&mut state, e) {
-                    Some(msg) => {
-                        view.render(&mut Printer::new(&mut backend));
-                        backend.flush();
-                        if msg {
-                            break;
-                        }
-                    }
-                    None => {}
-                }
-            }
-        }
-    }
-
-    crossterm::execute!(out, DisableMouseCapture, LeaveAlternateScreen, Show).unwrap();
-
-    disable_raw_mode().unwrap();
+    crossterm_run(&mut state, guard.inner(), &mut view);
 }
