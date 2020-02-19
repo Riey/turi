@@ -43,7 +43,6 @@ where
         self.inner.render(printer);
     }
 
-
     #[inline(always)]
     fn layout(
         &mut self,
@@ -190,17 +189,74 @@ where
     }
 }
 
+pub struct OrElseLeft<V, F> {
+    inner: V,
+    f:     F,
+}
+
+impl<V, F> OrElseLeft<V, F> {
+    pub fn new(
+        inner: V,
+        f: F,
+    ) -> Self {
+        Self { inner, f }
+    }
+}
+
+impl<S, V, F, T: Try> View<S> for OrElseLeft<V, F>
+where
+    V: View<S, Message = T>,
+    V::Event: Clone,
+    F: FnMut(&mut V, &mut S, V::Event) -> T,
+{
+    type Event = V::Event;
+    type Message = T;
+
+    #[inline(always)]
+    fn render(
+        &self,
+        printer: &mut Printer,
+    ) {
+        self.inner.render(printer);
+    }
+
+    #[inline(always)]
+    fn layout(
+        &mut self,
+        size: Vec2,
+    ) {
+        self.inner.layout(size);
+    }
+
+    #[inline(always)]
+    fn desired_size(&self) -> Vec2 {
+        self.inner.desired_size()
+    }
+
+    #[inline(always)]
+    fn on_event(
+        &mut self,
+        state: &mut S,
+        e: Self::Event,
+    ) -> Self::Message {
+        match (self.f)(&mut self.inner, state, e.clone()).into_result() {
+            Ok(ret) => T::from_ok(ret),
+            Err(_) => T::from_ok(self.inner.on_event(state, e)?),
+        }
+    }
+}
+
 pub struct OrElse<V, F> {
     inner: V,
     f:     F,
 }
 
 impl<V, F> OrElse<V, F> {
-    pub fn new(inner: V, f: F) -> Self {
-        Self {
-            inner,
-            f,
-        }
+    pub fn new(
+        inner: V,
+        f: F,
+    ) -> Self {
+        Self { inner, f }
     }
 }
 

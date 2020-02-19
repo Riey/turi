@@ -6,6 +6,7 @@ use crate::{
         MapE,
         MapOptE,
         OrElse,
+        OrElseLeft,
     },
 };
 use std::ops::Try;
@@ -63,6 +64,20 @@ pub trait View<S> {
         F: FnMut(&mut Self, &mut S, E) -> Option<Self::Event>,
     {
         MapOptE::new(self, f)
+    }
+
+    #[inline(always)]
+    fn or_else_left<F>(
+        self,
+        f: F,
+    ) -> OrElseLeft<Self, F>
+    where
+        Self: Sized,
+        F: FnMut(&mut Self, &mut S, Self::Event) -> Self::Message,
+        Self::Message: Try,
+        Self::Event: Clone,
+    {
+        OrElseLeft::new(self, f)
     }
 
     #[inline(always)]
