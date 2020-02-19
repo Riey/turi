@@ -1,4 +1,5 @@
 use crate::{
+    backend::Backend,
     rect::Rect,
     vec2::Vec2,
 };
@@ -6,7 +7,7 @@ use ansi_term::{
     ANSIString,
     Style,
 };
-use core::mem::replace;
+use std::mem::replace;
 pub struct Printer<'a> {
     bound:   Rect,
     backend: &'a mut dyn Backend,

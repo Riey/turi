@@ -4,7 +4,8 @@ version = "0.1.0"
 authors = ["Riey <creeper844@gmail.com>"]
 edition = "2018"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[features]
+crossterm-backend = ["crossterm"]
 
 [dependencies]
 enumflags2 = "0.6.2"
@@ -12,6 +13,10 @@ unicode-width = "0.1.7"
 derive_more = "0.99.2"
 log = "0.4.8"
 ansi_term = "0.12.1"
+
+[dependencies.crossterm]
+version = "0.16"
+optional = true
 
 [dev-dependencies]
 simplelog = "0.7.4"
