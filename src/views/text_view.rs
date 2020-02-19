@@ -1,27 +1,30 @@
 use crate::{
     printer::Printer,
-    style::StyledText,
     vec2::Vec2,
     view::View,
 };
+use unicode_width::UnicodeWidthStr;
 
-use crossterm::event::Event;
+use ansi_term::ANSIString;
 
-pub struct TextView {
-    text: StyledText,
+pub struct TextView<'a> {
+    text:       ANSIString<'a>,
+    text_width: u16,
 }
 
-impl TextView {
-    pub fn new(text: StyledText) -> Self {
-        Self { text }
+impl<'a> TextView<'a> {
+    pub fn new(text: ANSIString<'a>) -> Self {
+        let text_width = text.width() as u16;
+        Self { text, text_width }
     }
 }
 
-impl<S> View<S> for TextView {
+impl<'a, S> View<S> for TextView<'a> {
+    type Event = ();
     type Message = ();
 
     fn desired_size(&self) -> Vec2 {
-        Vec2::new(self.text.width() as u16, 1)
+        Vec2::new(self.text_width, 1)
     }
 
     fn layout(
@@ -40,8 +43,7 @@ impl<S> View<S> for TextView {
     fn on_event(
         &mut self,
         _state: &mut S,
-        _event: Event,
-    ) -> Option<Self::Message> {
-        None
+        _event: (),
+    ) {
     }
 }

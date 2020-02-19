@@ -3,16 +3,15 @@ use crate::{
     vec2::Vec2,
     view::View,
 };
-use crossterm::event::Event;
 use std::marker::PhantomData;
 
-pub struct Map<V, F, U> {
+pub struct Map<V, F, E, U> {
     inner:   V,
     f:       F,
-    _marker: PhantomData<U>,
+    _marker: PhantomData<(E, U)>,
 }
 
-impl<V, F, U> Map<V, F, U> {
+impl<V, F, E, U> Map<V, F, (E, U)> {
     pub fn new(
         inner: V,
         f: F,
@@ -25,11 +24,12 @@ impl<V, F, U> Map<V, F, U> {
     }
 }
 
-impl<'a, S, V, F, U> View<S> for Map<V, F, U>
+impl<'a, S, V, F, E, U> View<S> for Map<V, F, E, U>
 where
     V: View<S>,
     F: FnMut(&mut V, &mut S, V::Message) -> U + 'a,
 {
+    type Event = E;
     type Message = U;
 
     fn render(
@@ -53,7 +53,7 @@ where
     fn on_event(
         &mut self,
         state: &mut S,
-        e: Event,
+        e: E,
     ) -> Option<U> {
         let msg = self.inner.on_event(state, e);
         msg.map(|msg| (self.f)(&mut self.inner, state, msg))

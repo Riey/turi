@@ -1,35 +1,19 @@
 use crate::{
     printer::Printer,
-    style::Style,
     vec2::Vec2,
     view::View,
-};
-use crossterm::event::{
-    Event,
-    KeyCode,
-    KeyEvent,
 };
 use unicode_width::UnicodeWidthStr;
 
 pub struct EditView {
-    text:  String,
-    style: Style,
+    text: String,
 }
 
 impl EditView {
     pub fn new() -> Self {
         Self {
-            text:  String::new(),
-            style: Style::default(),
+            text: String::new(),
         }
-    }
-
-    pub fn with_style(
-        mut self,
-        style: Style,
-    ) -> Self {
-        self.style = style;
-        self
     }
 
     pub fn text(&self) -> &str {
@@ -42,13 +26,21 @@ impl EditView {
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum EditViewEvent {
+pub enum EditViewMessage {
     Edit,
     Submit,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum EditViewEvent {
+    Char(char),
+    Backspace,
+    Enter,
+}
+
 impl<S> View<S> for EditView {
-    type Message = EditViewEvent;
+    type Event = EditViewEvent;
+    type Message = EditViewMessage;
 
     fn desired_size(&self) -> Vec2 {
         Vec2::new(self.text.width() as u16, 1)
@@ -64,37 +56,24 @@ impl<S> View<S> for EditView {
         &self,
         printer: &mut Printer,
     ) {
-        printer.with_style(self.style, |printer| {
-            printer.print((0, 0), &self.text);
-        });
+        printer.print((0, 0), &self.text);
     }
 
     fn on_event(
         &mut self,
         _state: &mut S,
-        e: Event,
-    ) -> Option<Self::Message> {
+        e: EditViewEvent,
+    ) -> EditViewMessage {
         match e {
-            // TODO: mouse
-            Event::Key(KeyEvent {
-                code: KeyCode::Enter,
-                ..
-            }) => Some(EditViewEvent::Submit),
-            Event::Key(KeyEvent {
-                code: KeyCode::Backspace,
-                ..
-            }) => {
+            EditViewEvent::Enter => EditViewMessage::Submit,
+            EditViewEvent::Backspace => {
                 self.text.pop();
-                Some(EditViewEvent::Edit)
+                EditViewMessage::Edit
             }
-            Event::Key(KeyEvent {
-                code: KeyCode::Char(ch),
-                modifiers,
-            }) if modifiers.is_empty() => {
+            EditViewEvent::Char(ch) => {
                 self.text.push(ch);
-                Some(EditViewEvent::Edit)
+                EditViewMessage::Edit
             }
-            _ => None,
         }
     }
 }

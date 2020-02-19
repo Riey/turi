@@ -1,14 +1,10 @@
 use crate::{
     printer::Printer,
     vec2::Vec2,
-    view_proxys::{
-        Map,
-        MapE,
-    },
 };
-use crossterm::event::Event;
 
 pub trait View<S> {
+    type Event;
     type Message;
 
     fn render(
@@ -23,33 +19,12 @@ pub trait View<S> {
     fn on_event(
         &mut self,
         state: &mut S,
-        e: Event,
-    ) -> Option<Self::Message>;
-
-    fn map<F, U>(
-        self,
-        f: F,
-    ) -> Map<Self, F, U>
-    where
-        Self: Sized,
-        F: FnMut(&mut Self, &mut S, Self::Message) -> U,
-    {
-        Map::new(self, f)
-    }
-
-    fn map_e<F>(
-        self,
-        f: F,
-    ) -> MapE<Self, F>
-    where
-        Self: Sized,
-        F: FnMut(&mut S, Event) -> Option<Self::Message>,
-    {
-        MapE::new(self, f)
-    }
+        e: Self::Event,
+    ) -> Self::Message;
 }
 
-impl<'a, S, M> View<S> for Box<dyn View<S, Message = M> + 'a> {
+impl<'a, S, E, M> View<S> for Box<dyn View<S, Event = E, Message = M> + 'a> {
+    type Event = E;
     type Message = M;
 
     fn render(
@@ -73,17 +48,18 @@ impl<'a, S, M> View<S> for Box<dyn View<S, Message = M> + 'a> {
     fn on_event(
         &mut self,
         state: &mut S,
-        e: Event,
-    ) -> Option<Self::Message> {
+        e: Self::Event,
+    ) -> Self::Message {
         (**self).on_event(state, e)
     }
 }
 
-impl<'a, S, M, V> View<S> for &'a mut V
+impl<'a, S, V> View<S> for &'a mut V
 where
-    V: View<S, Message = M>,
+    V: View<S>,
 {
-    type Message = M;
+    type Event = V::Event;
+    type Message = V::Message;
 
     fn render(
         &self,
@@ -106,8 +82,8 @@ where
     fn on_event(
         &mut self,
         state: &mut S,
-        e: Event,
-    ) -> Option<Self::Message> {
+        e: Self::Event,
+    ) -> Self::Message {
         (**self).on_event(state, e)
     }
 }
