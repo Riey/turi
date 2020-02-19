@@ -1,7 +1,11 @@
 use crate::vec2::Vec2;
 use ansi_term::Style;
 use crossterm::{
-    cursor::MoveTo,
+    cursor::{
+        Hide,
+        MoveTo,
+        Show,
+    },
     event::{
         DisableMouseCapture,
         EnableMouseCapture,
@@ -101,7 +105,13 @@ pub struct CrosstermBackendGuard<W: Write> {
 
 impl<W: Write> Drop for CrosstermBackendGuard<W> {
     fn drop(&mut self) {
-        execute!(self.inner.out(), LeaveAlternateScreen, DisableMouseCapture).ok();
+        execute!(
+            self.inner.out(),
+            Show,
+            LeaveAlternateScreen,
+            DisableMouseCapture
+        )
+        .ok();
         disable_raw_mode().ok();
     }
 }
@@ -109,7 +119,7 @@ impl<W: Write> Drop for CrosstermBackendGuard<W> {
 impl<W: Write> CrosstermBackendGuard<W> {
     pub fn new(mut inner: CrosstermBackend<W>) -> Self {
         enable_raw_mode().ok();
-        execute!(inner.out(), EnterAlternateScreen, EnableMouseCapture).ok();
+        execute!(inner.out(), Hide, EnterAlternateScreen, EnableMouseCapture).ok();
 
         Self { inner }
     }
