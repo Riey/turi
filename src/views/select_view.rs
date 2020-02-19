@@ -69,6 +69,7 @@ impl<T> SelectView<T> {
     }
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum SelectViewEvent {
     Up,
     Down,
@@ -76,6 +77,7 @@ pub enum SelectViewEvent {
     Click(u16),
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum SelectViewMessage {
     Select,
     IndexChanged,

@@ -105,8 +105,63 @@ where
         &mut self,
         state: &mut S,
         e: E,
-    ) -> V::Message {
+    ) -> Self::Message {
         let e = (self.f)(&mut self.inner, state, e);
         self.inner.on_event(state, e)
+    }
+}
+
+pub struct MapOptE<V, E, F> {
+    inner: V,
+    f:     F,
+    _marker: PhantomData<E>,
+}
+
+impl<V, E, F> MapOptE<V, E, F> {
+    pub fn new(
+        inner: V,
+        f: F,
+    ) -> Self {
+        Self { inner, f, _marker: PhantomData }
+    }
+}
+
+impl<S, V, E, F> View<S> for MapOptE<V, E, F>
+where
+    V: View<S>,
+    F: FnMut(&mut V, &mut S, E) -> Option<V::Event>,
+{
+    type Event = E;
+    type Message = Option<V::Message>;
+
+    fn render(
+        &self,
+        printer: &mut Printer,
+    ) {
+        self.inner.render(printer);
+    }
+
+    fn layout(
+        &mut self,
+        size: Vec2,
+    ) {
+        self.inner.layout(size);
+    }
+
+    fn desired_size(&self) -> Vec2 {
+        self.inner.desired_size()
+    }
+
+    fn on_event(
+        &mut self,
+        state: &mut S,
+        e: E,
+    ) -> Self::Message {
+        let e = (self.f)(&mut self.inner, state, e);
+
+        match e {
+            Some(e) => Some(self.inner.on_event(state, e)),
+            None => None,
+        }
     }
 }

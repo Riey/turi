@@ -15,11 +15,10 @@ pub struct Printer<'a> {
 
 impl<'a> Printer<'a> {
     pub fn new(
-        size: impl Into<Vec2>,
         backend: &'a mut dyn Backend,
     ) -> Self {
         Self {
-            bound: Rect::new((0, 0), size),
+            bound: Rect::new((0, 0), backend.size()),
             backend,
         }
     }
