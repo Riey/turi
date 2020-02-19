@@ -1,20 +1,13 @@
 use crate::{
     printer::Printer,
-    style::Style,
     vec2::Vec2,
     view::View,
-};
-use crossterm::event::{
-    Event,
-    KeyCode,
-    KeyEvent,
 };
 use unicode_width::UnicodeWidthStr;
 
 pub struct ButtonView {
     text:       String,
     text_width: u16,
-    style:      Style,
 }
 
 impl ButtonView {
@@ -26,19 +19,7 @@ impl ButtonView {
 
         let text_width = text.width() as u16;
 
-        Self {
-            text,
-            text_width,
-            style: Style::default(),
-        }
-    }
-
-    pub fn with_style(
-        mut self,
-        style: Style,
-    ) -> Self {
-        self.style = style;
-        self
+        Self { text, text_width }
     }
 }
 
@@ -75,6 +56,7 @@ pub enum ButtonViewEvent {
 }
 
 impl<S> View<S> for ButtonView {
+    type Event = ButtonViewEvent;
     type Message = ButtonViewEvent;
 
     fn desired_size(&self) -> Vec2 {
@@ -91,24 +73,14 @@ impl<S> View<S> for ButtonView {
         &self,
         printer: &mut Printer,
     ) {
-        printer.with_style(self.style, |printer| {
-            printer.print((0, 0), &self.text);
-        });
+        printer.print((0, 0), &self.text);
     }
 
     fn on_event(
         &mut self,
         _state: &mut S,
-        e: Event,
-    ) -> Option<Self::Message> {
-        match e {
-            // TODO: mouse
-            Event::Key(KeyEvent {
-                code: KeyCode::Enter,
-                ..
-            })
-            | Event::Mouse(..) => Some(ButtonViewEvent::Click),
-            _ => None,
-        }
+        e: Self::Event,
+    ) -> Self::Message {
+        e
     }
 }

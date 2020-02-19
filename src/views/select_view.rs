@@ -1,21 +1,13 @@
 use crate::{
     printer::Printer,
-    style::Style,
     vec2::Vec2,
     view::View,
 };
-use crossterm::{
-    event::{
-        Event,
-        KeyCode,
-        KeyEvent,
-    },
-    style::Color,
+use ansi_term::{
+    Color,
+    Style,
 };
-
 use unicode_width::UnicodeWidthStr;
-
-pub struct SelectEvent;
 
 pub struct SelectView<T> {
     btns:     Vec<(String, T)>,
@@ -48,12 +40,24 @@ impl<T> SelectView<T> {
         }
     }
 
-    pub fn focus_down(&mut self) {
-        self.selected = (self.selected + 1).min(self.btns.len() - 1);
+    pub fn focus_down(&mut self) -> SelectViewMessage {
+        let val = self.selected + 1;
+
+        if val >= self.btns.len() {
+            SelectViewMessage::Nop
+        } else {
+            self.selected = val;
+            SelectViewMessage::IndexChanged
+        }
     }
 
-    pub fn focus_up(&mut self) {
-        self.selected = self.selected.saturating_sub(1);
+    pub fn focus_up(&mut self) -> SelectViewMessage {
+        if self.selected > 0 {
+            self.selected -= 1;
+            SelectViewMessage::IndexChanged
+        } else {
+            SelectViewMessage::Nop
+        }
     }
 
     pub fn selected_val(&self) -> &T {
@@ -65,8 +69,24 @@ impl<T> SelectView<T> {
     }
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum SelectViewEvent {
+    Up,
+    Down,
+    Enter,
+    Click(u16),
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum SelectViewMessage {
+    Select,
+    IndexChanged,
+    Nop,
+}
+
 impl<S, T> View<S> for SelectView<T> {
-    type Message = SelectEvent;
+    type Event = SelectViewEvent;
+    type Message = SelectViewMessage;
 
     fn render(
         &self,
@@ -74,15 +94,9 @@ impl<S, T> View<S> for SelectView<T> {
     ) {
         for (i, (text, _)) in self.btns.iter().enumerate() {
             if i == self.selected {
-                printer.with_style(
-                    Style {
-                        bg: Color::DarkYellow,
-                        ..Default::default()
-                    },
-                    |printer| {
-                        printer.print((0, i as u16), text);
-                    },
-                )
+                printer.with_style(Style::new().on(Color::Yellow), |printer| {
+                    printer.print((0, i as u16), text);
+                })
             } else {
                 printer.print((0, i as u16), text);
             }
@@ -102,27 +116,16 @@ impl<S, T> View<S> for SelectView<T> {
     fn on_event(
         &mut self,
         _state: &mut S,
-        e: Event,
-    ) -> Option<SelectEvent> {
+        e: Self::Event,
+    ) -> Self::Message {
         match e {
-            Event::Key(KeyEvent {
-                code: KeyCode::Enter,
-                ..
-            }) => Some(SelectEvent),
-            Event::Key(KeyEvent {
-                code: KeyCode::Up, ..
-            }) => {
-                self.focus_up();
-                None
+            SelectViewEvent::Enter => SelectViewMessage::Select,
+            SelectViewEvent::Click(idx) => {
+                self.selected = idx as usize;
+                SelectViewMessage::Select
             }
-            Event::Key(KeyEvent {
-                code: KeyCode::Down,
-                ..
-            }) => {
-                self.focus_down();
-                None
-            }
-            _ => None,
+            SelectViewEvent::Up => self.focus_up(),
+            SelectViewEvent::Down => self.focus_down(),
         }
     }
 }

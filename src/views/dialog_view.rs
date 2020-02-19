@@ -2,20 +2,11 @@ use crate::{
     printer::Printer,
     vec2::Vec2,
     view::View,
-    view_wrappers::{
-        BoundChecker,
-        SizeCacher,
-    },
     views::{
         ButtonView,
         ButtonViewEvent,
         LinearView,
     },
-};
-use crossterm::event::{
-    Event,
-    KeyCode,
-    KeyEvent,
 };
 
 pub struct DialogView<'a, S, M, C: 'a> {

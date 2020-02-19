@@ -2,28 +2,24 @@ use crossterm::event::{
     Event,
     KeyCode,
     KeyEvent,
-    KeyModifiers,
+    MouseButton,
+    MouseEvent,
 };
 use simplelog::*;
 use std::io::BufWriter;
 use turi::{
-    printer::PrinterGuard,
+    backend::{
+        crossterm_run,
+        CrosstermBackend,
+        CrosstermBackendGuard,
+    },
     view::View,
-    views::SelectView,
+    views::{
+        SelectView,
+        SelectViewEvent,
+        SelectViewMessage,
+    },
 };
-
-fn quit_check<S>(
-    _s: &mut S,
-    e: Event,
-) -> Option<bool> {
-    match e {
-        Event::Key(KeyEvent {
-            code: KeyCode::Char('c'),
-            modifiers: KeyModifiers::CONTROL,
-        }) => Some(true),
-        _ => None,
-    }
-}
 
 fn main() {
     WriteLogger::init(
@@ -37,14 +33,50 @@ fn main() {
     let out = std::io::stdout();
     let out = out.lock();
     let mut out = BufWriter::with_capacity(1024 * 1024, out);
-    let mut printer_guard = PrinterGuard::new(&mut out, true);
 
-    let mut select_view = SelectView::with_items(vec![("123".into(), 123), ("456".into(), 456)])
-        .map(|view, _, _| {
-            log::trace!("Input: {}", view.selected_val());
-            false
+    let backend = CrosstermBackend::new(&mut out, crossterm::terminal::size().unwrap().into());
+    let mut guard = CrosstermBackendGuard::new(backend);
+
+    let mut state = ();
+
+    let mut view = SelectView::with_items(vec![("123".into(), 123), ("456".into(), 456)])
+        .map(|view, _state, msg| {
+            match msg {
+                SelectViewMessage::Select => {
+                    log::info!("Selected: {}", view.selected_val());
+                    true
+                }
+                msg => {
+                    log::info!("Other event: {:?}", msg);
+                    false
+                }
+            }
         })
-        .map_e(quit_check);
+        .map_opt_e(|_view, _state, event| {
+            match event {
+                Event::Key(KeyEvent { code, .. }) => {
+                    match code {
+                        KeyCode::Enter => Some(SelectViewEvent::Enter),
+                        KeyCode::Up => Some(SelectViewEvent::Up),
+                        KeyCode::Down => Some(SelectViewEvent::Down),
+                        _ => None,
+                    }
+                }
+                Event::Mouse(MouseEvent::Down(MouseButton::Left, _, y, ..)) => {
+                    Some(SelectViewEvent::Click(y))
+                }
+                _ => None,
+            }
+        })
+        .or_else(|_view, _state, event| {
+            match event {
+                Event::Key(KeyEvent {
+                    code: KeyCode::Char('q'),
+                    ..
+                }) => Some(true),
+                _ => None,
+            }
+        });
 
-    turi::run(&mut (), &mut select_view, &mut printer_guard);
+    crossterm_run(&mut state, guard.inner(), &mut view);
 }

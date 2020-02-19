@@ -4,10 +4,6 @@ use crate::{
     vec2::Vec2,
     view::View,
 };
-use crossterm::event::{
-    Event,
-    MouseEvent,
-};
 use std::cell::Cell;
 
 impl_deref_for_generic_inner!(SizeCacher => inner);
@@ -32,10 +28,11 @@ impl<T> SizeCacher<T> {
     }
 }
 
-impl<S, T> View<S> for SizeCacher<T>
+impl<S, E, T> View<S> for SizeCacher<T>
 where
-    T: View<S>,
+    T: View<S, Event = E>,
 {
+    type Event = E;
     type Message = T::Message;
 
     fn render(
@@ -60,8 +57,8 @@ where
     fn on_event(
         &mut self,
         state: &mut S,
-        e: Event,
-    ) -> Option<T::Message> {
+        e: E,
+    ) -> T::Message {
         self.inner.on_event(state, e)
     }
 }
@@ -85,19 +82,13 @@ impl<T> BoundChecker<T> {
     ) -> bool {
         self.bound.get().contains(p)
     }
-
-    pub fn contains_cursor(
-        &self,
-        me: MouseEvent,
-    ) -> bool {
-        self.contains(get_pos_from_me(me))
-    }
 }
 
 impl<S, T> View<S> for BoundChecker<T>
 where
-    T: View<S>,
+    T: View<S, Event = bool>,
 {
+    type Event = Vec2;
     type Message = T::Message;
 
     fn render(
@@ -122,18 +113,8 @@ where
     fn on_event(
         &mut self,
         state: &mut S,
-        e: Event,
-    ) -> Option<T::Message> {
-        self.inner.on_event(state, e)
-    }
-}
-
-fn get_pos_from_me(me: MouseEvent) -> Vec2 {
-    match me {
-        MouseEvent::Up(_, x, y, _)
-        | MouseEvent::Down(_, x, y, _)
-        | MouseEvent::Drag(_, x, y, _)
-        | MouseEvent::ScrollUp(x, y, _)
-        | MouseEvent::ScrollDown(x, y, _) => Vec2::new(x, y),
+        e: Vec2,
+    ) -> T::Message {
+        self.inner.on_event(state, self.contains(e))
     }
 }

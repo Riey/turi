@@ -4,11 +4,15 @@ use crate::{
     view_proxys::{
         Map,
         MapE,
+        MapOptE,
+        OrElse,
+        OrElseFirst,
     },
 };
-use crossterm::event::Event;
+use std::ops::Try;
 
 pub trait View<S> {
+    type Event;
     type Message;
 
     fn render(
@@ -23,13 +27,14 @@ pub trait View<S> {
     fn on_event(
         &mut self,
         state: &mut S,
-        e: Event,
-    ) -> Option<Self::Message>;
+        e: Self::Event,
+    ) -> Self::Message;
 
-    fn map<F, U>(
+    #[inline(always)]
+    fn map<U, F>(
         self,
         f: F,
-    ) -> Map<Self, F, U>
+    ) -> Map<Self, U, F>
     where
         Self: Sized,
         F: FnMut(&mut Self, &mut S, Self::Message) -> U,
@@ -37,21 +42,64 @@ pub trait View<S> {
         Map::new(self, f)
     }
 
-    fn map_e<F>(
+    #[inline(always)]
+    fn map_e<E, F>(
         self,
         f: F,
-    ) -> MapE<Self, F>
+    ) -> MapE<Self, E, F>
     where
         Self: Sized,
-        F: FnMut(&mut S, Event) -> Option<Self::Message>,
+        F: FnMut(&mut Self, &mut S, E) -> Self::Event,
     {
         MapE::new(self, f)
     }
+
+    #[inline(always)]
+    fn map_opt_e<E, F>(
+        self,
+        f: F,
+    ) -> MapOptE<Self, E, F>
+    where
+        Self: Sized,
+        F: FnMut(&mut Self, &mut S, E) -> Option<Self::Event>,
+    {
+        MapOptE::new(self, f)
+    }
+
+    #[inline(always)]
+    fn or_else_first<F>(
+        self,
+        f: F,
+    ) -> OrElseFirst<Self, F>
+    where
+        Self: Sized,
+        F: FnMut(&mut Self, &mut S, Self::Event) -> Self::Message,
+        Self::Message: Try,
+        Self::Event: Clone,
+    {
+        OrElseFirst::new(self, f)
+    }
+
+    #[inline(always)]
+    fn or_else<F>(
+        self,
+        f: F,
+    ) -> OrElse<Self, F>
+    where
+        Self: Sized,
+        F: FnMut(&mut Self, &mut S, Self::Event) -> Self::Message,
+        Self::Message: Try,
+        Self::Event: Clone,
+    {
+        OrElse::new(self, f)
+    }
 }
 
-impl<'a, S, M> View<S> for Box<dyn View<S, Message = M> + 'a> {
+impl<S, E, M> View<S> for Box<dyn View<S, Event = E, Message = M>> {
+    type Event = E;
     type Message = M;
 
+    #[inline(always)]
     fn render(
         &self,
         printer: &mut Printer,
@@ -59,6 +107,7 @@ impl<'a, S, M> View<S> for Box<dyn View<S, Message = M> + 'a> {
         (**self).render(printer)
     }
 
+    #[inline(always)]
     fn layout(
         &mut self,
         size: Vec2,
@@ -66,25 +115,29 @@ impl<'a, S, M> View<S> for Box<dyn View<S, Message = M> + 'a> {
         (**self).layout(size)
     }
 
+    #[inline(always)]
     fn desired_size(&self) -> Vec2 {
         (**self).desired_size()
     }
 
+    #[inline(always)]
     fn on_event(
         &mut self,
         state: &mut S,
-        e: Event,
-    ) -> Option<Self::Message> {
+        e: Self::Event,
+    ) -> Self::Message {
         (**self).on_event(state, e)
     }
 }
 
-impl<'a, S, M, V> View<S> for &'a mut V
+impl<'a, S, V> View<S> for &'a mut V
 where
-    V: View<S, Message = M>,
+    V: View<S>,
 {
-    type Message = M;
+    type Event = V::Event;
+    type Message = V::Message;
 
+    #[inline(always)]
     fn render(
         &self,
         printer: &mut Printer,
@@ -92,6 +145,7 @@ where
         (**self).render(printer)
     }
 
+    #[inline(always)]
     fn layout(
         &mut self,
         size: Vec2,
@@ -99,15 +153,17 @@ where
         (**self).layout(size)
     }
 
+    #[inline(always)]
     fn desired_size(&self) -> Vec2 {
         (**self).desired_size()
     }
 
+    #[inline(always)]
     fn on_event(
         &mut self,
         state: &mut S,
-        e: Event,
-    ) -> Option<Self::Message> {
+        e: Self::Event,
+    ) -> Self::Message {
         (**self).on_event(state, e)
     }
 }
