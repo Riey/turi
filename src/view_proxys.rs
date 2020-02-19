@@ -189,12 +189,12 @@ where
     }
 }
 
-pub struct OrElseLeft<V, F> {
+pub struct OrElseFirst<V, F> {
     inner: V,
     f:     F,
 }
 
-impl<V, F> OrElseLeft<V, F> {
+impl<V, F> OrElseFirst<V, F> {
     pub fn new(
         inner: V,
         f: F,
@@ -203,7 +203,7 @@ impl<V, F> OrElseLeft<V, F> {
     }
 }
 
-impl<S, V, F, T: Try> View<S> for OrElseLeft<V, F>
+impl<S, V, F, T: Try> View<S> for OrElseFirst<V, F>
 where
     V: View<S, Message = T>,
     V::Event: Clone,
