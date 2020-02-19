@@ -13,6 +13,10 @@ pub use self::{
         EditView,
         EditViewEvent,
     },
-    select_view::{SelectView, SelectViewMessage, SelectViewEvent},
+    select_view::{
+        SelectView,
+        SelectViewEvent,
+        SelectViewMessage,
+    },
     text_view::TextView,
 };

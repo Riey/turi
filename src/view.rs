@@ -1,7 +1,11 @@
 use crate::{
     printer::Printer,
     vec2::Vec2,
-    view_proxys::{Map, MapE, MapOptE},
+    view_proxys::{
+        Map,
+        MapE,
+        MapOptE,
+    },
 };
 
 pub trait View<S> {
@@ -24,17 +28,38 @@ pub trait View<S> {
     ) -> Self::Message;
 
     #[inline(always)]
-    fn map<U, F>(self, f: F) -> Map<Self, U, F> where Self: Sized, F: FnMut(&mut Self, &mut S, Self::Message) -> U {
+    fn map<U, F>(
+        self,
+        f: F,
+    ) -> Map<Self, U, F>
+    where
+        Self: Sized,
+        F: FnMut(&mut Self, &mut S, Self::Message) -> U,
+    {
         Map::new(self, f)
     }
 
     #[inline(always)]
-    fn map_e<E, F>(self, f: F) -> MapE<Self, E, F> where Self: Sized, F: FnMut(&mut Self, &mut S, E) -> Self::Event {
+    fn map_e<E, F>(
+        self,
+        f: F,
+    ) -> MapE<Self, E, F>
+    where
+        Self: Sized,
+        F: FnMut(&mut Self, &mut S, E) -> Self::Event,
+    {
         MapE::new(self, f)
     }
 
     #[inline(always)]
-    fn map_opt_e<E, F>(self, f: F) -> MapOptE<Self, E, F> where Self: Sized, F: FnMut(&mut Self, &mut S, E) -> Option<Self::Event> {
+    fn map_opt_e<E, F>(
+        self,
+        f: F,
+    ) -> MapOptE<Self, E, F>
+    where
+        Self: Sized,
+        F: FnMut(&mut Self, &mut S, E) -> Option<Self::Event>,
+    {
         MapOptE::new(self, f)
     }
 }

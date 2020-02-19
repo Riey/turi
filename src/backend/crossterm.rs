@@ -1,24 +1,30 @@
+use crate::vec2::Vec2;
+use ansi_term::Style;
 use crossterm::{
+    cursor::MoveTo,
     execute,
     queue,
     style::Print,
-    cursor::MoveTo,
-    terminal::{Clear, ClearType},
+    terminal::{
+        Clear,
+        ClearType,
+    },
 };
-use ansi_term::Style;
 use std::io::Write;
-use crate::vec2::Vec2;
 
 use crate::backend::Backend;
 
 pub struct CrosstermBackend<W: Write> {
-    out: W,
+    out:   W,
     style: Style,
-    size: Vec2,
+    size:  Vec2,
 }
 
 impl<W: Write> CrosstermBackend<W> {
-    pub fn new(out: W, size: Vec2) -> Self {
+    pub fn new(
+        out: W,
+        size: Vec2,
+    ) -> Self {
         Self {
             out,
             style: Style::default(),
@@ -26,7 +32,10 @@ impl<W: Write> CrosstermBackend<W> {
         }
     }
 
-    pub fn resize(&mut self, size: Vec2) {
+    pub fn resize(
+        &mut self,
+        size: Vec2,
+    ) {
         self.size = size;
     }
 }
@@ -56,7 +65,12 @@ impl<W: Write> Backend for CrosstermBackend<W> {
         pos: Vec2,
         text: &str,
     ) {
-        queue!(self.out, MoveTo(pos.x, pos.y), Print(self.style.paint(text))).unwrap();
+        queue!(
+            self.out,
+            MoveTo(pos.x, pos.y),
+            Print(self.style.paint(text))
+        )
+        .unwrap();
     }
 
     fn flush(&mut self) {

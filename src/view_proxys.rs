@@ -61,8 +61,8 @@ where
 }
 
 pub struct MapE<V, E, F> {
-    inner: V,
-    f:     F,
+    inner:   V,
+    f:       F,
     _marker: PhantomData<E>,
 }
 
@@ -71,7 +71,11 @@ impl<V, E, F> MapE<V, E, F> {
         inner: V,
         f: F,
     ) -> Self {
-        Self { inner, f, _marker: PhantomData }
+        Self {
+            inner,
+            f,
+            _marker: PhantomData,
+        }
     }
 }
 
@@ -112,8 +116,8 @@ where
 }
 
 pub struct MapOptE<V, E, F> {
-    inner: V,
-    f:     F,
+    inner:   V,
+    f:       F,
     _marker: PhantomData<E>,
 }
 
@@ -122,7 +126,11 @@ impl<V, E, F> MapOptE<V, E, F> {
         inner: V,
         f: F,
     ) -> Self {
-        Self { inner, f, _marker: PhantomData }
+        Self {
+            inner,
+            f,
+            _marker: PhantomData,
+        }
     }
 }
 

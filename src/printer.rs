@@ -14,9 +14,7 @@ pub struct Printer<'a> {
 }
 
 impl<'a> Printer<'a> {
-    pub fn new(
-        backend: &'a mut dyn Backend,
-    ) -> Self {
+    pub fn new(backend: &'a mut dyn Backend) -> Self {
         Self {
             bound: Rect::new((0, 0), backend.size()),
             backend,

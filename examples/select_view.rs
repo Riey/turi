@@ -1,5 +1,8 @@
 use crossterm::{
-    cursor::{Show, Hide},
+    cursor::{
+        Hide,
+        Show,
+    },
     event::{
         DisableMouseCapture,
         EnableMouseCapture,
@@ -22,7 +25,10 @@ use std::io::{
     Write,
 };
 use turi::{
-    backend::{Backend, CrosstermBackend},
+    backend::{
+        Backend,
+        CrosstermBackend,
+    },
     printer::Printer,
     view::View,
     views::{
