@@ -1,3 +1,5 @@
+#![feature(try_trait)]
+
 #[macro_use]
 pub mod macros;
 

@@ -3,7 +3,10 @@ use crate::{
     vec2::Vec2,
     view::View,
 };
-use std::marker::PhantomData;
+use std::{
+    marker::PhantomData,
+    ops::Try,
+};
 
 pub struct Map<V, U, F> {
     inner:   V,
@@ -170,6 +173,59 @@ where
         match e {
             Some(e) => Some(self.inner.on_event(state, e)),
             None => None,
+        }
+    }
+}
+
+pub struct OrElse<V, F> {
+    inner: V,
+    f:     F,
+}
+
+impl<V, F> OrElse<V, F> {
+    pub fn new(inner: V, f: F) -> Self {
+        Self {
+            inner,
+            f,
+        }
+    }
+}
+
+impl<S, V, F, T: Try> View<S> for OrElse<V, F>
+where
+    V: View<S, Message = T>,
+    V::Event: Clone,
+    F: FnMut(&mut V, &mut S, V::Event) -> T,
+{
+    type Event = V::Event;
+    type Message = T;
+
+    fn render(
+        &self,
+        printer: &mut Printer,
+    ) {
+        self.inner.render(printer);
+    }
+
+    fn layout(
+        &mut self,
+        size: Vec2,
+    ) {
+        self.inner.layout(size);
+    }
+
+    fn desired_size(&self) -> Vec2 {
+        self.inner.desired_size()
+    }
+
+    fn on_event(
+        &mut self,
+        state: &mut S,
+        e: Self::Event,
+    ) -> Self::Message {
+        match self.inner.on_event(state, e.clone()).into_result() {
+            Ok(ret) => T::from_ok(ret),
+            Err(_) => T::from_ok((self.f)(&mut self.inner, state, e)?),
         }
     }
 }
