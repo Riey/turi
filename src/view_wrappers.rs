@@ -58,7 +58,7 @@ where
         &mut self,
         state: &mut S,
         e: E,
-    ) -> Option<T::Message> {
+    ) -> T::Message {
         self.inner.on_event(state, e)
     }
 }
@@ -82,19 +82,13 @@ impl<T> BoundChecker<T> {
     ) -> bool {
         self.bound.get().contains(p)
     }
-
-    pub fn contains_cursor(
-        &self,
-        me: MouseEvent,
-    ) -> bool {
-        self.contains(get_pos_from_me(me))
-    }
 }
 
 impl<S, T> View<S> for BoundChecker<T>
 where
-    T: View<S>,
+    T: View<S, Event = bool>,
 {
+    type Event = Vec2;
     type Message = T::Message;
 
     fn render(
@@ -119,8 +113,8 @@ where
     fn on_event(
         &mut self,
         state: &mut S,
-        e: Event,
-    ) -> Option<T::Message> {
-        self.inner.on_event(state, e)
+        e: Vec2,
+    ) -> T::Message {
+        self.inner.on_event(state, self.contains(e))
     }
 }

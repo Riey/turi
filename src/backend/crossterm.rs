@@ -17,6 +17,20 @@ pub struct CrosstermBackend<W: Write> {
     size: Vec2,
 }
 
+impl<W: Write> CrosstermBackend<W> {
+    pub fn new(out: W, size: Vec2) -> Self {
+        Self {
+            out,
+            style: Style::default(),
+            size,
+        }
+    }
+
+    pub fn resize(&mut self, size: Vec2) {
+        self.size = size;
+    }
+}
+
 impl<W: Write> Backend for CrosstermBackend<W> {
     fn clear(&mut self) {
         execute!(self.out, Clear(ClearType::All)).unwrap();

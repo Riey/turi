@@ -9,7 +9,6 @@ pub mod vec2;
 pub mod view;
 #[cfg(windows)]
 pub mod view_proxys;
-#[cfg(windows)]
 pub mod view_wrappers;
 pub mod views;
 
