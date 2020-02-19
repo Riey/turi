@@ -5,7 +5,11 @@ use ansi_term::Style;
 mod crossterm;
 
 #[cfg(feature = "crossterm-backend")]
-pub use self::crossterm::CrosstermBackend;
+pub use self::crossterm::{
+    crossterm_run,
+    CrosstermBackend,
+    CrosstermBackendGuard,
+};
 
 pub trait Backend {
     fn clear(&mut self);
