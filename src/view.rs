@@ -1,6 +1,7 @@
 use crate::{
     printer::Printer,
     vec2::Vec2,
+    view_proxys::{Map, MapE},
 };
 
 pub trait View<S> {
@@ -21,9 +22,17 @@ pub trait View<S> {
         state: &mut S,
         e: Self::Event,
     ) -> Self::Message;
+
+    fn map<U, F>(self, f: F) -> Map<Self, U, F> where Self: Sized, F: FnMut(&mut Self, &mut S, Self::Message) -> U {
+        Map::new(self, f)
+    }
+
+    fn map_e<E, F>(self, f: F) -> MapE<Self, E, F> where Self: Sized, F: FnMut(&mut Self, &mut S, Self::Event) -> E {
+        MapE::new(self, f)
+    }
 }
 
-impl<'a, S, E, M> View<S> for Box<dyn View<S, Event = E, Message = M> + 'a> {
+impl<S, E, M> View<S> for Box<dyn View<S, Event = E, Message = M>> {
     type Event = E;
     type Message = M;
 
