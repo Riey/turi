@@ -35,6 +35,7 @@ where
     type Event = V::Event;
     type Message = U;
 
+    #[inline(always)]
     fn render(
         &self,
         printer: &mut Printer,
@@ -42,6 +43,8 @@ where
         self.inner.render(printer);
     }
 
+
+    #[inline(always)]
     fn layout(
         &mut self,
         size: Vec2,
@@ -49,10 +52,12 @@ where
         self.inner.layout(size);
     }
 
+    #[inline(always)]
     fn desired_size(&self) -> Vec2 {
         self.inner.desired_size()
     }
 
+    #[inline(always)]
     fn on_event(
         &mut self,
         state: &mut S,
@@ -90,6 +95,7 @@ where
     type Event = E;
     type Message = V::Message;
 
+    #[inline(always)]
     fn render(
         &self,
         printer: &mut Printer,
@@ -97,6 +103,7 @@ where
         self.inner.render(printer);
     }
 
+    #[inline(always)]
     fn layout(
         &mut self,
         size: Vec2,
@@ -104,10 +111,12 @@ where
         self.inner.layout(size);
     }
 
+    #[inline(always)]
     fn desired_size(&self) -> Vec2 {
         self.inner.desired_size()
     }
 
+    #[inline(always)]
     fn on_event(
         &mut self,
         state: &mut S,
@@ -145,6 +154,7 @@ where
     type Event = E;
     type Message = Option<V::Message>;
 
+    #[inline(always)]
     fn render(
         &self,
         printer: &mut Printer,
@@ -152,6 +162,7 @@ where
         self.inner.render(printer);
     }
 
+    #[inline(always)]
     fn layout(
         &mut self,
         size: Vec2,
@@ -159,10 +170,12 @@ where
         self.inner.layout(size);
     }
 
+    #[inline(always)]
     fn desired_size(&self) -> Vec2 {
         self.inner.desired_size()
     }
 
+    #[inline(always)]
     fn on_event(
         &mut self,
         state: &mut S,
@@ -200,6 +213,7 @@ where
     type Event = V::Event;
     type Message = T;
 
+    #[inline(always)]
     fn render(
         &self,
         printer: &mut Printer,
@@ -207,6 +221,7 @@ where
         self.inner.render(printer);
     }
 
+    #[inline(always)]
     fn layout(
         &mut self,
         size: Vec2,
@@ -214,10 +229,12 @@ where
         self.inner.layout(size);
     }
 
+    #[inline(always)]
     fn desired_size(&self) -> Vec2 {
         self.inner.desired_size()
     }
 
+    #[inline(always)]
     fn on_event(
         &mut self,
         state: &mut S,
