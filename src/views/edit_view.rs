@@ -1,4 +1,6 @@
 use crate::{
+    event::EventHandler,
+    events::{CharEvent, BackspaceEvent, EnterEvent},
     printer::Printer,
     vec2::Vec2,
     view::View,
@@ -31,17 +33,7 @@ pub enum EditViewMessage {
     Submit,
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum EditViewEvent {
-    Char(char),
-    Backspace,
-    Enter,
-}
-
-impl<S> View<S> for EditView {
-    type Event = EditViewEvent;
-    type Message = EditViewMessage;
-
+impl View for EditView {
     fn desired_size(&self) -> Vec2 {
         Vec2::new(self.text.width() as u16, 1)
     }
@@ -58,22 +50,33 @@ impl<S> View<S> for EditView {
     ) {
         printer.print((0, 0), &self.text);
     }
+}
 
-    fn on_event(
-        &mut self,
-        _state: &mut S,
-        e: EditViewEvent,
-    ) -> EditViewMessage {
-        match e {
-            EditViewEvent::Enter => EditViewMessage::Submit,
-            EditViewEvent::Backspace => {
-                self.text.pop();
-                EditViewMessage::Edit
-            }
-            EditViewEvent::Char(ch) => {
-                self.text.push(ch);
-                EditViewMessage::Edit
-            }
-        }
+impl<S> EventHandler<S, CharEvent> for EditView {
+    type Message = EditViewMessage;
+
+    fn on_event(&mut self, _: &mut S, event: CharEvent) -> Self::Message {
+        self.text_mut().push(event.0);
+
+        EditViewMessage::Edit
     }
 }
+
+impl<S> EventHandler<S, BackspaceEvent> for EditView {
+    type Message = EditViewMessage;
+
+    fn on_event(&mut self, _: &mut S, _: BackspaceEvent) -> Self::Message {
+        self.text_mut().pop();
+
+        EditViewMessage::Edit
+    }
+}
+
+impl<S> EventHandler<S, EnterEvent> for EditView {
+    type Message = EditViewMessage;
+
+    fn on_event(&mut self, _: &mut S, _: EnterEvent) -> Self::Message {
+        EditViewMessage::Submit
+    }
+}
+

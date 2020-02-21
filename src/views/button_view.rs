@@ -1,4 +1,6 @@
 use crate::{
+    event::EventHandler,
+    events::ClickEvent,
     printer::Printer,
     vec2::Vec2,
     view::View,
@@ -51,36 +53,33 @@ impl Default for ButtonDecoration {
     }
 }
 
-pub enum ButtonViewEvent {
-    Click,
-}
-
-impl<S> View<S> for ButtonView {
-    type Event = ButtonViewEvent;
-    type Message = ButtonViewEvent;
-
+impl View for ButtonView {
+    #[inline(always)]
     fn desired_size(&self) -> Vec2 {
         Vec2::new(self.text_width, 1)
     }
 
+    #[inline(always)]
     fn layout(
         &mut self,
         _size: Vec2,
     ) {
     }
 
+    #[inline(always)]
     fn render(
         &self,
         printer: &mut Printer,
     ) {
         printer.print((0, 0), &self.text);
     }
+}
 
-    fn on_event(
-        &mut self,
-        _state: &mut S,
-        e: Self::Event,
-    ) -> Self::Message {
-        e
+impl<S> EventHandler<S, ClickEvent> for ButtonView {
+    type Message = ();
+
+    #[inline(always)]
+    fn on_event(&mut self, _state: &mut S, _e: ClickEvent) {
     }
 }
+

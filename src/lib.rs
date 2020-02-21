@@ -4,11 +4,14 @@
 pub mod macros;
 
 pub mod backend;
+pub mod event;
+pub mod events;
 pub mod modifires;
 pub mod printer;
 pub mod rect;
 pub mod vec2;
 pub mod view;
-pub mod view_proxys;
+pub mod converters;
+#[cfg(windows)]
 pub mod view_wrappers;
 pub mod views;

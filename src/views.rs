@@ -1,21 +1,21 @@
 mod button_view;
 mod edit_view;
+#[cfg(windows)]
 mod select_view;
+#[cfg(windows)]
 mod text_view;
 
+#[cfg(windows)]
 pub use self::{
     button_view::{
         ButtonDecoration,
         ButtonView,
-        ButtonViewEvent,
     },
     edit_view::{
         EditView,
-        EditViewEvent,
     },
     select_view::{
         SelectView,
-        SelectViewEvent,
         SelectViewMessage,
     },
     text_view::TextView,
