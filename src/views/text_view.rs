@@ -19,10 +19,7 @@ impl<'a> TextView<'a> {
     }
 }
 
-impl<'a, S> View<S> for TextView<'a> {
-    type Event = ();
-    type Message = ();
-
+impl<'a> View for TextView<'a> {
     fn desired_size(&self) -> Vec2 {
         Vec2::new(self.text_width, 1)
     }
@@ -38,12 +35,5 @@ impl<'a, S> View<S> for TextView<'a> {
         printer: &mut Printer,
     ) {
         printer.print_styled((0, 0), &self.text);
-    }
-
-    fn on_event(
-        &mut self,
-        _state: &mut S,
-        _event: (),
-    ) {
     }
 }

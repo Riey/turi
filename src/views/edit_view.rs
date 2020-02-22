@@ -1,9 +1,7 @@
 use crate::{
-    event::EventHandler,
-    events::{
-        BackspaceEvent,
-        CharEvent,
-        EnterEvent,
+    event::{
+        EventHandler,
+        EventLike,
     },
     printer::Printer,
     vec2::Vec2,
@@ -56,42 +54,25 @@ impl View for EditView {
     }
 }
 
-impl<S> EventHandler<S, CharEvent> for EditView {
+impl<S, E: EventLike> EventHandler<S, E> for EditView {
     type Message = EditViewMessage;
 
     fn on_event(
         &mut self,
         _: &mut S,
-        event: CharEvent,
-    ) -> Self::Message {
-        self.text_mut().push(event.0);
-
-        EditViewMessage::Edit
-    }
-}
-
-impl<S> EventHandler<S, BackspaceEvent> for EditView {
-    type Message = EditViewMessage;
-
-    fn on_event(
-        &mut self,
-        _: &mut S,
-        _: BackspaceEvent,
-    ) -> Self::Message {
-        self.text_mut().pop();
-
-        EditViewMessage::Edit
-    }
-}
-
-impl<S> EventHandler<S, EnterEvent> for EditView {
-    type Message = EditViewMessage;
-
-    fn on_event(
-        &mut self,
-        _: &mut S,
-        _: EnterEvent,
-    ) -> Self::Message {
-        EditViewMessage::Submit
+        e: E,
+    ) -> Option<Self::Message> {
+        if let Some(ch) = e.try_char() {
+            self.text_mut().push(ch);
+            Some(EditViewMessage::Edit)
+        } else if e.try_backspace() {
+            if self.text.pop().is_some() {
+                Some(EditViewMessage::Edit)
+            } else {
+                None
+            }
+        } else {
+            None
+        }
     }
 }

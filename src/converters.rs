@@ -5,10 +5,7 @@ use crate::{
         ViewProxy,
     },
 };
-use std::{
-    marker::PhantomData,
-    ops::Try,
-};
+use std::marker::PhantomData;
 
 macro_rules! impl_view_proxy {
     ($ident:ident<$inner:ident $(,$gen:ident)+>) => {
@@ -59,9 +56,10 @@ where
         &mut self,
         state: &mut S,
         e: E,
-    ) -> U {
+    ) -> Option<U> {
         let msg = self.inner.on_event(state, e);
-        (self.f)(&mut self.inner, state, msg)
+
+        msg.map(|msg| (self.f)(&mut self.inner, state, msg))
     }
 }
 
@@ -98,7 +96,7 @@ where
         &mut self,
         state: &mut S,
         e: E,
-    ) -> Self::Message {
+    ) -> Option<Self::Message> {
         let e = (self.f)(&mut self.inner, state, e);
         self.inner.on_event(state, e)
     }
@@ -130,18 +128,18 @@ where
     H: EventHandler<S, E>,
     F: FnMut(&mut H, &mut S, NE) -> Option<E>,
 {
-    type Message = Option<H::Message>;
+    type Message = H::Message;
 
     #[inline(always)]
     fn on_event(
         &mut self,
         state: &mut S,
         e: NE,
-    ) -> Self::Message {
+    ) -> Option<Self::Message> {
         let e = (self.f)(&mut self.inner, state, e);
 
         match e {
-            Some(e) => Some(self.inner.on_event(state, e)),
+            Some(e) => self.inner.on_event(state, e),
             None => None,
         }
     }
@@ -163,24 +161,21 @@ impl<H, F> OrElseFirst<H, F> {
     }
 }
 
-impl<S, E, H, F, T: Try> EventHandler<S, E> for OrElseFirst<H, F>
+impl<S, E, H, F> EventHandler<S, E> for OrElseFirst<H, F>
 where
-    H: EventHandler<S, E, Message = T>,
     E: Clone,
-    F: FnMut(&mut H, &mut S, E) -> T,
+    H: EventHandler<S, E>,
+    F: FnMut(&mut H, &mut S, E) -> Option<H::Message>,
 {
-    type Message = T;
+    type Message = H::Message;
 
     #[inline(always)]
     fn on_event(
         &mut self,
         state: &mut S,
         e: E,
-    ) -> Self::Message {
-        match (self.f)(&mut self.inner, state, e.clone()).into_result() {
-            Ok(ret) => T::from_ok(ret),
-            Err(_) => T::from_ok(self.inner.on_event(state, e)?),
-        }
+    ) -> Option<Self::Message> {
+        (self.f)(&mut self.inner, state, e.clone()).or_else(|| self.inner.on_event(state, e))
     }
 }
 
@@ -200,24 +195,23 @@ impl<H, F> OrElse<H, F> {
     }
 }
 
-impl<S, E, H, F, T: Try> EventHandler<S, E> for OrElse<H, F>
+impl<S, E, H, F> EventHandler<S, E> for OrElse<H, F>
 where
-    H: EventHandler<S, E, Message = T>,
     E: Clone,
-    F: FnMut(&mut H, &mut S, E) -> T,
+    H: EventHandler<S, E>,
+    F: FnMut(&mut H, &mut S, E) -> Option<H::Message>,
 {
-    type Message = T;
+    type Message = H::Message;
 
     #[inline(always)]
     fn on_event(
         &mut self,
         state: &mut S,
         e: E,
-    ) -> Self::Message {
-        match self.inner.on_event(state, e.clone()).into_result() {
-            Ok(ret) => T::from_ok(ret),
-            Err(_) => T::from_ok((self.f)(&mut self.inner, state, e)?),
-        }
+    ) -> Option<Self::Message> {
+        self.inner
+            .on_event(state, e.clone())
+            .or_else(|| (self.f)(&mut self.inner, state, e))
     }
 }
 

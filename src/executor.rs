@@ -5,11 +5,11 @@ use crate::{
     view::View,
 };
 
-pub fn simple<S, E, V: View + EventHandler<S, E, Message = Option<bool>>>(
+pub fn simple<S, E, B: Backend, V: View + EventHandler<S, E, Message = bool>>(
     state: &mut S,
-    backend: &mut dyn Backend,
+    backend: &mut B,
     view: &mut V,
-    mut event_source: impl FnMut() -> E,
+    mut event_source: impl FnMut(&mut B) -> E,
 ) {
     backend.clear();
     view.layout(backend.size());
@@ -17,7 +17,7 @@ pub fn simple<S, E, V: View + EventHandler<S, E, Message = Option<bool>>>(
     backend.flush();
 
     loop {
-        let e = event_source();
+        let e = event_source(backend);
         match view.on_event(state, e) {
             Some(exit) => {
                 view.layout(backend.size());

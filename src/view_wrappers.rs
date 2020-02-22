@@ -67,7 +67,7 @@ where
         &mut self,
         state: &mut S,
         event: E,
-    ) -> Self::Message {
+    ) -> Option<Self::Message> {
         self.inner.on_event(state, event)
     }
 }
@@ -132,7 +132,7 @@ where
         &mut self,
         state: &mut S,
         event: E,
-    ) -> Self::Message {
+    ) -> Option<Self::Message> {
         self.inner.on_event(state, event)
     }
 }

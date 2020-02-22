@@ -1,6 +1,8 @@
 use crate::{
-    event::EventHandler,
-    events::ClickEvent,
+    event::{
+        EventHandler,
+        EventLike,
+    },
     printer::Printer,
     vec2::Vec2,
     view::View,
@@ -75,14 +77,15 @@ impl View for ButtonView {
     }
 }
 
-impl<S> EventHandler<S, ClickEvent> for ButtonView {
+impl<S, E: EventLike> EventHandler<S, E> for ButtonView {
     type Message = ();
 
     #[inline(always)]
     fn on_event(
         &mut self,
         _state: &mut S,
-        _e: ClickEvent,
-    ) {
+        e: E,
+    ) -> Option<()> {
+        e.try_click().map(|_| ())
     }
 }
