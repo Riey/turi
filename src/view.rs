@@ -1,4 +1,5 @@
 use crate::{
+    event::EventHandler,
     printer::Printer,
     vec2::Vec2,
 };
@@ -86,3 +87,7 @@ where
         self
     }
 }
+
+pub trait EventHandledView<S, E>: View + EventHandler<S, E> {}
+
+impl<S, E, V> EventHandledView<S, E> for V where V: View + EventHandler<S, E> {}

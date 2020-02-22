@@ -1,5 +1,6 @@
 mod button_view;
 mod edit_view;
+mod linear_view;
 mod select_view;
 mod text_view;
 
@@ -12,6 +13,7 @@ pub use self::{
         EditView,
         EditViewMessage,
     },
+    linear_view::LinearView,
     select_view::{
         SelectView,
         SelectViewMessage,

@@ -139,6 +139,17 @@ impl EventLike for Event {
         }
     }
 
+    fn try_mouse(&self) -> Option<Vec2> {
+        match self {
+            Event::Mouse(MouseEvent::Down(_, x, y, ..))
+            | Event::Mouse(MouseEvent::Up(_, x, y, ..))
+            | Event::Mouse(MouseEvent::Drag(_, x, y, ..))
+            | Event::Mouse(MouseEvent::ScrollUp(x, y, ..))
+            | Event::Mouse(MouseEvent::ScrollDown(x, y, ..)) => Some((*x, *y).into()),
+            _ => None,
+        }
+    }
+
     fn try_char(&self) -> Option<char> {
         match self {
             Event::Key(KeyEvent {

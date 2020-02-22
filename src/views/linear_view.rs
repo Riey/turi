@@ -1,21 +1,27 @@
 use crate::{
+    event::{
+        EventHandler,
+        EventLike,
+    },
     printer::Printer,
     vec2::Vec2,
-    view::View,
+    view::{
+        EventHandledView,
+        View,
+    },
     view_wrappers::{
         BoundChecker,
         SizeCacher,
     },
 };
-use crossterm::event::Event;
 
-pub struct LinearView<'a, S, M> {
-    children:    Vec<SizeCacher<BoundChecker<Box<dyn View<S, Message = M> + 'a>>>>,
+pub struct LinearView<'a, S, E, M> {
+    children:    Vec<SizeCacher<BoundChecker<Box<dyn EventHandledView<S, E, Message = M> + 'a>>>>,
     orientation: Orientation,
     focus:       Option<usize>,
 }
 
-impl<'a, S, M> LinearView<'a, S, M> {
+impl<'a, S, E, M> LinearView<'a, S, E, M> {
     pub fn new() -> Self {
         Self {
             children:    Vec::with_capacity(10),
@@ -41,16 +47,14 @@ impl<'a, S, M> LinearView<'a, S, M> {
 
     pub fn add_child(
         &mut self,
-        v: impl View<S, Message = M> + 'a,
+        v: impl EventHandledView<S, E, Message = M> + 'a,
     ) {
         self.children
             .push(SizeCacher::new(BoundChecker::new(Box::new(v))));
     }
 }
 
-impl<'a, S, M> View<S> for LinearView<'a, S, M> {
-    type Message = M;
-
+impl<'a, S, E, M> View for LinearView<'a, S, E, M> {
     fn render(
         &self,
         printer: &mut Printer,
@@ -116,30 +120,30 @@ impl<'a, S, M> View<S> for LinearView<'a, S, M> {
             }
         }
     }
+}
+
+impl<'a, S, E: EventLike, M> EventHandler<S, E> for LinearView<'a, S, E, M> {
+    type Message = M;
 
     fn on_event(
         &mut self,
         state: &mut S,
-        e: Event,
+        event: E,
     ) -> Option<Self::Message> {
-        match e {
-            Event::Key(_) => {
-                if let Some(focus) = self.focus {
-                    self.children[focus].on_event(state, e)
-                } else {
-                    None
+        if let Some(pos) = event.try_mouse() {
+            for child in self.children.iter_mut() {
+                if child.contains(pos) {
+                    return child.on_event(state, event);
                 }
             }
-            Event::Mouse(me) => {
-                for child in self.children.iter_mut() {
-                    if child.contains_cursor(me) {
-                        return child.on_event(state, e);
-                    }
-                }
 
+            None
+        } else {
+            if let Some(focus) = self.focus {
+                self.children[focus].on_event(state, event)
+            } else {
                 None
             }
-            Event::Resize(_, _) => None,
         }
     }
 }
