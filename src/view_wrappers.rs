@@ -1,8 +1,12 @@
 use crate::{
+    event::EventHandler,
     printer::Printer,
     rect::Rect,
     vec2::Vec2,
-    view::View,
+    view::{
+        View,
+        ViewProxy,
+    },
 };
 use std::cell::Cell;
 
@@ -28,38 +32,43 @@ impl<T> SizeCacher<T> {
     }
 }
 
-impl<S, E, T> View<S> for SizeCacher<T>
+impl<T> ViewProxy for SizeCacher<T>
 where
-    T: View<S, Event = E>,
+    T: View,
 {
-    type Event = E;
-    type Message = T::Message;
+    type Inner = T;
 
-    fn render(
-        &self,
-        printer: &mut Printer,
-    ) {
-        self.inner.render(printer);
+    fn get_inner(&self) -> &T {
+        &self.inner
     }
 
-    fn desired_size(&self) -> Vec2 {
-        self.inner.desired_size()
+    fn get_inner_mut(&mut self) -> &mut T {
+        &mut self.inner
     }
 
-    fn layout(
+    #[inline(always)]
+    fn proxy_layout(
         &mut self,
         size: Vec2,
     ) {
         self.prev_size = size;
         self.inner.layout(size);
     }
+}
 
+impl<S, E, T> EventHandler<S, E> for SizeCacher<T>
+where
+    T: EventHandler<S, E>,
+{
+    type Message = T::Message;
+
+    #[inline(always)]
     fn on_event(
         &mut self,
         state: &mut S,
-        e: E,
-    ) -> T::Message {
-        self.inner.on_event(state, e)
+        event: E,
+    ) -> Option<Self::Message> {
+        self.inner.on_event(state, event)
     }
 }
 
@@ -69,6 +78,7 @@ pub struct BoundChecker<T> {
 }
 
 impl<T> BoundChecker<T> {
+    #[inline(always)]
     pub fn new(inner: T) -> Self {
         Self {
             inner,
@@ -76,6 +86,7 @@ impl<T> BoundChecker<T> {
         }
     }
 
+    #[inline(always)]
     pub fn contains(
         &self,
         p: Vec2,
@@ -84,37 +95,44 @@ impl<T> BoundChecker<T> {
     }
 }
 
-impl<S, T> View<S> for BoundChecker<T>
+impl<T> ViewProxy for BoundChecker<T>
 where
-    T: View<S, Event = bool>,
+    T: View,
 {
-    type Event = Vec2;
-    type Message = T::Message;
+    type Inner = T;
 
-    fn render(
+    #[inline(always)]
+    fn get_inner(&self) -> &T {
+        &self.inner
+    }
+
+    #[inline(always)]
+    fn get_inner_mut(&mut self) -> &mut T {
+        &mut self.inner
+    }
+
+    #[inline(always)]
+    fn proxy_render(
         &self,
         printer: &mut Printer,
     ) {
         self.bound.set(printer.bound());
         self.inner.render(printer);
     }
+}
 
-    fn desired_size(&self) -> Vec2 {
-        self.inner.desired_size()
-    }
+impl<S, E, T> EventHandler<S, E> for BoundChecker<T>
+where
+    T: EventHandler<S, E>,
+{
+    type Message = T::Message;
 
-    fn layout(
-        &mut self,
-        size: Vec2,
-    ) {
-        self.inner.layout(size);
-    }
-
+    #[inline(always)]
     fn on_event(
         &mut self,
         state: &mut S,
-        e: Vec2,
-    ) -> T::Message {
-        self.inner.on_event(state, self.contains(e))
+        event: E,
+    ) -> Option<Self::Message> {
+        self.inner.on_event(state, event)
     }
 }

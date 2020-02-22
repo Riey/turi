@@ -1,4 +1,8 @@
 use crate::{
+    event::{
+        EventHandler,
+        EventLike,
+    },
     printer::Printer,
     vec2::Vec2,
     view::View,
@@ -31,17 +35,7 @@ pub enum EditViewMessage {
     Submit,
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum EditViewEvent {
-    Char(char),
-    Backspace,
-    Enter,
-}
-
-impl<S> View<S> for EditView {
-    type Event = EditViewEvent;
-    type Message = EditViewMessage;
-
+impl View for EditView {
     fn desired_size(&self) -> Vec2 {
         Vec2::new(self.text.width() as u16, 1)
     }
@@ -58,22 +52,27 @@ impl<S> View<S> for EditView {
     ) {
         printer.print((0, 0), &self.text);
     }
+}
+
+impl<S, E: EventLike> EventHandler<S, E> for EditView {
+    type Message = EditViewMessage;
 
     fn on_event(
         &mut self,
-        _state: &mut S,
-        e: EditViewEvent,
-    ) -> EditViewMessage {
-        match e {
-            EditViewEvent::Enter => EditViewMessage::Submit,
-            EditViewEvent::Backspace => {
-                self.text.pop();
-                EditViewMessage::Edit
+        _: &mut S,
+        e: E,
+    ) -> Option<Self::Message> {
+        if let Some(ch) = e.try_char() {
+            self.text_mut().push(ch);
+            Some(EditViewMessage::Edit)
+        } else if e.try_backspace() {
+            if self.text.pop().is_some() {
+                Some(EditViewMessage::Edit)
+            } else {
+                None
             }
-            EditViewEvent::Char(ch) => {
-                self.text.push(ch);
-                EditViewMessage::Edit
-            }
+        } else {
+            None
         }
     }
 }

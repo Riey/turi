@@ -10,6 +10,9 @@ use crossterm::{
         DisableMouseCapture,
         EnableMouseCapture,
         Event,
+        KeyCode,
+        KeyEvent,
+        MouseEvent,
     },
     execute,
     queue,
@@ -27,8 +30,7 @@ use std::io::Write;
 
 use crate::{
     backend::Backend,
-    printer::Printer,
-    view::View,
+    event::EventLike,
 };
 
 pub struct CrosstermBackend<W: Write> {
@@ -129,34 +131,49 @@ impl<W: Write> CrosstermBackendGuard<W> {
     }
 }
 
-pub fn crossterm_run<S, V: View<S, Event = Event, Message = Option<bool>>, W: Write>(
-    state: &mut S,
-    backend: &mut CrosstermBackend<W>,
-    view: &mut V,
-) {
-    backend.clear();
-    view.layout(backend.size());
-    view.render(&mut Printer::new(backend));
-    backend.flush();
+impl EventLike for Event {
+    fn try_click(&self) -> Option<Vec2> {
+        match self {
+            Event::Mouse(MouseEvent::Down(_btn, x, y, ..)) => Some((*x, *y).into()),
+            _ => None,
+        }
+    }
 
-    loop {
-        match crossterm::event::read().unwrap() {
-            Event::Resize(x, y) => {
-                backend.resize((x, y).into());
-            }
-            e => {
-                match view.on_event(state, e) {
-                    Some(exit) => {
-                        view.layout(backend.size());
-                        view.render(&mut Printer::new(backend));
-                        backend.flush();
-                        if exit {
-                            break;
-                        }
-                    }
-                    None => continue,
-                }
-            }
+    fn try_char(&self) -> Option<char> {
+        match self {
+            Event::Key(KeyEvent {
+                code: KeyCode::Char(ch),
+                ..
+            }) => Some(*ch),
+            _ => None,
+        }
+    }
+
+    fn try_enter(&self) -> bool {
+        match self {
+            Event::Key(ke) if ke.code == KeyCode::Enter => true,
+            _ => false,
+        }
+    }
+
+    fn try_up(&self) -> bool {
+        match self {
+            Event::Key(ke) if ke.code == KeyCode::Up => true,
+            _ => false,
+        }
+    }
+
+    fn try_down(&self) -> bool {
+        match self {
+            Event::Key(ke) if ke.code == KeyCode::Down => true,
+            _ => false,
+        }
+    }
+
+    fn try_backspace(&self) -> bool {
+        match self {
+            Event::Key(ke) if ke.code == KeyCode::Backspace => true,
+            _ => false,
         }
     }
 }

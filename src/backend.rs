@@ -6,7 +6,6 @@ mod crossterm;
 
 #[cfg(feature = "crossterm-backend")]
 pub use self::crossterm::{
-    crossterm_run,
     CrosstermBackend,
     CrosstermBackendGuard,
 };
@@ -70,22 +69,27 @@ impl<'a, B: Backend> Backend for &'a mut B {
 pub struct DummyBackend;
 
 impl Backend for DummyBackend {
+    #[inline(always)]
     fn clear(&mut self) {}
 
+    #[inline(always)]
     fn size(&self) -> Vec2 {
         Vec2::new(0, 0)
     }
 
+    #[inline(always)]
     fn set_style(
         &mut self,
         _style: Style,
     ) {
     }
 
+    #[inline(always)]
     fn style(&self) -> Style {
         Style::default()
     }
 
+    #[inline(always)]
     fn print_at(
         &mut self,
         _pos: Vec2,
@@ -93,5 +97,6 @@ impl Backend for DummyBackend {
     ) {
     }
 
+    #[inline(always)]
     fn flush(&mut self) {}
 }

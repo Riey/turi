@@ -7,15 +7,13 @@ pub use self::{
     button_view::{
         ButtonDecoration,
         ButtonView,
-        ButtonViewEvent,
     },
     edit_view::{
         EditView,
-        EditViewEvent,
+        EditViewMessage,
     },
     select_view::{
         SelectView,
-        SelectViewEvent,
         SelectViewMessage,
     },
     text_view::TextView,

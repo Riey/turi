@@ -1,4 +1,8 @@
 use crate::{
+    event::{
+        EventHandler,
+        EventLike,
+    },
     printer::Printer,
     vec2::Vec2,
     view::View,
@@ -40,23 +44,23 @@ impl<T> SelectView<T> {
         }
     }
 
-    pub fn focus_down(&mut self) -> SelectViewMessage {
+    pub fn focus_down(&mut self) -> Option<SelectViewMessage> {
         let val = self.selected + 1;
 
         if val >= self.btns.len() {
-            SelectViewMessage::Nop
+            None
         } else {
             self.selected = val;
-            SelectViewMessage::IndexChanged
+            Some(SelectViewMessage::IndexChanged)
         }
     }
 
-    pub fn focus_up(&mut self) -> SelectViewMessage {
+    pub fn focus_up(&mut self) -> Option<SelectViewMessage> {
         if self.selected > 0 {
             self.selected -= 1;
-            SelectViewMessage::IndexChanged
+            Some(SelectViewMessage::IndexChanged)
         } else {
-            SelectViewMessage::Nop
+            None
         }
     }
 
@@ -70,24 +74,12 @@ impl<T> SelectView<T> {
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum SelectViewEvent {
-    Up,
-    Down,
-    Enter,
-    Click(u16),
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum SelectViewMessage {
     Select,
     IndexChanged,
-    Nop,
 }
 
-impl<S, T> View<S> for SelectView<T> {
-    type Event = SelectViewEvent;
-    type Message = SelectViewMessage;
-
+impl<T> View for SelectView<T> {
     fn render(
         &self,
         printer: &mut Printer,
@@ -112,20 +104,24 @@ impl<S, T> View<S> for SelectView<T> {
     fn desired_size(&self) -> Vec2 {
         Vec2::new(self.width, self.btns.len() as u16)
     }
+}
+
+impl<S, E: EventLike, T> EventHandler<S, E> for SelectView<T> {
+    type Message = SelectViewMessage;
 
     fn on_event(
         &mut self,
-        _state: &mut S,
-        e: Self::Event,
-    ) -> Self::Message {
-        match e {
-            SelectViewEvent::Enter => SelectViewMessage::Select,
-            SelectViewEvent::Click(idx) => {
-                self.selected = idx as usize;
-                SelectViewMessage::Select
-            }
-            SelectViewEvent::Up => self.focus_up(),
-            SelectViewEvent::Down => self.focus_down(),
+        _: &mut S,
+        e: E,
+    ) -> Option<Self::Message> {
+        if e.try_click().is_some() || e.try_enter() {
+            Some(SelectViewMessage::Select)
+        } else if e.try_up() {
+            self.focus_up()
+        } else if e.try_down() {
+            self.focus_down()
+        } else {
+            None
         }
     }
 }
