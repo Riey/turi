@@ -1,9 +1,12 @@
-use crate::view::ViewProxy;
 use crate::{
+    event::EventHandler,
     printer::Printer,
     rect::Rect,
     vec2::Vec2,
-    view::View,
+    view::{
+        View,
+        ViewProxy,
+    },
 };
 use std::cell::Cell;
 
@@ -35,9 +38,15 @@ where
 {
     type Inner = T;
 
-    fn get_inner(&self) -> &T { &self.inner }
-    fn get_inner_mut(&mut self) -> &mut T { &mut self.inner }
+    fn get_inner(&self) -> &T {
+        &self.inner
+    }
 
+    fn get_inner_mut(&mut self) -> &mut T {
+        &mut self.inner
+    }
+
+    #[inline(always)]
     fn proxy_layout(
         &mut self,
         size: Vec2,
@@ -47,12 +56,29 @@ where
     }
 }
 
+impl<S, E, T> EventHandler<S, E> for SizeCacher<T>
+where
+    T: EventHandler<S, E>,
+{
+    type Message = T::Message;
+
+    #[inline(always)]
+    fn on_event(
+        &mut self,
+        state: &mut S,
+        event: E,
+    ) -> Self::Message {
+        self.inner.on_event(state, event)
+    }
+}
+
 pub struct BoundChecker<T> {
     inner: T,
     bound: Cell<Rect>,
 }
 
 impl<T> BoundChecker<T> {
+    #[inline(always)]
     pub fn new(inner: T) -> Self {
         Self {
             inner,
@@ -60,6 +86,7 @@ impl<T> BoundChecker<T> {
         }
     }
 
+    #[inline(always)]
     pub fn contains(
         &self,
         p: Vec2,
@@ -74,14 +101,38 @@ where
 {
     type Inner = T;
 
-    fn get_inner(&self) -> &T { &self.inner }
-    fn get_inner_mut(&mut self) -> &mut T { &mut self.inner }
+    #[inline(always)]
+    fn get_inner(&self) -> &T {
+        &self.inner
+    }
 
+    #[inline(always)]
+    fn get_inner_mut(&mut self) -> &mut T {
+        &mut self.inner
+    }
+
+    #[inline(always)]
     fn proxy_render(
         &self,
         printer: &mut Printer,
     ) {
         self.bound.set(printer.bound());
         self.inner.render(printer);
+    }
+}
+
+impl<S, E, T> EventHandler<S, E> for BoundChecker<T>
+where
+    T: EventHandler<S, E>,
+{
+    type Message = T::Message;
+
+    #[inline(always)]
+    fn on_event(
+        &mut self,
+        state: &mut S,
+        event: E,
+    ) -> Self::Message {
+        self.inner.on_event(state, event)
     }
 }

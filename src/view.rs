@@ -22,12 +22,18 @@ pub trait ViewProxy {
     fn get_inner_mut(&mut self) -> &mut Self::Inner;
 
     #[inline(always)]
-    fn proxy_render(&self, printer: &mut Printer) {
+    fn proxy_render(
+        &self,
+        printer: &mut Printer,
+    ) {
         self.get_inner().render(printer);
     }
 
     #[inline(always)]
-    fn proxy_layout(&mut self, size: Vec2) {
+    fn proxy_layout(
+        &mut self,
+        size: Vec2,
+    ) {
         self.get_inner_mut().layout(size);
     }
 
