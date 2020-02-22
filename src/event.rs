@@ -18,6 +18,35 @@ pub trait EventLike {
     fn try_backspace(&self) -> bool;
 }
 
+#[derive(Clone, Copy, Debug)]
+pub struct NoneEvent;
+
+impl EventLike for NoneEvent {
+    fn try_click(&self) -> Option<Vec2> {
+        None
+    }
+
+    fn try_char(&self) -> Option<char> {
+        None
+    }
+
+    fn try_enter(&self) -> bool {
+        false
+    }
+
+    fn try_up(&self) -> bool {
+        false
+    }
+
+    fn try_down(&self) -> bool {
+        false
+    }
+
+    fn try_backspace(&self) -> bool {
+        false
+    }
+}
+
 pub trait EventHandler<S, E> {
     type Message;
 
