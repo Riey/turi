@@ -12,7 +12,6 @@ use crossterm::{
         Event,
         KeyCode,
         KeyEvent,
-        KeyModifiers,
         MouseEvent,
     },
     execute,
@@ -34,10 +33,7 @@ use std::{
 
 use crate::{
     backend::Backend,
-    event::EventHandler,
     events,
-    printer::Printer,
-    view::View,
 };
 
 pub struct CrosstermBackend<W: Write> {
@@ -135,38 +131,6 @@ impl<W: Write> CrosstermBackendGuard<W> {
 
     pub fn inner(&mut self) -> &mut CrosstermBackend<W> {
         &mut self.inner
-    }
-}
-
-pub fn crossterm_run<S, V: View + EventHandler<S, Event, Message = Option<bool>>, W: Write>(
-    state: &mut S,
-    backend: &mut CrosstermBackend<W>,
-    view: &mut V,
-) {
-    backend.clear();
-    view.layout(backend.size());
-    view.render(&mut Printer::new(backend));
-    backend.flush();
-
-    loop {
-        match crossterm::event::read().unwrap() {
-            Event::Resize(x, y) => {
-                backend.resize((x, y).into());
-            }
-            e => {
-                match view.on_event(state, e) {
-                    Some(exit) => {
-                        view.layout(backend.size());
-                        view.render(&mut Printer::new(backend));
-                        backend.flush();
-                        if exit {
-                            break;
-                        }
-                    }
-                    None => continue,
-                }
-            }
-        }
     }
 }
 

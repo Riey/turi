@@ -1,7 +1,5 @@
 use crate::{
     event::EventHandler,
-    printer::Printer,
-    vec2::Vec2,
     view::{
         View,
         ViewProxy,

@@ -6,7 +6,6 @@ mod crossterm;
 
 #[cfg(feature = "crossterm-backend")]
 pub use self::crossterm::{
-    crossterm_run,
     CrosstermBackend,
     CrosstermBackendGuard,
 };
@@ -101,4 +100,3 @@ impl Backend for DummyBackend {
     #[inline(always)]
     fn flush(&mut self) {}
 }
-
