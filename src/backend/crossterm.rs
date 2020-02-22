@@ -10,6 +10,10 @@ use crossterm::{
         DisableMouseCapture,
         EnableMouseCapture,
         Event,
+        KeyCode,
+        KeyEvent,
+        KeyModifiers,
+        MouseEvent,
     },
     execute,
     queue,
@@ -23,10 +27,15 @@ use crossterm::{
         LeaveAlternateScreen,
     },
 };
-use std::io::Write;
+use std::{
+    convert::TryFrom,
+    io::Write,
+};
 
 use crate::{
     backend::Backend,
+    event::EventHandler,
+    events,
     printer::Printer,
     view::View,
 };
@@ -129,7 +138,7 @@ impl<W: Write> CrosstermBackendGuard<W> {
     }
 }
 
-pub fn crossterm_run<S, V: View<S, Event = Event, Message = Option<bool>>, W: Write>(
+pub fn crossterm_run<S, V: View + EventHandler<S, Event, Message = Option<bool>>, W: Write>(
     state: &mut S,
     backend: &mut CrosstermBackend<W>,
     view: &mut V,
@@ -157,6 +166,59 @@ pub fn crossterm_run<S, V: View<S, Event = Event, Message = Option<bool>>, W: Wr
                     None => continue,
                 }
             }
+        }
+    }
+}
+
+impl TryFrom<Event> for events::ClickEvent {
+    type Error = Event;
+
+    fn try_from(e: Event) -> Result<Self, Self::Error> {
+        match e {
+            Event::Mouse(MouseEvent::Down(..)) => Ok(Self),
+            _ => Err(e),
+        }
+    }
+}
+
+impl TryFrom<Event> for events::CharEvent {
+    type Error = Event;
+
+    fn try_from(e: Event) -> Result<Self, Self::Error> {
+        match e {
+            Event::Key(KeyEvent {
+                code: KeyCode::Char(ch),
+                modifiers,
+            }) if modifiers.is_empty() => Ok(Self(ch)),
+            _ => Err(e),
+        }
+    }
+}
+
+impl TryFrom<Event> for events::EnterEvent {
+    type Error = Event;
+
+    fn try_from(e: Event) -> Result<Self, Self::Error> {
+        match e {
+            Event::Key(KeyEvent {
+                code: KeyCode::Enter,
+                modifiers,
+            }) if modifiers.is_empty() => Ok(Self),
+            _ => Err(e),
+        }
+    }
+}
+
+impl TryFrom<Event> for events::BackspaceEvent {
+    type Error = Event;
+
+    fn try_from(e: Event) -> Result<Self, Self::Error> {
+        match e {
+            Event::Key(KeyEvent {
+                code: KeyCode::Backspace,
+                modifiers,
+            }) if modifiers.is_empty() => Ok(Self),
+            _ => Err(e),
         }
     }
 }

@@ -22,7 +22,11 @@ pub trait ViewProxy {
     fn get_inner_mut(&mut self) -> &mut Self::Inner;
 }
 
-impl<V, P> View for P where P: ViewProxy<Inner = V>, V: View {
+impl<V, P> View for P
+where
+    P: ViewProxy<Inner = V>,
+    V: View,
+{
     #[inline(always)]
     fn render(
         &self,
@@ -45,12 +49,19 @@ impl<V, P> View for P where P: ViewProxy<Inner = V>, V: View {
     }
 }
 
-impl<'a, V> ViewProxy for &'a mut V where V: View {
+impl<'a, V> ViewProxy for &'a mut V
+where
+    V: View,
+{
     type Inner = V;
 
     #[inline(always)]
-    fn get_inner(&self) -> &Self::Inner { self }
-    #[inline(always)]
-    fn get_inner_mut(&mut self) -> &mut Self::Inner { self }
-}
+    fn get_inner(&self) -> &Self::Inner {
+        self
+    }
 
+    #[inline(always)]
+    fn get_inner_mut(&mut self) -> &mut Self::Inner {
+        self
+    }
+}

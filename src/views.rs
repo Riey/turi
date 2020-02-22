@@ -11,9 +11,7 @@ pub use self::{
         ButtonDecoration,
         ButtonView,
     },
-    edit_view::{
-        EditView,
-    },
+    edit_view::EditView,
     select_view::{
         SelectView,
         SelectViewMessage,

@@ -9,4 +9,3 @@ pub struct EnterEvent;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct BackspaceEvent;
-

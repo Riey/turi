@@ -1,6 +1,10 @@
 use crate::{
     event::EventHandler,
-    events::{CharEvent, BackspaceEvent, EnterEvent},
+    events::{
+        BackspaceEvent,
+        CharEvent,
+        EnterEvent,
+    },
     printer::Printer,
     vec2::Vec2,
     view::View,
@@ -55,7 +59,11 @@ impl View for EditView {
 impl<S> EventHandler<S, CharEvent> for EditView {
     type Message = EditViewMessage;
 
-    fn on_event(&mut self, _: &mut S, event: CharEvent) -> Self::Message {
+    fn on_event(
+        &mut self,
+        _: &mut S,
+        event: CharEvent,
+    ) -> Self::Message {
         self.text_mut().push(event.0);
 
         EditViewMessage::Edit
@@ -65,7 +73,11 @@ impl<S> EventHandler<S, CharEvent> for EditView {
 impl<S> EventHandler<S, BackspaceEvent> for EditView {
     type Message = EditViewMessage;
 
-    fn on_event(&mut self, _: &mut S, _: BackspaceEvent) -> Self::Message {
+    fn on_event(
+        &mut self,
+        _: &mut S,
+        _: BackspaceEvent,
+    ) -> Self::Message {
         self.text_mut().pop();
 
         EditViewMessage::Edit
@@ -75,8 +87,11 @@ impl<S> EventHandler<S, BackspaceEvent> for EditView {
 impl<S> EventHandler<S, EnterEvent> for EditView {
     type Message = EditViewMessage;
 
-    fn on_event(&mut self, _: &mut S, _: EnterEvent) -> Self::Message {
+    fn on_event(
+        &mut self,
+        _: &mut S,
+        _: EnterEvent,
+    ) -> Self::Message {
         EditViewMessage::Submit
     }
 }
-

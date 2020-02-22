@@ -79,7 +79,10 @@ impl<S> EventHandler<S, ClickEvent> for ButtonView {
     type Message = ();
 
     #[inline(always)]
-    fn on_event(&mut self, _state: &mut S, _e: ClickEvent) {
+    fn on_event(
+        &mut self,
+        _state: &mut S,
+        _e: ClickEvent,
+    ) {
     }
 }
-
