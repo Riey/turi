@@ -1,3 +1,4 @@
+use crate::view::ViewProxy;
 use crate::{
     printer::Printer,
     rect::Rect,
@@ -28,38 +29,21 @@ impl<T> SizeCacher<T> {
     }
 }
 
-impl<S, E, T> View<S> for SizeCacher<T>
+impl<T> ViewProxy for SizeCacher<T>
 where
-    T: View<S, Event = E>,
+    T: View,
 {
-    type Event = E;
-    type Message = T::Message;
+    type Inner = T;
 
-    fn render(
-        &self,
-        printer: &mut Printer,
-    ) {
-        self.inner.render(printer);
-    }
+    fn get_inner(&self) -> &T { &self.inner }
+    fn get_inner_mut(&mut self) -> &mut T { &mut self.inner }
 
-    fn desired_size(&self) -> Vec2 {
-        self.inner.desired_size()
-    }
-
-    fn layout(
+    fn proxy_layout(
         &mut self,
         size: Vec2,
     ) {
         self.prev_size = size;
         self.inner.layout(size);
-    }
-
-    fn on_event(
-        &mut self,
-        state: &mut S,
-        e: E,
-    ) -> T::Message {
-        self.inner.on_event(state, e)
     }
 }
 
@@ -84,37 +68,20 @@ impl<T> BoundChecker<T> {
     }
 }
 
-impl<S, T> View<S> for BoundChecker<T>
+impl<T> ViewProxy for BoundChecker<T>
 where
-    T: View<S, Event = bool>,
+    T: View,
 {
-    type Event = Vec2;
-    type Message = T::Message;
+    type Inner = T;
 
-    fn render(
+    fn get_inner(&self) -> &T { &self.inner }
+    fn get_inner_mut(&mut self) -> &mut T { &mut self.inner }
+
+    fn proxy_render(
         &self,
         printer: &mut Printer,
     ) {
         self.bound.set(printer.bound());
         self.inner.render(printer);
-    }
-
-    fn desired_size(&self) -> Vec2 {
-        self.inner.desired_size()
-    }
-
-    fn layout(
-        &mut self,
-        size: Vec2,
-    ) {
-        self.inner.layout(size);
-    }
-
-    fn on_event(
-        &mut self,
-        state: &mut S,
-        e: Vec2,
-    ) -> T::Message {
-        self.inner.on_event(state, self.contains(e))
     }
 }

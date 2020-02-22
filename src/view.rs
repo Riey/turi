@@ -20,6 +20,21 @@ pub trait ViewProxy {
 
     fn get_inner(&self) -> &Self::Inner;
     fn get_inner_mut(&mut self) -> &mut Self::Inner;
+
+    #[inline(always)]
+    fn proxy_render(&self, printer: &mut Printer) {
+        self.get_inner().render(printer);
+    }
+
+    #[inline(always)]
+    fn proxy_layout(&mut self, size: Vec2) {
+        self.get_inner_mut().layout(size);
+    }
+
+    #[inline(always)]
+    fn proxy_desired_size(&self) -> Vec2 {
+        self.get_inner().desired_size()
+    }
 }
 
 impl<V, P> View for P
@@ -32,7 +47,7 @@ where
         &self,
         printer: &mut Printer,
     ) {
-        self.get_inner().render(printer)
+        self.proxy_render(printer);
     }
 
     #[inline(always)]
@@ -40,12 +55,12 @@ where
         &mut self,
         size: Vec2,
     ) {
-        self.get_inner_mut().layout(size)
+        self.proxy_layout(size);
     }
 
     #[inline(always)]
     fn desired_size(&self) -> Vec2 {
-        self.get_inner().desired_size()
+        self.proxy_desired_size()
     }
 }
 
