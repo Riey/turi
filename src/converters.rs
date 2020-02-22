@@ -5,7 +5,13 @@ use crate::{
         ViewProxy,
     },
 };
-use std::marker::PhantomData;
+use std::{
+    marker::PhantomData,
+    ops::{
+        Deref,
+        DerefMut,
+    },
+};
 
 macro_rules! impl_view_proxy {
     ($ident:ident<$inner:ident $(,$gen:ident)+>) => {
@@ -22,6 +28,22 @@ macro_rules! impl_view_proxy {
                 &mut self.inner
             }
         }
+
+        impl<$inner $(,$gen)+> Deref for $ident<$inner $(,$gen)+> {
+            type Target = $inner;
+
+            #[inline(always)]
+            fn deref(&self) -> &$inner {
+                &self.inner
+            }
+        }
+        impl<$inner $(,$gen)+> DerefMut for $ident<$inner $(,$gen)+> {
+            #[inline(always)]
+            fn deref_mut(&mut self) -> &mut $inner {
+                &mut self.inner
+            }
+        }
+
     };
 }
 
