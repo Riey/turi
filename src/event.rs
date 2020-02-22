@@ -17,6 +17,7 @@ pub trait EventLike {
     fn try_up(&self) -> bool;
     fn try_down(&self) -> bool;
     fn try_backspace(&self) -> bool;
+    fn try_tab(&self) -> bool;
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -55,6 +56,11 @@ impl EventLike for NoneEvent {
 
     #[inline(always)]
     fn try_backspace(&self) -> bool {
+        false
+    }
+
+    #[inline(always)]
+    fn try_tab(&self) -> bool {
         false
     }
 }

@@ -1,23 +1,31 @@
 use crate::{
+    event::{
+        EventHandler,
+        EventLike,
+    },
     printer::Printer,
     vec2::Vec2,
     view::View,
+    view_wrappers::{
+        BoundChecker,
+        SizeCacher,
+    },
     views::{
         ButtonView,
-        ButtonViewEvent,
         LinearView,
     },
 };
 
-pub struct DialogView<'a, S, M, C: 'a> {
+pub struct DialogView<'a, S, E, M, C: 'a> {
     title:         String,
     content:       SizeCacher<BoundChecker<C>>,
-    buttons:       SizeCacher<BoundChecker<LinearView<'a, S, M>>>,
+    buttons:       SizeCacher<BoundChecker<LinearView<'a, S, E, M>>>,
     content_focus: bool,
 }
 
-impl<'a, S, M, C> DialogView<'a, S, M, C>
+impl<'a, S, E, M, C> DialogView<'a, S, E, M, C>
 where
+    E: EventLike + 'static,
     M: 'static,
 {
     pub fn new(content: C) -> Self {
@@ -39,9 +47,12 @@ where
     pub fn add_button(
         &mut self,
         btn: ButtonView,
-        mapper: impl FnMut(&mut ButtonView, &mut S, ButtonViewEvent) -> M + 'a,
+        mut mapper: impl FnMut(&mut S) -> M + 'a,
     ) {
-        self.buttons.add_child(btn.map(mapper));
+        self.buttons.add_child(
+            btn.map_e::<E, _>(|_, _, e| e)
+                .map(move |_, state, _| mapper(state)),
+        );
     }
 
     fn tab(&mut self) {
@@ -49,13 +60,11 @@ where
     }
 }
 
-impl<'a, S, M, C> View<S> for DialogView<'a, S, M, C>
+impl<'a, S, E, M, C> View for DialogView<'a, S, E, M, C>
 where
-    C: View<S, Message = M>,
+    C: View,
     M: 'static,
 {
-    type Message = M;
-
     fn render(
         &self,
         printer: &mut Printer,
@@ -94,36 +103,38 @@ where
         let buttons = self.buttons.desired_size();
         Vec2::new(content.x.max(buttons.x), content.y + buttons.y) + Vec2::new(2, 2)
     }
+}
+
+impl<'a, S, E, M, C> EventHandler<S, E> for DialogView<'a, S, E, M, C>
+where
+    C: EventHandler<S, E, Message = M>,
+    E: EventLike + 'static,
+    M: 'static,
+{
+    type Message = M;
 
     fn on_event(
         &mut self,
         state: &mut S,
-        e: Event,
-    ) -> Option<M> {
-        match e {
-            Event::Key(KeyEvent {
-                code: KeyCode::Tab, ..
-            }) => {
-                self.tab();
+        event: E,
+    ) -> Option<Self::Message> {
+        if event.try_tab() {
+            self.tab();
+            None
+        } else if let Some(pos) = event.try_mouse() {
+            if self.content.contains(pos) {
+                self.content.on_event(state, event)
+            } else if self.buttons.contains(pos) {
+                self.buttons.on_event(state, event)
+            } else {
                 None
             }
-            Event::Key(_) => {
-                if self.content_focus {
-                    self.content.on_event(state, e)
-                } else {
-                    self.buttons.on_event(state, e)
-                }
+        } else {
+            if self.content_focus {
+                self.content.on_event(state, event)
+            } else {
+                self.buttons.on_event(state, event)
             }
-            Event::Mouse(me) => {
-                if self.content.contains_cursor(me) {
-                    self.content.on_event(state, e)
-                } else if self.buttons.contains_cursor(me) {
-                    self.buttons.on_event(state, e)
-                } else {
-                    None
-                }
-            }
-            _ => None,
         }
     }
 }

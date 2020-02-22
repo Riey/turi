@@ -187,4 +187,11 @@ impl EventLike for Event {
             _ => false,
         }
     }
+
+    fn try_tab(&self) -> bool {
+        match self {
+            Event::Key(ke) if ke.code == KeyCode::Tab => true,
+            _ => false,
+        }
+    }
 }
