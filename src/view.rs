@@ -26,6 +26,24 @@ pub trait View {
     }
 }
 
+pub trait ScrollableView: View {
+    fn scroll_vertical_render(
+        &self,
+        pos: u16,
+        printer: &mut Printer,
+    );
+    fn scroll_horizontal_render(
+        &self,
+        pos: u16,
+        printer: &mut Printer,
+    );
+    fn scroll_both_render(
+        &self,
+        pos: Vec2,
+        printer: &mut Printer,
+    );
+}
+
 pub trait ViewProxy {
     type Inner: View;
 
