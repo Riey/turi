@@ -3,6 +3,7 @@ use crate::{
         EventHandler,
         EventLike,
     },
+    orientation::Orientation,
     printer::Printer,
     vec2::Vec2,
     view::{
@@ -146,9 +147,4 @@ impl<'a, S, E: EventLike, M> EventHandler<S, E> for LinearView<'a, S, E, M> {
             }
         }
     }
-}
-
-pub enum Orientation {
-    Horizontal,
-    Vertical,
 }
