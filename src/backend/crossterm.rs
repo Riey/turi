@@ -66,7 +66,7 @@ impl<W: Write> CrosstermBackend<W> {
 
 impl<W: Write> Backend for CrosstermBackend<W> {
     fn clear(&mut self) {
-        execute!(self.out, Clear(ClearType::All)).unwrap();
+        queue!(self.out, Clear(ClearType::All)).unwrap();
     }
 
     fn size(&self) -> Vec2 {
