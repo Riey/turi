@@ -1,9 +1,11 @@
 use crate::{
     event::EventHandler,
+    orientation::Orientation,
     printer::Printer,
     rect::Rect,
     vec2::Vec2,
     view::{
+        ScrollableView,
         View,
         ViewProxy,
     },
@@ -37,9 +39,86 @@ macro_rules! impl_deref_for_inner {
     };
 }
 
+impl_deref_for_inner!(ScrollView<T>);
 impl_deref_for_inner!(EventMarker<T, E>);
 impl_deref_for_inner!(SizeCacher<T>);
 impl_deref_for_inner!(BoundChecker<T>);
+
+pub struct ScrollView<T> {
+    inner:       SizeCacher<T>,
+    orientation: Orientation,
+    scroll:      u16,
+}
+
+impl<T> ScrollView<T> {
+    pub fn new(
+        inner: T,
+        orientation: Orientation,
+    ) -> Self {
+        Self {
+            inner: SizeCacher::new(inner),
+            orientation,
+            scroll: 0,
+        }
+    }
+
+    #[inline]
+    fn additional_size(&self) -> Vec2 {
+        match self.orientation {
+            Orientation::Horizontal => Vec2::new(0, 1),
+            Orientation::Vertical => Vec2::new(1, 0),
+        }
+    }
+}
+
+impl<T> View for ScrollView<T>
+where
+    T: ScrollableView,
+{
+    fn render(
+        &self,
+        printer: &mut Printer,
+    ) {
+        printer.with_bound(
+            printer.bound().sub_size(self.additional_size()),
+            |printer| {
+                match self.orientation {
+                    Orientation::Horizontal => {
+                        self.inner.scroll_horizontal_render(self.scroll, printer);
+                    }
+                    Orientation::Vertical => {
+                        self.inner.scroll_vertical_render(self.scroll, printer);
+                    }
+                }
+            },
+        );
+
+        match self.orientation {
+            Orientation::Horizontal => {
+                let pos = printer.bound().y() + printer.bound().h();
+                printer.print_horizontal_line(pos);
+                printer.print_horizontal_block_line_at((self.scroll, pos), 4);
+            }
+            Orientation::Vertical => {
+                let pos = printer.bound().x() + printer.bound().w();
+                printer.print_vertical_line(pos);
+                printer.print_vertical_block_line_at((pos, self.scroll), 4);
+            }
+        }
+    }
+
+    fn layout(
+        &mut self,
+        mut size: Vec2,
+    ) {
+        size = size.saturating_sub(self.additional_size());
+        self.inner.layout(size);
+    }
+
+    fn desired_size(&self) -> Vec2 {
+        self.inner.desired_size() + self.additional_size()
+    }
+}
 
 pub struct EventMarker<T, E> {
     inner:   T,

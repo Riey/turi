@@ -1,8 +1,12 @@
 use crate::{
     event::EventHandler,
+    orientation::Orientation,
     printer::Printer,
     vec2::Vec2,
-    view_wrappers::EventMarker,
+    view_wrappers::{
+        EventMarker,
+        ScrollView,
+    },
 };
 
 pub trait View {
@@ -42,6 +46,17 @@ pub trait ScrollableView: View {
         pos: Vec2,
         printer: &mut Printer,
     );
+
+    #[inline(always)]
+    fn scrollbar(
+        self,
+        orientation: Orientation,
+    ) -> ScrollView<Self>
+    where
+        Self: Sized,
+    {
+        ScrollView::new(self, orientation)
+    }
 }
 
 pub trait ViewProxy {
