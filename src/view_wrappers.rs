@@ -162,12 +162,12 @@ where
             Orientation::Horizontal => {
                 let pos = printer.bound().y() + printer.bound().h();
                 printer.print_horizontal_line(pos);
-                printer.print_horizontal_block_line_at((self.scroll, pos), 4);
+                printer.print_horizontal_block_line_at((self.scroll, pos), 1);
             }
             Orientation::Vertical => {
                 let pos = printer.bound().x() + printer.bound().w();
                 printer.print_vertical_line(pos);
-                printer.print_vertical_block_line_at((pos, self.scroll), 4);
+                printer.print_vertical_block_line_at((pos, self.scroll), 1);
             }
         }
     }
