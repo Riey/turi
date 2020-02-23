@@ -2,6 +2,7 @@ use crate::{
     event::EventHandler,
     printer::Printer,
     vec2::Vec2,
+    view_wrappers::EventMarker,
 };
 
 pub trait View {
@@ -14,6 +15,12 @@ pub trait View {
         size: Vec2,
     );
     fn desired_size(&self) -> Vec2;
+
+    /// Mark event type for type inference
+    #[inline(always)]
+    fn mark<E>(self) -> EventMarker<Self, E> where Self: Sized {
+        EventMarker::new(self)
+    }
 }
 
 pub trait ViewProxy {

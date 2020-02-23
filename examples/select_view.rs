@@ -16,6 +16,7 @@ use turi::{
         SelectView,
         SelectViewMessage,
     },
+    view::View,
 };
 
 fn main() {
@@ -37,7 +38,7 @@ fn main() {
     let mut state = ();
 
     let mut view = SelectView::with_items(vec![("123".into(), 123), ("456".into(), 456)])
-        .map_e::<Event, _>(|_, _, e| e)
+        .mark::<Event>()
         .map(|view, _state, msg| {
             match msg {
                 SelectViewMessage::Select => {

@@ -1,6 +1,3 @@
-#[macro_use]
-pub mod macros;
-
 pub mod backend;
 pub mod converters;
 pub mod event;
