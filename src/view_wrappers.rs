@@ -6,6 +6,7 @@ use crate::{
     orientation::Orientation,
     printer::Printer,
     rect::Rect,
+    state::RedrawState,
     vec2::Vec2,
     view::{
         ScrollableView,
@@ -21,7 +22,6 @@ use std::{
         DerefMut,
     },
 };
-use crate::state::RedrawState;
 
 macro_rules! impl_deref_for_inner {
     ($ident:ident<$inner:ident $(,$gen:ident)*>) => {
@@ -100,6 +100,7 @@ pub struct ScrollView<T> {
     inner:       SizeCacher<T>,
     orientation: Orientation,
     scroll:      u16,
+    prev_bound:  Cell<Rect>,
 }
 
 impl<T> ScrollView<T> {
@@ -111,6 +112,7 @@ impl<T> ScrollView<T> {
             inner: SizeCacher::new(inner),
             orientation,
             scroll: 0,
+            prev_bound: Cell::new(Rect::new((0, 0), (0, 0))),
         }
     }
 
@@ -144,6 +146,8 @@ where
         &self,
         printer: &mut Printer,
     ) {
+        self.prev_bound.set(printer.bound());
+
         printer.with_bound(
             printer.bound().sub_size(self.additional_size()),
             |printer| {
@@ -200,7 +204,15 @@ where
 
         match self.orientation {
             Orientation::Vertical => {
-                if event.try_up() {
+                if let Some(pos) = event.try_click() {
+                    let prev_bound = self.prev_bound.get();
+                    let pos = pos - prev_bound.start();
+                    if pos.x + 1 == prev_bound.x() + prev_bound.w() {
+                        self.scroll = pos.y;
+                        state.set_need_redraw(true);
+                        return None;
+                    }
+                } else if event.try_up() {
                     self.down();
                     state.set_need_redraw(true);
                     return None;
@@ -211,7 +223,15 @@ where
                 }
             }
             Orientation::Horizontal => {
-                if event.try_left() {
+                if let Some(pos) = event.try_click() {
+                    let prev_bound = self.prev_bound.get();
+                    let pos = pos - prev_bound.start();
+                    if pos.y + 1 == prev_bound.y() + prev_bound.h() {
+                        self.scroll = pos.x;
+                        state.set_need_redraw(true);
+                        return None;
+                    }
+                } else if event.try_left() {
                     self.down();
                     state.set_need_redraw(true);
                     return None;
