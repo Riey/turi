@@ -1,5 +1,8 @@
 use crate::{
-    event::EventHandler,
+    event::{
+        EventHandler,
+        EventLike,
+    },
     orientation::Orientation,
     printer::Printer,
     rect::Rect,
@@ -18,7 +21,6 @@ use std::{
         DerefMut,
     },
 };
-use crate::event::EventLike;
 
 macro_rules! impl_deref_for_inner {
     ($ident:ident<$inner:ident $(,$gen:ident)*>) => {
@@ -40,10 +42,58 @@ macro_rules! impl_deref_for_inner {
     };
 }
 
+impl_deref_for_inner!(ConsumeEvent<T, M>);
 impl_deref_for_inner!(ScrollView<T>);
 impl_deref_for_inner!(EventMarker<T, E>);
 impl_deref_for_inner!(SizeCacher<T>);
 impl_deref_for_inner!(BoundChecker<T>);
+
+pub struct ConsumeEvent<T, M> {
+    inner: T,
+    msg:   M,
+}
+
+impl<T, M> ConsumeEvent<T, M> {
+    pub fn new(
+        inner: T,
+        msg: M,
+    ) -> Self {
+        Self { inner, msg }
+    }
+}
+
+impl<T, M> ViewProxy for ConsumeEvent<T, M>
+where
+    T: View,
+{
+    type Inner = T;
+
+    #[inline(always)]
+    fn get_inner(&self) -> &Self::Inner {
+        &self.inner
+    }
+
+    #[inline(always)]
+    fn get_inner_mut(&mut self) -> &mut Self::Inner {
+        &mut self.inner
+    }
+}
+
+impl<S, E, T, M> EventHandler<S, E> for ConsumeEvent<T, M>
+where
+    M: Clone,
+{
+    type Message = M;
+
+    #[inline(always)]
+    fn on_event(
+        &mut self,
+        _state: &mut S,
+        _event: E,
+    ) -> Option<Self::Message> {
+        Some(self.msg.clone())
+    }
+}
 
 pub struct ScrollView<T> {
     inner:       SizeCacher<T>,
@@ -70,7 +120,7 @@ impl<T> ScrollView<T> {
 
     #[inline]
     fn up(&mut self) {
-        self.scroll = (self.scroll +1).min(match self.orientation {
+        self.scroll = (self.scroll + 1).min(match self.orientation {
             Orientation::Vertical => self.inner.prev_size.y,
             Orientation::Horizontal => self.inner.prev_size.x,
         });
@@ -134,10 +184,17 @@ where
     }
 }
 
-impl<S, E: EventLike, T> EventHandler<S, E> for ScrollView<T> where T: EventHandler<S, E> {
+impl<S, E: EventLike, T> EventHandler<S, E> for ScrollView<T>
+where
+    T: EventHandler<S, E>,
+{
     type Message = T::Message;
 
-    fn on_event(&mut self, state: &mut S, event: E) -> Option<Self::Message> {
+    fn on_event(
+        &mut self,
+        state: &mut S,
+        event: E,
+    ) -> Option<Self::Message> {
         // TODO: check click, focus
 
         match self.orientation {

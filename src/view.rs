@@ -4,6 +4,7 @@ use crate::{
     printer::Printer,
     vec2::Vec2,
     view_wrappers::{
+        ConsumeEvent,
         EventMarker,
         ScrollView,
     },
@@ -27,6 +28,17 @@ pub trait View {
         Self: Sized,
     {
         EventMarker::new(self)
+    }
+
+    #[inline(always)]
+    fn consume_event<M>(
+        self,
+        msg: M,
+    ) -> ConsumeEvent<Self, M>
+    where
+        Self: Sized,
+    {
+        ConsumeEvent::new(self, msg)
     }
 }
 
@@ -111,6 +123,39 @@ where
     #[inline(always)]
     fn desired_size(&self) -> Vec2 {
         self.proxy_desired_size()
+    }
+}
+
+impl<V, P> ScrollableView for P
+where
+    P: ViewProxy<Inner = V>,
+    V: ScrollableView,
+{
+    #[inline(always)]
+    fn scroll_vertical_render(
+        &self,
+        pos: u16,
+        printer: &mut Printer,
+    ) {
+        self.get_inner().scroll_vertical_render(pos, printer);
+    }
+
+    #[inline(always)]
+    fn scroll_horizontal_render(
+        &self,
+        pos: u16,
+        printer: &mut Printer,
+    ) {
+        self.get_inner().scroll_horizontal_render(pos, printer);
+    }
+
+    #[inline(always)]
+    fn scroll_both_render(
+        &self,
+        pos: Vec2,
+        printer: &mut Printer,
+    ) {
+        self.get_inner().scroll_both_render(pos, printer);
     }
 }
 
