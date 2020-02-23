@@ -21,6 +21,7 @@ use std::{
         DerefMut,
     },
 };
+use crate::state::RedrawState;
 
 macro_rules! impl_deref_for_inner {
     ($ident:ident<$inner:ident $(,$gen:ident)*>) => {
@@ -184,7 +185,7 @@ where
     }
 }
 
-impl<S, E: EventLike, T> EventHandler<S, E> for ScrollView<T>
+impl<S: RedrawState, E: EventLike, T> EventHandler<S, E> for ScrollView<T>
 where
     T: EventHandler<S, E>,
 {
@@ -201,18 +202,22 @@ where
             Orientation::Vertical => {
                 if event.try_up() {
                     self.down();
+                    state.set_need_redraw(true);
                     return None;
                 } else if event.try_down() {
                     self.up();
+                    state.set_need_redraw(true);
                     return None;
                 }
             }
             Orientation::Horizontal => {
                 if event.try_left() {
                     self.down();
+                    state.set_need_redraw(true);
                     return None;
                 } else if event.try_right() {
                     self.up();
+                    state.set_need_redraw(true);
                     return None;
                 }
             }

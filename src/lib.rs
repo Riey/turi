@@ -2,6 +2,7 @@ pub mod backend;
 pub mod converters;
 pub mod event;
 pub mod executor;
+pub mod state;
 pub mod orientation;
 pub mod printer;
 pub mod rect;

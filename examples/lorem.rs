@@ -2,6 +2,7 @@ use crossterm::event::{
     Event,
     KeyCode,
     KeyEvent,
+    KeyModifiers,
 };
 use simplelog::*;
 use std::io::BufWriter;
@@ -12,11 +13,12 @@ use turi::{
     },
     event::EventHandler,
     executor,
-    view::View,
-    views::{
-        SelectView,
-        SelectViewMessage,
+    orientation::Orientation,
+    view::{
+        ScrollableView,
+        View,
     },
+    views::ParagraphView,
 };
 
 fn main() {
@@ -37,25 +39,18 @@ fn main() {
 
     let mut state = false;
 
-    let mut view = SelectView::with_items(vec![("123".into(), 123), ("456".into(), 456)])
-        .mark::<Event>()
-        .map(|view, _state, msg| {
-            match msg {
-                SelectViewMessage::Select => {
-                    log::info!("Selected: {}", view.selected_val());
-                    true
-                }
-                msg => {
-                    log::info!("Other event: {:?}", msg);
-                    false
-                }
-            }
-        })
-        .or_else(|_view, _state, event: Event| {
+    let mut view = ParagraphView::new();
+
+    view.append(include_str!("lorem.txt"));
+
+    let mut view = view
+        .scrollbar(Orientation::Horizontal)
+        .consume_event(false)
+        .or_else_first(|_view, _state, event: Event| {
             match event {
                 Event::Key(KeyEvent {
-                    code: KeyCode::Char('q'),
-                    ..
+                    code: KeyCode::Char('c'),
+                    modifiers: KeyModifiers::CONTROL,
                 }) => Some(true),
                 _ => None,
             }
