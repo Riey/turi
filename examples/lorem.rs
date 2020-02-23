@@ -32,7 +32,7 @@ fn main() {
 
     let out = std::io::stdout();
     let out = out.lock();
-    let mut out = BufWriter::with_capacity(1024 * 1024, out);
+    let mut out = BufWriter::with_capacity(1024 * 1024 * 10, out);
 
     let backend = CrosstermBackend::new(&mut out, crossterm::terminal::size().unwrap().into());
     let mut guard = CrosstermBackendGuard::new(backend);
@@ -44,8 +44,8 @@ fn main() {
     view.append(include_str!("lorem.txt"));
 
     let mut view = view
-        .scrollbar(Orientation::Horizontal)
         .consume_event(false)
+        .scrollbar(Orientation::Horizontal)
         .or_else_first(|_view, _state, event: Event| {
             match event {
                 Event::Key(KeyEvent {
