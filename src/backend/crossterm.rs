@@ -192,6 +192,20 @@ impl EventLike for Event {
         }
     }
 
+    fn try_left(&self) -> bool {
+        match self {
+            Event::Key(ke) if ke.code == KeyCode::Left => true,
+            _ => false,
+        }
+    }
+
+    fn try_right(&self) -> bool {
+        match self {
+            Event::Key(ke) if ke.code == KeyCode::Right => true,
+            _ => false,
+        }
+    }
+
     fn try_backspace(&self) -> bool {
         match self {
             Event::Key(ke) if ke.code == KeyCode::Backspace => true,

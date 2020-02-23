@@ -18,6 +18,7 @@ use std::{
         DerefMut,
     },
 };
+use crate::event::EventLike;
 
 macro_rules! impl_deref_for_inner {
     ($ident:ident<$inner:ident $(,$gen:ident)*>) => {
@@ -60,6 +61,19 @@ impl<T> ScrollView<T> {
             orientation,
             scroll: 0,
         }
+    }
+
+    #[inline]
+    fn down(&mut self) {
+        self.scroll = self.scroll.saturating_sub(1);
+    }
+
+    #[inline]
+    fn up(&mut self) {
+        self.scroll = (self.scroll +1).min(match self.orientation {
+            Orientation::Vertical => self.inner.prev_size.y,
+            Orientation::Horizontal => self.inner.prev_size.x,
+        });
     }
 
     #[inline]
@@ -117,6 +131,37 @@ where
 
     fn desired_size(&self) -> Vec2 {
         self.inner.desired_size() + self.additional_size()
+    }
+}
+
+impl<S, E: EventLike, T> EventHandler<S, E> for ScrollView<T> where T: EventHandler<S, E> {
+    type Message = T::Message;
+
+    fn on_event(&mut self, state: &mut S, event: E) -> Option<Self::Message> {
+        // TODO: check click, focus
+
+        match self.orientation {
+            Orientation::Vertical => {
+                if event.try_up() {
+                    self.down();
+                    return None;
+                } else if event.try_down() {
+                    self.up();
+                    return None;
+                }
+            }
+            Orientation::Horizontal => {
+                if event.try_left() {
+                    self.down();
+                    return None;
+                } else if event.try_right() {
+                    self.up();
+                    return None;
+                }
+            }
+        }
+
+        self.inner.on_event(state, event)
     }
 }
 

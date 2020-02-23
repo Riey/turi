@@ -17,6 +17,8 @@ pub trait EventLike {
     fn try_enter(&self) -> bool;
     fn try_up(&self) -> bool;
     fn try_down(&self) -> bool;
+    fn try_left(&self) -> bool;
+    fn try_right(&self) -> bool;
     fn try_backspace(&self) -> bool;
     fn try_tab(&self) -> bool;
 }
@@ -57,6 +59,16 @@ impl EventLike for NoneEvent {
 
     #[inline(always)]
     fn try_down(&self) -> bool {
+        false
+    }
+
+    #[inline(always)]
+    fn try_left(&self) -> bool {
+        false
+    }
+
+    #[inline(always)]
+    fn try_right(&self) -> bool {
         false
     }
 
