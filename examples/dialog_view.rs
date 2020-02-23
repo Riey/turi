@@ -2,6 +2,7 @@ use crossterm::event::{
     Event,
     KeyCode,
     KeyEvent,
+    KeyModifiers,
 };
 use simplelog::*;
 use std::io::BufWriter;
@@ -14,8 +15,11 @@ use turi::{
     executor,
     view::View,
     views::{
-        SelectView,
-        SelectViewMessage,
+        ButtonDecoration,
+        ButtonView,
+        DialogView,
+        EditView,
+        EditViewMessage,
     },
 };
 
@@ -35,27 +39,38 @@ fn main() {
     let backend = CrosstermBackend::new(&mut out, crossterm::terminal::size().unwrap().into());
     let mut guard = CrosstermBackendGuard::new(backend);
 
-    let mut state = ();
+    let mut state = 0;
 
-    let mut view = SelectView::with_items(vec![("123".into(), 123), ("456".into(), 456)])
-        .mark::<Event>()
-        .map(|view, _state, msg| {
-            match msg {
-                SelectViewMessage::Select => {
-                    log::info!("Selected: {}", view.selected_val());
-                    true
-                }
-                msg => {
-                    log::info!("Other event: {:?}", msg);
-                    false
-                }
+    let mut dialog = DialogView::new(EditView::new().mark::<Event>().map(|v, _s, m| {
+        match m {
+            EditViewMessage::Edit => {
+                log::trace!("edit: {}", v.text());
+                false
             }
-        })
-        .or_else(|_view, _state, event: Event| {
+            EditViewMessage::Submit => {
+                log::trace!("submit: {}", v.text());
+                true
+            }
+        }
+    }));
+
+    dialog.set_title("TITLE".into());
+    dialog.add_button(
+        ButtonView::new("Click".into(), ButtonDecoration::Angle),
+        |s| {
+            *s += 1;
+            log::trace!("btn click count: {}", s);
+            false
+        },
+    );
+
+    let mut view = dialog
+        .mark::<Event>()
+        .or_else_first(|_view, _state, event: Event| {
             match event {
                 Event::Key(KeyEvent {
-                    code: KeyCode::Char('q'),
-                    ..
+                    code: KeyCode::Char('c'),
+                    modifiers: KeyModifiers::CONTROL,
                 }) => Some(true),
                 _ => None,
             }

@@ -18,7 +18,10 @@ pub trait View {
 
     /// Mark event type for type inference
     #[inline(always)]
-    fn mark<E>(self) -> EventMarker<Self, E> where Self: Sized {
+    fn mark<E>(self) -> EventMarker<Self, E>
+    where
+        Self: Sized,
+    {
         EventMarker::new(self)
     }
 }

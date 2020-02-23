@@ -62,7 +62,9 @@ impl<S, E: EventLike> EventHandler<S, E> for EditView {
         _: &mut S,
         e: E,
     ) -> Option<Self::Message> {
-        if let Some(ch) = e.try_char() {
+        if e.try_enter() {
+            Some(EditViewMessage::Submit)
+        } else if let Some(ch) = e.try_char() {
             self.text_mut().push(ch);
             Some(EditViewMessage::Edit)
         } else if e.try_backspace() {

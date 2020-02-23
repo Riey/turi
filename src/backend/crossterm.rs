@@ -12,6 +12,7 @@ use crossterm::{
         Event,
         KeyCode,
         KeyEvent,
+        KeyModifiers,
         MouseEvent,
     },
     execute,
@@ -154,7 +155,17 @@ impl EventLike for Event {
         match self {
             Event::Key(KeyEvent {
                 code: KeyCode::Char(ch),
-                ..
+                modifiers,
+            }) if *modifiers == KeyModifiers::empty() => Some(*ch),
+            _ => None,
+        }
+    }
+
+    fn try_ctrl_char(&self) -> Option<char> {
+        match self {
+            Event::Key(KeyEvent {
+                code: KeyCode::Char(ch),
+                modifiers: KeyModifiers::CONTROL,
             }) => Some(*ch),
             _ => None,
         }

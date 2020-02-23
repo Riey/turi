@@ -13,6 +13,7 @@ pub trait EventLike {
     fn try_click(&self) -> Option<Vec2>;
     fn try_mouse(&self) -> Option<Vec2>;
     fn try_char(&self) -> Option<char>;
+    fn try_ctrl_char(&self) -> Option<char>;
     fn try_enter(&self) -> bool;
     fn try_up(&self) -> bool;
     fn try_down(&self) -> bool;
@@ -36,6 +37,11 @@ impl EventLike for NoneEvent {
 
     #[inline(always)]
     fn try_char(&self) -> Option<char> {
+        None
+    }
+
+    #[inline(always)]
+    fn try_ctrl_char(&self) -> Option<char> {
         None
     }
 

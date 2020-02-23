@@ -8,8 +8,14 @@ use crate::{
         ViewProxy,
     },
 };
-use std::{marker::PhantomData, cell::Cell};
-use std::ops::{Deref, DerefMut};
+use std::{
+    cell::Cell,
+    marker::PhantomData,
+    ops::{
+        Deref,
+        DerefMut,
+    },
+};
 
 macro_rules! impl_deref_for_inner {
     ($ident:ident<$inner:ident $(,$gen:ident)*>) => {
@@ -36,7 +42,7 @@ impl_deref_for_inner!(SizeCacher<T>);
 impl_deref_for_inner!(BoundChecker<T>);
 
 pub struct EventMarker<T, E> {
-    inner: T,
+    inner:   T,
     _marker: PhantomData<E>,
 }
 
@@ -49,22 +55,37 @@ impl<T, E> EventMarker<T, E> {
     }
 }
 
-impl<T, E> ViewProxy for EventMarker<T, E> where T: View {
+impl<T, E> ViewProxy for EventMarker<T, E>
+where
+    T: View,
+{
     type Inner = T;
+
     #[inline(always)]
-    fn get_inner(&self) -> &Self::Inner { &self.inner }
+    fn get_inner(&self) -> &Self::Inner {
+        &self.inner
+    }
+
     #[inline(always)]
-    fn get_inner_mut(&mut self) -> &mut Self::Inner { &mut self.inner }
+    fn get_inner_mut(&mut self) -> &mut Self::Inner {
+        &mut self.inner
+    }
 }
 
-impl<S, T, E> EventHandler<S, E> for EventMarker<T, E> where T: EventHandler<S, E> {
+impl<S, T, E> EventHandler<S, E> for EventMarker<T, E>
+where
+    T: EventHandler<S, E>,
+{
     type Message = T::Message;
+
     #[inline(always)]
     fn on_event(
         &mut self,
         state: &mut S,
         event: E,
-    ) -> Option<Self::Message> { self.inner.on_event(state, event) }
+    ) -> Option<Self::Message> {
+        self.inner.on_event(state, event)
+    }
 }
 
 pub struct SizeCacher<T> {
