@@ -92,11 +92,34 @@ impl<'a> Printer<'a> {
         &mut self,
         pos: u16,
     ) {
+        self.print_vertical_line_at((pos, 0), self.bound.h() as usize);
+    }
+
+    pub fn print_vertical_line_at(
+        &mut self,
+        start: impl Into<Vec2>,
+        size: usize,
+    ) {
         const VLINE_CHAR: &str = "│";
+        let start = start.into();
 
         // TODO: check bound
-        for i in 0..self.bound.h() {
-            self.raw_print((pos, i), VLINE_CHAR);
+        for i in 0..size as u16 {
+            self.raw_print(start.add_y(i), VLINE_CHAR);
+        }
+    }
+
+    pub fn print_vertical_block_line_at(
+        &mut self,
+        start: impl Into<Vec2>,
+        size: usize,
+    ) {
+        const BLOCK_CHAR: &str = "█";
+        let start = start.into();
+
+        // TODO: check bound
+        for i in 0..size as u16 {
+            self.raw_print(start.add_y(i), BLOCK_CHAR);
         }
     }
 
@@ -104,14 +127,25 @@ impl<'a> Printer<'a> {
         &mut self,
         pos: u16,
     ) {
-        let size = self.bound.w();
-        let pos = self.bound.y() + pos;
+        self.print_horizontal_line_at((0, pos), self.bound().w() as usize);
+    }
 
+    pub fn print_horizontal_line_at(
+        &mut self,
+        start: impl Into<Vec2>,
+        size: usize,
+    ) {
         static BAR_STRING: &str = "────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────";
-        let bar = &BAR_STRING[..size as usize * "─".len()];
+        self.print(start, &BAR_STRING[..size * "─".len()]);
+    }
 
-        // TODO: check bound
-        self.backend.print_at((self.bound.x(), pos).into(), bar);
+    pub fn print_horizontal_block_line_at(
+        &mut self,
+        start: impl Into<Vec2>,
+        size: usize,
+    ) {
+        static BLOCK_STRING: &str = "██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████";
+        self.print(start, &BLOCK_STRING[..size * "█".len()]);
     }
 
     pub fn print_rect(&mut self) {
