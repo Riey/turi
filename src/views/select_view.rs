@@ -114,7 +114,7 @@ impl<S, E: EventLike, T> EventHandler<S, E> for SelectView<T> {
         _: &mut S,
         e: E,
     ) -> Option<Self::Message> {
-        if e.try_click().is_some() || e.try_enter() {
+        if e.try_mouse_down().is_some() || e.try_enter() {
             Some(SelectViewMessage::Select)
         } else if e.try_up() {
             self.focus_up()

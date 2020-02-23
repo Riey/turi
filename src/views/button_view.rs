@@ -86,6 +86,6 @@ impl<S, E: EventLike> EventHandler<S, E> for ButtonView {
         _state: &mut S,
         e: E,
     ) -> Option<()> {
-        e.try_click().map(|_| ())
+        e.try_mouse_down().map(|_| ())
     }
 }

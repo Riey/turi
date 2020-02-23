@@ -33,6 +33,7 @@ use crate::{
     backend::Backend,
     event::EventLike,
 };
+use crossterm::event::MouseButton;
 
 pub struct CrosstermBackend<W: Write> {
     out:   W,
@@ -133,9 +134,23 @@ impl<W: Write> CrosstermBackendGuard<W> {
 }
 
 impl EventLike for Event {
-    fn try_click(&self) -> Option<Vec2> {
+    fn try_mouse_down(&self) -> Option<Vec2> {
         match self {
-            Event::Mouse(MouseEvent::Down(_btn, x, y, ..)) => Some((*x, *y).into()),
+            Event::Mouse(MouseEvent::Down(MouseButton::Left, x, y, ..)) => Some((*x, *y).into()),
+            _ => None,
+        }
+    }
+
+    fn try_mouse_up(&self) -> Option<Vec2> {
+        match self {
+            Event::Mouse(MouseEvent::Up(MouseButton::Left, x, y, ..)) => Some((*x, *y).into()),
+            _ => None,
+        }
+    }
+
+    fn try_drag(&self) -> Option<Vec2> {
+        match self {
+            Event::Mouse(MouseEvent::Drag(MouseButton::Left, x, y, ..)) => Some((*x, *y).into()),
             _ => None,
         }
     }

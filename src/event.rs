@@ -10,7 +10,9 @@ use crate::{
 };
 
 pub trait EventLike {
-    fn try_click(&self) -> Option<Vec2>;
+    fn try_mouse_down(&self) -> Option<Vec2>;
+    fn try_mouse_up(&self) -> Option<Vec2>;
+    fn try_drag(&self) -> Option<Vec2>;
     fn try_mouse(&self) -> Option<Vec2>;
     fn try_char(&self) -> Option<char>;
     fn try_ctrl_char(&self) -> Option<char>;
@@ -28,7 +30,17 @@ pub struct NoneEvent;
 
 impl EventLike for NoneEvent {
     #[inline(always)]
-    fn try_click(&self) -> Option<Vec2> {
+    fn try_mouse_down(&self) -> Option<Vec2> {
+        None
+    }
+
+    #[inline(always)]
+    fn try_mouse_up(&self) -> Option<Vec2> {
+        None
+    }
+
+    #[inline(always)]
+    fn try_drag(&self) -> Option<Vec2> {
         None
     }
 
