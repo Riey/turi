@@ -39,7 +39,6 @@ macro_rules! impl_deref_for_inner {
                 &mut self.inner
             }
         }
-
     };
 }
 
@@ -221,15 +220,38 @@ where
     ) {
         self.prev_bound.set(printer.bound());
 
+        let inner_size = self.inner.desired_size();
+
+        let pos = match self.orientation {
+            Orientation::Horizontal => {
+                match inner_size.x.checked_sub(printer.bound().w()) {
+                    Some(left) => left * self.scroll / (printer.bound().w() - 1),
+                    None => {
+                        self.inner.render(printer);
+                        return;
+                    }
+                }
+            }
+            Orientation::Vertical => {
+                match inner_size.y.checked_sub(printer.bound().h()) {
+                    Some(left) => left * self.scroll / (printer.bound().h() - 1),
+                    None => {
+                        self.inner.render(printer);
+                        return;
+                    }
+                }
+            }
+        };
+
         printer.with_bound(
             printer.bound().sub_size(self.additional_size()),
             |printer| {
                 match self.orientation {
                     Orientation::Horizontal => {
-                        self.inner.scroll_horizontal_render(self.scroll, printer);
+                        self.inner.scroll_horizontal_render(pos, printer);
                     }
                     Orientation::Vertical => {
-                        self.inner.scroll_vertical_render(self.scroll, printer);
+                        self.inner.scroll_vertical_render(pos, printer);
                     }
                 }
             },
@@ -377,10 +399,12 @@ where
 {
     type Inner = T;
 
+    #[inline(always)]
     fn get_inner(&self) -> &T {
         &self.inner
     }
 
+    #[inline(always)]
     fn get_inner_mut(&mut self) -> &mut T {
         &mut self.inner
     }
