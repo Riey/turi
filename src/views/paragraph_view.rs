@@ -98,22 +98,15 @@ fn scroll_horizontal_render_impl(
 ) {
     for (y, line) in lines[idx].iter().enumerate() {
         let mut left = pos;
-        let mut prev_idx = 0;
-        let mut iter = line.char_indices();
 
-        loop {
-            match iter.next() {
-                Some((idx, ch)) => {
-                    let width = ch.width().unwrap_or(0);
-                    if width >= left {
-                        printer.print((0, y as u16), &line[prev_idx..]);
-                        break;
-                    } else {
-                        prev_idx = idx;
-                        left -= width;
-                    }
+        for (idx, ch) in line.char_indices() {
+            let width = ch.width().unwrap_or(0);
+            match left.checked_sub(width) {
+                Some(num) => {
+                    left = num;
                 }
                 None => {
+                    printer.print((0, y as u16), &line[idx..]);
                     break;
                 }
             }
