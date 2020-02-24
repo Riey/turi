@@ -10,7 +10,7 @@ pub fn simple<S: RedrawState, E, B: Backend, V: View + EventHandler<S, E, Messag
     state: &mut S,
     backend: &mut B,
     view: &mut V,
-    mut event_source: impl FnMut(&mut B) -> E,
+    mut event_source: impl FnMut(&mut S, &mut B) -> E,
 ) {
     backend.clear();
     state.set_need_redraw(true);
@@ -23,7 +23,7 @@ pub fn simple<S: RedrawState, E, B: Backend, V: View + EventHandler<S, E, Messag
             backend.flush();
             state.set_need_redraw(false);
         }
-        let e = event_source(backend);
+        let e = event_source(state, backend);
         match view.on_event(state, e) {
             Some(exit) => {
                 if exit {

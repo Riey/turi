@@ -29,6 +29,17 @@ impl Rect {
             && p.y < (self.y() + self.h())
     }
 
+    pub fn contains_inclusive(
+        self,
+        p: impl Into<Vec2>,
+    ) -> bool {
+        let p = p.into();
+        p.x >= self.x()
+            && p.x <= (self.x() + self.w())
+            && p.y >= self.y()
+            && p.y <= (self.y() + self.h())
+    }
+
     pub fn add_start(
         self,
         add: impl Into<Vec2>,

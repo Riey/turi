@@ -8,7 +8,7 @@
             "type": "lldb",
             "request": "attach",
             "name": "Attach",
-            "program": "${workspaceFolder}/text_view"
+            "program": "${workspaceFolder}/lorem"
         }
     ]
 }

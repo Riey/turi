@@ -8,6 +8,8 @@ use ansi_term::{
     Style,
 };
 use std::mem::replace;
+use unicode_width::UnicodeWidthChar;
+
 pub struct Printer<'a> {
     bound:   Rect,
     backend: &'a mut dyn Backend,
@@ -64,8 +66,27 @@ impl<'a> Printer<'a> {
         start: impl Into<Vec2>,
         text: &str,
     ) {
-        //TODO: check bound
-        self.raw_print(start.into(), text);
+        let start = start.into();
+
+        if !self.bound.contains_inclusive(start) {
+            return;
+        }
+
+        let mut left = (self.bound.end().x - start.x) as usize;
+
+        for (pos, ch) in text.char_indices() {
+            match left.checked_sub(ch.width().unwrap_or(0)) {
+                Some(num) => {
+                    left = num;
+                }
+                None => {
+                    self.raw_print(start, &text[..pos]);
+                    return;
+                }
+            }
+        }
+
+        self.raw_print(start, text);
     }
 
     fn raw_print(
@@ -82,9 +103,8 @@ impl<'a> Printer<'a> {
         start: impl Into<Vec2>,
         text: &ANSIString,
     ) {
-        // TODO: check bound
         self.with_style(*text.style_ref(), |printer| {
-            printer.raw_print(start, text);
+            printer.print(start, text);
         });
     }
 
@@ -136,7 +156,7 @@ impl<'a> Printer<'a> {
         size: usize,
     ) {
         static BAR_STRING: &str = "────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────";
-        self.print(start, &BAR_STRING[..size * "─".len()]);
+        self.raw_print(start, &BAR_STRING[..size * "─".len()]);
     }
 
     pub fn print_horizontal_block_line_at(
@@ -145,7 +165,7 @@ impl<'a> Printer<'a> {
         size: usize,
     ) {
         static BLOCK_STRING: &str = "██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████";
-        self.print(start, &BLOCK_STRING[..size * "█".len()]);
+        self.raw_print(start, &BLOCK_STRING[..size * "█".len()]);
     }
 
     pub fn print_rect(&mut self) {
@@ -162,9 +182,9 @@ impl<'a> Printer<'a> {
         let start = self.bound.start();
         let end = self.bound.end();
 
-        self.backend.print_at(start, LEFT_TOP);
-        self.backend.print_at((end.x, start.y).into(), RIGHT_TOP);
-        self.backend.print_at((start.x, end.y).into(), LEFT_BOTTOM);
-        self.backend.print_at(end, RIGHT_BOTTOM);
+        self.raw_print(start, LEFT_TOP);
+        self.raw_print((end.x, start.y), RIGHT_TOP);
+        self.raw_print((start.x, end.y), LEFT_BOTTOM);
+        self.raw_print(end, RIGHT_BOTTOM);
     }
 }

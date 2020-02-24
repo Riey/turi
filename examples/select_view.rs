@@ -61,10 +61,13 @@ fn main() {
             }
         });
 
-    executor::simple(&mut state, guard.inner(), &mut view, |backend| {
+    executor::simple(&mut state, guard.inner(), &mut view, |state, backend| {
         loop {
             match crossterm::event::read().unwrap() {
-                Event::Resize(x, y) => backend.resize((x, y).into()),
+                Event::Resize(x, y) => {
+                    backend.resize((x, y).into());
+                    *state = true;
+                }
                 e => break e,
             }
         }

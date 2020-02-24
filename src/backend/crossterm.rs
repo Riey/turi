@@ -57,6 +57,7 @@ impl<W: Write> CrosstermBackend<W> {
         &mut self,
         size: Vec2,
     ) {
+        log::trace!("Resize to {:?}", size);
         self.size = size;
     }
 
