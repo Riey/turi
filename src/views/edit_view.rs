@@ -5,27 +5,25 @@ use crate::{
     },
     printer::Printer,
     vec2::Vec2,
-    view::View,
+    view::View, state::RedrawState,
 };
-use unicode_width::UnicodeWidthStr;
+use unicode_width::UnicodeWidthChar;
 
 pub struct EditView {
-    text: String,
+    text:  String,
+    width: usize,
 }
 
 impl EditView {
     pub fn new() -> Self {
         Self {
-            text: String::new(),
+            text:  String::new(),
+            width: 0,
         }
     }
 
     pub fn text(&self) -> &str {
         &self.text
-    }
-
-    pub fn text_mut(&mut self) -> &mut String {
-        &mut self.text
     }
 }
 
@@ -37,7 +35,7 @@ pub enum EditViewMessage {
 
 impl View for EditView {
     fn desired_size(&self) -> Vec2 {
-        Vec2::new(self.text.width() as u16, 1)
+        Vec2::new(self.width as u16, 1)
     }
 
     fn layout(
@@ -54,21 +52,25 @@ impl View for EditView {
     }
 }
 
-impl<S, E: EventLike> EventHandler<S, E> for EditView {
+impl<S: RedrawState, E: EventLike> EventHandler<S, E> for EditView {
     type Message = EditViewMessage;
 
     fn on_event(
         &mut self,
-        _: &mut S,
+        state: &mut S,
         e: E,
     ) -> Option<Self::Message> {
         if e.try_enter() {
             Some(EditViewMessage::Submit)
         } else if let Some(ch) = e.try_char() {
-            self.text_mut().push(ch);
+            self.text.push(ch);
+            self.width += ch.width().unwrap_or(0);
+            state.set_need_redraw(true);
             Some(EditViewMessage::Edit)
         } else if e.try_backspace() {
-            if self.text.pop().is_some() {
+            if let Some(ch) = self.text.pop() {
+                self.width -= ch.width().unwrap_or(0);
+                state.set_need_redraw(true);
                 Some(EditViewMessage::Edit)
             } else {
                 None
