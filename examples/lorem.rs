@@ -11,7 +11,6 @@ use turi::{
         CrosstermBackend,
         CrosstermBackendGuard,
     },
-    event::EventHandler,
     executor,
     orientation::Orientation,
     view::{
