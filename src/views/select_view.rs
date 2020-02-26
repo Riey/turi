@@ -3,6 +3,7 @@ use crate::{
     printer::Printer,
     vec2::Vec2,
     view::View,
+    state::RedrawState,
 };
 use ansi_term::{
     Color,
@@ -18,7 +19,7 @@ pub struct SelectView<S, E, T> {
     _marker:  PhantomData<(S, E)>,
 }
 
-impl<S, E, T> SelectView<S, E, T> {
+impl<S: RedrawState, E, T> SelectView<S, E, T> {
     pub fn new() -> Self {
         Self {
             btns:     Vec::new(),
@@ -45,20 +46,22 @@ impl<S, E, T> SelectView<S, E, T> {
         }
     }
 
-    pub fn focus_down(&mut self) -> Option<SelectViewMessage> {
+    pub fn focus_down(&mut self, state: &mut S) -> Option<SelectViewMessage> {
         let val = self.selected + 1;
 
         if val >= self.btns.len() {
             None
         } else {
             self.selected = val;
+            state.set_need_redraw(true);
             Some(SelectViewMessage::IndexChanged)
         }
     }
 
-    pub fn focus_up(&mut self) -> Option<SelectViewMessage> {
+    pub fn focus_up(&mut self, state: &mut S) -> Option<SelectViewMessage> {
         if self.selected > 0 {
             self.selected -= 1;
+            state.set_need_redraw(true);
             Some(SelectViewMessage::IndexChanged)
         } else {
             None
@@ -80,7 +83,7 @@ pub enum SelectViewMessage {
     IndexChanged,
 }
 
-impl<S, E: EventLike, T> View<S, E> for SelectView<S, E, T> {
+impl<S: RedrawState, E: EventLike, T> View<S, E> for SelectView<S, E, T> {
     type Message = SelectViewMessage;
 
     fn render(
@@ -110,15 +113,15 @@ impl<S, E: EventLike, T> View<S, E> for SelectView<S, E, T> {
 
     fn on_event(
         &mut self,
-        _: &mut S,
+        state: &mut S,
         e: E,
     ) -> Option<Self::Message> {
         if e.try_mouse_down().is_some() || e.try_enter() {
             Some(SelectViewMessage::Select)
         } else if e.try_up() {
-            self.focus_up()
+            self.focus_up(state)
         } else if e.try_down() {
-            self.focus_down()
+            self.focus_down(state)
         } else {
             None
         }
