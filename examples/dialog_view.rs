@@ -11,7 +11,6 @@ use turi::{
         CrosstermBackend,
         CrosstermBackendGuard,
     },
-    event::EventHandler,
     executor,
     view::View,
     views::{
@@ -21,7 +20,31 @@ use turi::{
         EditView,
         EditViewMessage,
     },
+    state::RedrawState,
 };
+
+#[derive(Default, Clone, Copy)]
+struct MyState {
+    btn_cnt: u32,
+    need_redraw: bool,
+}
+
+impl MyState {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+
+impl RedrawState for MyState {
+    #[inline]
+    fn set_need_redraw(
+        &mut self,
+        need_redraw: bool,
+    ) { self.need_redraw = need_redraw; }
+    #[inline]
+    fn is_need_redraw(&self) -> bool { self.need_redraw }
+    
+}
 
 fn main() {
     WriteLogger::init(
@@ -39,9 +62,9 @@ fn main() {
     let backend = CrosstermBackend::new(&mut out, crossterm::terminal::size().unwrap().into());
     let mut guard = CrosstermBackendGuard::new(backend);
 
-    let mut state = 0;
+    let mut state = MyState::new();
 
-    let mut dialog = DialogView::new(EditView::new().mark::<Event>().map(|v, _s, m| {
+    let mut dialog = DialogView::new(EditView::new().map(|v, _s, m| {
         match m {
             EditViewMessage::Edit => {
                 log::trace!("edit: {}", v.text());
@@ -57,15 +80,14 @@ fn main() {
     dialog.set_title("TITLE".into());
     dialog.add_button(
         ButtonView::new("Click".into(), ButtonDecoration::Angle),
-        |s| {
-            *s += 1;
-            log::trace!("btn click count: {}", s);
+        |s: &mut MyState| {
+            s.btn_cnt += 1;
+            log::trace!("btn click count: {}", s.btn_cnt);
             false
         },
     );
 
     let mut view = dialog
-        .mark::<Event>()
         .or_else_first(|_view, _state, event: Event| {
             match event {
                 Event::Key(KeyEvent {
@@ -81,7 +103,7 @@ fn main() {
             match crossterm::event::read().unwrap() {
                 Event::Resize(x, y) => {
                     backend.resize((x, y).into());
-                    *state = true;
+                    state.set_need_redraw(true);
                 }
                 e => break e,
             }
