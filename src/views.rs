@@ -2,7 +2,6 @@ mod button_view;
 #[cfg(windows)]
 mod dialog_view;
 mod edit_view;
-#[cfg(windows)]
 mod linear_view;
 mod paragraph_view;
 mod select_view;

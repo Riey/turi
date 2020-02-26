@@ -1,25 +1,23 @@
 use crate::{
     event::{
-        EventHandler,
         EventLike,
     },
     orientation::Orientation,
     printer::Printer,
     vec2::Vec2,
     view::{
-        EventHandledView,
         View,
     },
     view_wrappers::BoundChecker,
 };
 
-pub struct LinearView<'a, S, E, M> {
-    children:    Vec<BoundChecker<Box<dyn EventHandledView<S, E, Message = M> + 'a>>>,
+pub struct LinearView<S, E, M> {
+    children:    Vec<BoundChecker<Box<dyn View<S, E, Message = M> + 'static>>>,
     orientation: Orientation,
     focus:       Option<usize>,
 }
 
-impl<'a, S, E, M> LinearView<'a, S, E, M> {
+impl<S, E, M> LinearView<S, E, M> {
     pub fn new() -> Self {
         Self {
             children:    Vec::with_capacity(10),
@@ -45,13 +43,15 @@ impl<'a, S, E, M> LinearView<'a, S, E, M> {
 
     pub fn add_child(
         &mut self,
-        v: impl EventHandledView<S, E, Message = M> + 'a,
+        v: impl View<S, E, Message = M> + 'static,
     ) {
         self.children.push(BoundChecker::new(Box::new(v)));
     }
 }
 
-impl<'a, S, E, M> View for LinearView<'a, S, E, M> {
+impl<S, E: EventLike, M> View<S, E> for LinearView<S, E, M> {
+    type Message = M;
+
     fn render(
         &self,
         printer: &mut Printer,
@@ -61,7 +61,7 @@ impl<'a, S, E, M> View for LinearView<'a, S, E, M> {
                 let mut x = 0;
                 for child in self.children.iter() {
                     printer.with_bound(printer.bound().add_start((x, 0)), |printer| {
-                        child.handled_render(printer)
+                        child.render(printer)
                     });
                     x += child.prev_size().x;
                 }
@@ -70,7 +70,7 @@ impl<'a, S, E, M> View for LinearView<'a, S, E, M> {
                 let mut y = 0;
                 for child in self.children.iter() {
                     printer.with_bound(printer.bound().add_start((0, y)), |printer| {
-                        child.handled_render(printer);
+                        child.render(printer);
                     });
                     y += child.prev_size().y;
                 }
@@ -117,10 +117,6 @@ impl<'a, S, E, M> View for LinearView<'a, S, E, M> {
             }
         }
     }
-}
-
-impl<'a, S, E: EventLike, M> EventHandler<S, E> for LinearView<'a, S, E, M> {
-    type Message = M;
 
     fn on_event(
         &mut self,
