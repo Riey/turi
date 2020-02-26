@@ -54,3 +54,36 @@ pub trait ScrollableView<S, E>: View<S, E> {
     */
 }
 
+impl<S, E, M> View<S, E> for Box<dyn View<S, E, Message = M>> {
+    type Message = M;
+
+    #[inline]
+    fn desired_size(&self) -> Vec2 {
+        (**self).desired_size()
+    }
+
+    #[inline]
+    fn layout(
+        &mut self,
+        size: Vec2,
+    ) {
+        (**self).layout(size)
+    }
+
+    #[inline]
+    fn render(
+        &self,
+        printer: &mut Printer,
+    ) {
+        (**self).render(printer);
+    }
+
+    #[inline]
+    fn on_event(
+        &mut self,
+        state: &mut S,
+        event: E,
+    ) -> Option<M> {
+        (**self).on_event(state, event)
+    }
+}
