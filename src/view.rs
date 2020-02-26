@@ -1,6 +1,15 @@
 use crate::{
+    converters::{
+        Map,
+        MapE,
+        MapOptE,
+        OrElse,
+        OrElseFirst,
+    },
+    orientation::Orientation,
     printer::Printer,
     vec2::Vec2,
+    view_wrappers::ScrollView,
 };
 
 pub trait View<S, E> {
@@ -21,6 +30,66 @@ pub trait View<S, E> {
         state: &mut S,
         event: E,
     ) -> Option<Self::Message>;
+
+    #[inline]
+    fn map<U, F>(
+        self,
+        f: F,
+    ) -> Map<Self, U, F>
+    where
+        Self: Sized,
+        F: FnMut(&mut Self, &mut S, Self::Message) -> U,
+    {
+        Map::new(self, f)
+    }
+
+    #[inline]
+    fn map_e<NE, F>(
+        self,
+        f: F,
+    ) -> MapE<Self, NE, F>
+    where
+        Self: Sized,
+        F: FnMut(&mut Self, &mut S, NE) -> E,
+    {
+        MapE::new(self, f)
+    }
+
+    #[inline]
+    fn map_opt_e<NE, F>(
+        self,
+        f: F,
+    ) -> MapOptE<Self, NE, F>
+    where
+        Self: Sized,
+        F: FnMut(&mut Self, &mut S, NE) -> Option<E>,
+    {
+        MapOptE::new(self, f)
+    }
+
+    #[inline]
+    fn or_else<F>(
+        self,
+        f: F,
+    ) -> OrElse<Self, F>
+    where
+        Self: Sized,
+        F: FnMut(&mut H, &mut S, E) -> Option<H::Message>,
+    {
+        OrElse::new(self, f)
+    }
+
+    #[inline]
+    fn or_else_first<F>(
+        self,
+        f: F,
+    ) -> OrElseFirst<Self, F>
+    where
+        Self: Sized,
+        F: FnMut(&mut H, &mut S, E) -> Option<H::Message>,
+    {
+        OrElseFirst::new(self, f)
+    }
 }
 
 pub trait ScrollableView<S, E>: View<S, E> {
@@ -40,7 +109,6 @@ pub trait ScrollableView<S, E>: View<S, E> {
         printer: &mut Printer,
     );
 
-    /*
     #[inline(always)]
     fn scrollbar(
         self,
@@ -51,7 +119,6 @@ pub trait ScrollableView<S, E>: View<S, E> {
     {
         ScrollView::new(self, orientation)
     }
-    */
 }
 
 impl<S, E, M> View<S, E> for Box<dyn View<S, E, Message = M>> {

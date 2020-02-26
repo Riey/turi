@@ -348,6 +348,11 @@ impl<T> BoundChecker<T> {
     }
 
     #[inline]
+    pub fn inner(&mut self) -> &mut T {
+        &mut self.inner
+    }
+
+    #[inline]
     pub fn prev_size(&self) -> Vec2 {
         self.bound.get().size()
     }
