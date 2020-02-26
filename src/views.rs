@@ -1,5 +1,4 @@
 mod button_view;
-#[cfg(windows)]
 mod dialog_view;
 mod edit_view;
 mod linear_view;
@@ -7,7 +6,6 @@ mod paragraph_view;
 mod select_view;
 mod text_view;
 
-#[cfg(windows)]
 pub use self::{
     button_view::{
         ButtonDecoration,

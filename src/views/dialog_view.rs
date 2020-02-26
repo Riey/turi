@@ -1,13 +1,11 @@
 use crate::{
     event::{
-        EventHandler,
         EventLike,
     },
     printer::Printer,
     vec2::Vec2,
     view::{
         View,
-        ViewProxy,
     },
     view_wrappers::BoundChecker,
     views::{
@@ -16,15 +14,16 @@ use crate::{
     },
 };
 
-pub struct DialogView<'a, S, E, M, C: 'a> {
+pub struct DialogView<S, E, M, C> {
     title:         String,
     content:       BoundChecker<C>,
-    buttons:       BoundChecker<LinearView<'a, S, E, M>>,
+    buttons:       BoundChecker<LinearView<S, E, M>>,
     content_focus: bool,
 }
 
-impl<'a, S, E, M, C> DialogView<'a, S, E, M, C>
+impl<S, E, M, C> DialogView<S, E, M, C>
 where
+    S: 'static,
     E: EventLike + 'static,
     M: 'static,
 {
@@ -46,12 +45,11 @@ where
 
     pub fn add_button(
         &mut self,
-        btn: ButtonView,
-        mut mapper: impl FnMut(&mut S) -> M + 'a,
+        btn: ButtonView<S, E>,
+        mut mapper: impl FnMut(&mut S) -> M + 'static,
     ) {
-        self.buttons.get_inner_mut().add_child(
-            btn.map_e::<E, _>(|_, _, e| e)
-                .map(move |_, state, _| mapper(state)),
+        self.buttons.inner().add_child(
+            btn.map(move |_, state, _| mapper(state)),
         );
     }
 
@@ -60,11 +58,15 @@ where
     }
 }
 
-impl<'a, S, E, M, C> View for DialogView<'a, S, E, M, C>
+impl<S, E, M, C> View<S, E> for DialogView<S, E, M, C>
 where
-    C: View,
+    S: 'static,
+    C: View<S, E, Message = M>,
+    E: EventLike + 'static,
     M: 'static,
 {
+    type Message = M;
+
     fn render(
         &self,
         printer: &mut Printer,
@@ -103,15 +105,6 @@ where
         let buttons = self.buttons.desired_size();
         Vec2::new(content.x.max(buttons.x), content.y + buttons.y) + Vec2::new(2, 2)
     }
-}
-
-impl<'a, S, E, M, C> EventHandler<S, E> for DialogView<'a, S, E, M, C>
-where
-    C: EventHandler<S, E, Message = M>,
-    E: EventLike + 'static,
-    M: 'static,
-{
-    type Message = M;
 
     fn on_event(
         &mut self,

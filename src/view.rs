@@ -74,7 +74,7 @@ pub trait View<S, E> {
     ) -> OrElse<Self, F>
     where
         Self: Sized,
-        F: FnMut(&mut H, &mut S, E) -> Option<H::Message>,
+        F: FnMut(&mut Self, &mut S, E) -> Option<Self::Message>,
     {
         OrElse::new(self, f)
     }
@@ -86,7 +86,7 @@ pub trait View<S, E> {
     ) -> OrElseFirst<Self, F>
     where
         Self: Sized,
-        F: FnMut(&mut H, &mut S, E) -> Option<H::Message>,
+        F: FnMut(&mut Self, &mut S, E) -> Option<Self::Message>,
     {
         OrElseFirst::new(self, f)
     }
