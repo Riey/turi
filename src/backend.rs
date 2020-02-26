@@ -27,17 +27,17 @@ pub trait Backend {
 }
 
 impl<'a, B: Backend> Backend for &'a mut B {
-    #[inline(always)]
+    #[inline]
     fn clear(&mut self) {
         (**self).clear();
     }
 
-    #[inline(always)]
+    #[inline]
     fn size(&self) -> Vec2 {
         (**self).size()
     }
 
-    #[inline(always)]
+    #[inline]
     fn print_at(
         &mut self,
         pos: Vec2,
@@ -46,12 +46,12 @@ impl<'a, B: Backend> Backend for &'a mut B {
         (**self).print_at(pos, text);
     }
 
-    #[inline(always)]
+    #[inline]
     fn flush(&mut self) {
         (**self).flush();
     }
 
-    #[inline(always)]
+    #[inline]
     fn set_style(
         &mut self,
         style: Style,
@@ -59,7 +59,7 @@ impl<'a, B: Backend> Backend for &'a mut B {
         (**self).set_style(style);
     }
 
-    #[inline(always)]
+    #[inline]
     fn style(&self) -> Style {
         (**self).style()
     }
@@ -69,27 +69,27 @@ impl<'a, B: Backend> Backend for &'a mut B {
 pub struct DummyBackend;
 
 impl Backend for DummyBackend {
-    #[inline(always)]
+    #[inline]
     fn clear(&mut self) {}
 
-    #[inline(always)]
+    #[inline]
     fn size(&self) -> Vec2 {
         Vec2::new(0, 0)
     }
 
-    #[inline(always)]
+    #[inline]
     fn set_style(
         &mut self,
         _style: Style,
     ) {
     }
 
-    #[inline(always)]
+    #[inline]
     fn style(&self) -> Style {
         Style::default()
     }
 
-    #[inline(always)]
+    #[inline]
     fn print_at(
         &mut self,
         _pos: Vec2,
@@ -97,6 +97,6 @@ impl Backend for DummyBackend {
     ) {
     }
 
-    #[inline(always)]
+    #[inline]
     fn flush(&mut self) {}
 }

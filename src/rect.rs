@@ -93,37 +93,37 @@ impl Rect {
         (up, down)
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn end(self) -> Vec2 {
         self.start + self.size
     }
 
-    #[inline(always)]
+    #[inline]
     pub const fn start(self) -> Vec2 {
         self.start
     }
 
-    #[inline(always)]
+    #[inline]
     pub const fn size(self) -> Vec2 {
         self.size
     }
 
-    #[inline(always)]
+    #[inline]
     pub const fn x(self) -> u16 {
         self.start.x
     }
 
-    #[inline(always)]
+    #[inline]
     pub const fn y(self) -> u16 {
         self.start.y
     }
 
-    #[inline(always)]
+    #[inline]
     pub const fn w(self) -> u16 {
         self.size.x
     }
 
-    #[inline(always)]
+    #[inline]
     pub const fn h(self) -> u16 {
         self.size.y
     }

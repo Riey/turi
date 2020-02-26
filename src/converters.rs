@@ -35,7 +35,7 @@ where
 
     impl_view_with_inner!(inner);
 
-    #[inline(always)]
+    #[inline]
     fn on_event(
         &mut self,
         state: &mut S,
@@ -75,7 +75,7 @@ where
 
     impl_view_with_inner!(inner);
 
-    #[inline(always)]
+    #[inline]
     fn on_event(
         &mut self,
         state: &mut S,
@@ -114,7 +114,7 @@ where
 
     impl_view_with_inner!(inner);
 
-    #[inline(always)]
+    #[inline]
     fn on_event(
         &mut self,
         state: &mut S,
@@ -153,7 +153,7 @@ where
 
     impl_view_with_inner!(inner);
 
-    #[inline(always)]
+    #[inline]
     fn on_event(
         &mut self,
         state: &mut S,
@@ -187,7 +187,7 @@ where
 
     impl_view_with_inner!(inner);
 
-    #[inline(always)]
+    #[inline]
     fn on_event(
         &mut self,
         state: &mut S,

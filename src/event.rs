@@ -20,67 +20,67 @@ pub trait EventLike {
 pub struct NoneEvent;
 
 impl EventLike for NoneEvent {
-    #[inline(always)]
+    #[inline]
     fn try_mouse_down(&self) -> Option<Vec2> {
         None
     }
 
-    #[inline(always)]
+    #[inline]
     fn try_mouse_up(&self) -> Option<Vec2> {
         None
     }
 
-    #[inline(always)]
+    #[inline]
     fn try_drag(&self) -> Option<Vec2> {
         None
     }
 
-    #[inline(always)]
+    #[inline]
     fn try_mouse(&self) -> Option<Vec2> {
         None
     }
 
-    #[inline(always)]
+    #[inline]
     fn try_char(&self) -> Option<char> {
         None
     }
 
-    #[inline(always)]
+    #[inline]
     fn try_ctrl_char(&self) -> Option<char> {
         None
     }
 
-    #[inline(always)]
+    #[inline]
     fn try_enter(&self) -> bool {
         false
     }
 
-    #[inline(always)]
+    #[inline]
     fn try_up(&self) -> bool {
         false
     }
 
-    #[inline(always)]
+    #[inline]
     fn try_down(&self) -> bool {
         false
     }
 
-    #[inline(always)]
+    #[inline]
     fn try_left(&self) -> bool {
         false
     }
 
-    #[inline(always)]
+    #[inline]
     fn try_right(&self) -> bool {
         false
     }
 
-    #[inline(always)]
+    #[inline]
     fn try_backspace(&self) -> bool {
         false
     }
 
-    #[inline(always)]
+    #[inline]
     fn try_tab(&self) -> bool {
         false
     }

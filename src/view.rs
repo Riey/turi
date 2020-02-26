@@ -124,7 +124,7 @@ pub trait ScrollableView<S, E>: View<S, E> {
         printer: &mut Printer,
     );
 
-    #[inline(always)]
+    #[inline]
     fn scrollbar(
         self,
         orientation: Orientation,

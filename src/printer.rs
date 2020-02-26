@@ -46,17 +46,17 @@ impl<'a> Printer<'a> {
         ret
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn refresh(&mut self) {
         self.backend.flush();
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn bound(&self) -> Rect {
         self.bound
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn clear(&mut self) {
         self.backend.clear();
     }

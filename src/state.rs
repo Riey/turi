@@ -7,7 +7,7 @@ pub trait RedrawState {
 }
 
 impl RedrawState for bool {
-    #[inline(always)]
+    #[inline]
     fn set_need_redraw(
         &mut self,
         need_redraw: bool,
@@ -15,7 +15,7 @@ impl RedrawState for bool {
         *self = need_redraw;
     }
 
-    #[inline(always)]
+    #[inline]
     fn is_need_redraw(&self) -> bool {
         *self
     }

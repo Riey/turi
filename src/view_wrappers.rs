@@ -35,7 +35,7 @@ where
 
     impl_view_with_inner!(inner);
 
-    #[inline(always)]
+    #[inline]
     fn on_event(
         &mut self,
         _state: &mut S,
@@ -286,7 +286,7 @@ pub struct SizeCacher<T> {
 }
 
 impl<T> SizeCacher<T> {
-    #[inline(always)]
+    #[inline]
     pub fn new(inner: T) -> Self {
         Self {
             inner,
@@ -306,7 +306,7 @@ where
 {
     type Message = T::Message;
 
-    #[inline(always)]
+    #[inline]
     fn render(
         &self,
         printer: &mut Printer,
@@ -314,7 +314,7 @@ where
         self.inner.render(printer);
     }
 
-    #[inline(always)]
+    #[inline]
     fn layout(
         &mut self,
         size: Vec2,
@@ -323,12 +323,12 @@ where
         self.inner.layout(size);
     }
 
-    #[inline(always)]
+    #[inline]
     fn desired_size(&self) -> Vec2 {
         self.inner.desired_size()
     }
 
-    #[inline(always)]
+    #[inline]
     fn on_event(
         &mut self,
         state: &mut S,
@@ -346,7 +346,7 @@ pub struct BoundChecker<T> {
 }
 
 impl<T> BoundChecker<T> {
-    #[inline(always)]
+    #[inline]
     pub fn new(inner: T) -> Self {
         Self {
             inner,
@@ -364,7 +364,7 @@ impl<T> BoundChecker<T> {
         self.bound.get().size()
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn contains(
         &self,
         p: Vec2,
@@ -379,7 +379,7 @@ where
 {
     type Message = T::Message;
 
-    #[inline(always)]
+    #[inline]
     fn render(
         &self,
         printer: &mut Printer,
@@ -390,7 +390,7 @@ where
         self.inner.render(printer);
     }
 
-    #[inline(always)]
+    #[inline]
     fn layout(
         &mut self,
         size: Vec2,
@@ -400,12 +400,12 @@ where
         self.inner.layout(size);
     }
 
-    #[inline(always)]
+    #[inline]
     fn desired_size(&self) -> Vec2 {
         self.inner.desired_size()
     }
 
-    #[inline(always)]
+    #[inline]
     fn on_event(
         &mut self,
         state: &mut S,

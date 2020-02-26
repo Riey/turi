@@ -61,19 +61,19 @@ impl Default for ButtonDecoration {
 impl<S, E: EventLike> View<S, E> for ButtonView<S, E> {
     type Message = ();
 
-    #[inline(always)]
+    #[inline]
     fn desired_size(&self) -> Vec2 {
         Vec2::new(self.text_width, 1)
     }
 
-    #[inline(always)]
+    #[inline]
     fn layout(
         &mut self,
         _size: Vec2,
     ) {
     }
 
-    #[inline(always)]
+    #[inline]
     fn render(
         &self,
         printer: &mut Printer,
@@ -81,7 +81,7 @@ impl<S, E: EventLike> View<S, E> for ButtonView<S, E> {
         printer.print((0, 0), &self.text);
     }
 
-    #[inline(always)]
+    #[inline]
     fn on_event(
         &mut self,
         _state: &mut S,
