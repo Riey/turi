@@ -10,7 +10,6 @@ use turi::{
         CrosstermBackend,
         CrosstermBackendGuard,
     },
-    event::EventHandler,
     executor,
     view::View,
     views::{
@@ -38,7 +37,6 @@ fn main() {
     let mut state = false;
 
     let mut view = SelectView::with_items(vec![("123".into(), 123), ("456".into(), 456)])
-        .mark::<Event>()
         .map(|view, _state, msg| {
             match msg {
                 SelectViewMessage::Select => {
