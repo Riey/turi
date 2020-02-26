@@ -9,7 +9,10 @@ use crate::{
     orientation::Orientation,
     printer::Printer,
     vec2::Vec2,
-    view_wrappers::ScrollView,
+    view_wrappers::{
+        ConsumeEvent,
+        ScrollView,
+    },
 };
 
 pub trait View<S, E> {
@@ -30,6 +33,18 @@ pub trait View<S, E> {
         state: &mut S,
         event: E,
     ) -> Option<Self::Message>;
+
+    #[inline]
+    fn consume_event<M>(
+        self,
+        msg: M,
+    ) -> ConsumeEvent<Self, M>
+    where
+        Self: Sized,
+        M: Clone,
+    {
+        ConsumeEvent::new(self, msg)
+    }
 
     #[inline]
     fn map<U, F>(

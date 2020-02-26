@@ -1,12 +1,8 @@
 use crate::{
-    event::{
-        EventLike,
-    },
+    event::EventLike,
     printer::Printer,
     vec2::Vec2,
-    view::{
-        View,
-    },
+    view::View,
     view_wrappers::BoundChecker,
     views::{
         ButtonView,
@@ -48,9 +44,9 @@ where
         btn: ButtonView<S, E>,
         mut mapper: impl FnMut(&mut S) -> M + 'static,
     ) {
-        self.buttons.inner().add_child(
-            btn.map(move |_, state, _| mapper(state)),
-        );
+        self.buttons
+            .inner()
+            .add_child(btn.map(move |_, state, _| mapper(state)));
     }
 
     fn tab(&mut self) {

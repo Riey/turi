@@ -1,7 +1,5 @@
 use crate::{
-    event::{
-        EventLike,
-    },
+    event::EventLike,
     orientation::Orientation,
     printer::Printer,
     rect::Rect,
@@ -12,9 +10,7 @@ use crate::{
         View,
     },
 };
-use std::{
-    cell::Cell,
-};
+use std::cell::Cell;
 
 pub struct ConsumeEvent<T, M> {
     inner: T,
@@ -32,7 +28,8 @@ impl<T, M> ConsumeEvent<T, M> {
 
 impl<S, E, T, M> View<S, E> for ConsumeEvent<T, M>
 where
-    M: Clone, T: View<S, E>,
+    M: Clone,
+    T: View<S, E>,
 {
     type Message = M;
 
@@ -48,7 +45,11 @@ where
     }
 }
 
-impl<S, E, T, M> ScrollableView<S, E> for ConsumeEvent<T, M> where T: ScrollableView<S, E>, M: Clone {
+impl<S, E, T, M> ScrollableView<S, E> for ConsumeEvent<T, M>
+where
+    T: ScrollableView<S, E>,
+    M: Clone,
+{
     impl_scrollable_view_with_inner!(inner);
 }
 
@@ -280,7 +281,7 @@ where
 }
 
 pub struct SizeCacher<T> {
-    inner: T,
+    inner:     T,
     prev_size: Vec2,
 }
 
@@ -306,12 +307,18 @@ where
     type Message = T::Message;
 
     #[inline(always)]
-    fn render(&self, printer: &mut Printer) {
+    fn render(
+        &self,
+        printer: &mut Printer,
+    ) {
         self.inner.render(printer);
     }
 
     #[inline(always)]
-    fn layout(&mut self, size: Vec2) {
+    fn layout(
+        &mut self,
+        size: Vec2,
+    ) {
         self.prev_size = size;
         self.inner.layout(size);
     }
@@ -373,14 +380,21 @@ where
     type Message = T::Message;
 
     #[inline(always)]
-    fn render(&self, printer: &mut Printer) {
+    fn render(
+        &self,
+        printer: &mut Printer,
+    ) {
         let bound = self.bound.get();
-        self.bound.set(Rect::new(printer.bound().start(), bound.size()));
+        self.bound
+            .set(Rect::new(printer.bound().start(), bound.size()));
         self.inner.render(printer);
     }
 
     #[inline(always)]
-    fn layout(&mut self, size: Vec2) {
+    fn layout(
+        &mut self,
+        size: Vec2,
+    ) {
         let bound = self.bound.get();
         self.bound.set(Rect::new(bound.start(), size));
         self.inner.layout(size);
@@ -402,4 +416,3 @@ where
 }
 
 impl_scrollable_view_for_inner!(BoundChecker<T>);
-

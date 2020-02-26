@@ -1,5 +1,5 @@
-use crate::never::Never;
 use crate::{
+    never::Never,
     printer::Printer,
     vec2::Vec2,
     view::{

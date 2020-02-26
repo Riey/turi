@@ -1,13 +1,9 @@
 use crate::{
-    event::{
-        EventLike,
-    },
+    event::EventLike,
     orientation::Orientation,
     printer::Printer,
     vec2::Vec2,
-    view::{
-        View,
-    },
+    view::View,
     view_wrappers::BoundChecker,
 };
 
