@@ -1,20 +1,19 @@
 use crate::{
-    event::{
-        EventHandler,
-        EventLike,
-    },
+    event::EventLike,
     printer::Printer,
     vec2::Vec2,
     view::View,
 };
+use std::marker::PhantomData;
 use unicode_width::UnicodeWidthStr;
 
-pub struct ButtonView {
+pub struct ButtonView<S, E> {
     text:       String,
     text_width: u16,
+    _marker:    PhantomData<(S, E)>,
 }
 
-impl ButtonView {
+impl<S, E> ButtonView<S, E> {
     pub fn new(
         mut text: String,
         decoration: ButtonDecoration,
@@ -23,7 +22,11 @@ impl ButtonView {
 
         let text_width = text.width() as u16;
 
-        Self { text, text_width }
+        Self {
+            text,
+            text_width,
+            _marker: PhantomData,
+        }
     }
 }
 
@@ -55,7 +58,9 @@ impl Default for ButtonDecoration {
     }
 }
 
-impl View for ButtonView {
+impl<S, E: EventLike> View<S, E> for ButtonView<S, E> {
+    type Message = ();
+
     #[inline(always)]
     fn desired_size(&self) -> Vec2 {
         Vec2::new(self.text_width, 1)
@@ -75,10 +80,6 @@ impl View for ButtonView {
     ) {
         printer.print((0, 0), &self.text);
     }
-}
-
-impl<S, E: EventLike> EventHandler<S, E> for ButtonView {
-    type Message = ();
 
     #[inline(always)]
     fn on_event(

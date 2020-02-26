@@ -1,51 +1,11 @@
-use crate::{
-    event::EventHandler,
-    view::{
-        View,
-        ViewProxy,
-    },
-};
-use std::{
-    marker::PhantomData,
-    ops::{
-        Deref,
-        DerefMut,
-    },
-};
+use crate::view::View;
+use std::marker::PhantomData;
 
-macro_rules! impl_view_proxy {
-    ($ident:ident<$inner:ident $(,$gen:ident)+>) => {
-        impl<$inner $(,$gen)+> ViewProxy for $ident<$inner $(,$gen)+> where $inner: View {
-            type Inner = $inner;
-
-            #[inline(always)]
-            fn get_inner(&self) -> &$inner {
-                &self.inner
-            }
-
-            #[inline(always)]
-            fn get_inner_mut(&mut self) -> &mut $inner {
-                &mut self.inner
-            }
-        }
-
-        impl<$inner $(,$gen)+> Deref for $ident<$inner $(,$gen)+> {
-            type Target = $inner;
-
-            #[inline(always)]
-            fn deref(&self) -> &$inner {
-                &self.inner
-            }
-        }
-        impl<$inner $(,$gen)+> DerefMut for $ident<$inner $(,$gen)+> {
-            #[inline(always)]
-            fn deref_mut(&mut self) -> &mut $inner {
-                &mut self.inner
-            }
-        }
-
-    };
-}
+impl_deref_for_inner!(Map<H, U, F>);
+impl_deref_for_inner!(MapE<H, NE, F>);
+impl_deref_for_inner!(MapOptE<H, NE, F>);
+impl_deref_for_inner!(OrElse<H, F>);
+impl_deref_for_inner!(OrElseFirst<H, F>);
 
 pub struct Map<H, U, F> {
     inner:   H,
@@ -66,12 +26,14 @@ impl<H, U, F> Map<H, U, F> {
     }
 }
 
-impl<S, E, H, U, F> EventHandler<S, E> for Map<H, U, F>
+impl<S, E, H, U, F> View<S, E> for Map<H, U, F>
 where
-    H: EventHandler<S, E>,
+    H: View<S, E>,
     F: FnMut(&mut H, &mut S, H::Message) -> U,
 {
     type Message = U;
+
+    impl_view_with_inner!(inner);
 
     #[inline(always)]
     fn on_event(
@@ -84,8 +46,6 @@ where
         msg.map(|msg| (self.f)(&mut self.inner, state, msg))
     }
 }
-
-impl_view_proxy!(Map<H, U, F>);
 
 pub struct MapE<H, NE, F> {
     inner:   H,
@@ -106,12 +66,14 @@ impl<H, NE, F> MapE<H, NE, F> {
     }
 }
 
-impl<S, H, E, NE, F> EventHandler<S, E> for MapE<H, NE, F>
+impl<S, H, E, NE, F> View<S, E> for MapE<H, NE, F>
 where
-    H: EventHandler<S, NE>,
+    H: View<S, NE>,
     F: FnMut(&mut H, &mut S, E) -> NE,
 {
     type Message = H::Message;
+
+    impl_view_with_inner!(inner);
 
     #[inline(always)]
     fn on_event(
@@ -123,8 +85,6 @@ where
         self.inner.on_event(state, e)
     }
 }
-
-impl_view_proxy!(MapE<H, NE, F>);
 
 pub struct MapOptE<H, NE, F> {
     inner:   H,
@@ -145,12 +105,14 @@ impl<H, NE, F> MapOptE<H, NE, F> {
     }
 }
 
-impl<S, H, E, NE, F> EventHandler<S, NE> for MapOptE<H, NE, F>
+impl<S, H, E, NE, F> View<S, NE> for MapOptE<H, NE, F>
 where
-    H: EventHandler<S, E>,
+    H: View<S, E>,
     F: FnMut(&mut H, &mut S, NE) -> Option<E>,
 {
     type Message = H::Message;
+
+    impl_view_with_inner!(inner);
 
     #[inline(always)]
     fn on_event(
@@ -167,8 +129,6 @@ where
     }
 }
 
-impl_view_proxy!(MapOptE<H, NE, F>);
-
 pub struct OrElseFirst<H, F> {
     inner: H,
     f:     F,
@@ -183,13 +143,15 @@ impl<H, F> OrElseFirst<H, F> {
     }
 }
 
-impl<S, E, H, F> EventHandler<S, E> for OrElseFirst<H, F>
+impl<S, E, H, F> View<S, E> for OrElseFirst<H, F>
 where
     E: Clone,
-    H: EventHandler<S, E>,
+    H: View<S, E>,
     F: FnMut(&mut H, &mut S, E) -> Option<H::Message>,
 {
     type Message = H::Message;
+
+    impl_view_with_inner!(inner);
 
     #[inline(always)]
     fn on_event(
@@ -200,8 +162,6 @@ where
         (self.f)(&mut self.inner, state, e.clone()).or_else(|| self.inner.on_event(state, e))
     }
 }
-
-impl_view_proxy!(OrElseFirst<H, F>);
 
 pub struct OrElse<H, F> {
     inner: H,
@@ -217,13 +177,15 @@ impl<H, F> OrElse<H, F> {
     }
 }
 
-impl<S, E, H, F> EventHandler<S, E> for OrElse<H, F>
+impl<S, E, H, F> View<S, E> for OrElse<H, F>
 where
     E: Clone,
-    H: EventHandler<S, E>,
+    H: View<S, E>,
     F: FnMut(&mut H, &mut S, E) -> Option<H::Message>,
 {
     type Message = H::Message;
+
+    impl_view_with_inner!(inner);
 
     #[inline(always)]
     fn on_event(
@@ -236,5 +198,3 @@ where
             .or_else(|| (self.f)(&mut self.inner, state, e))
     }
 }
-
-impl_view_proxy!(OrElse<H, F>);

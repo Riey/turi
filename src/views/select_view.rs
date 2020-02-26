@@ -1,8 +1,5 @@
 use crate::{
-    event::{
-        EventHandler,
-        EventLike,
-    },
+    event::EventLike,
     printer::Printer,
     vec2::Vec2,
     view::View,
@@ -11,20 +8,23 @@ use ansi_term::{
     Color,
     Style,
 };
+use std::marker::PhantomData;
 use unicode_width::UnicodeWidthStr;
 
-pub struct SelectView<T> {
+pub struct SelectView<S, E, T> {
     btns:     Vec<(String, T)>,
     selected: usize,
     width:    u16,
+    _marker:  PhantomData<(S, E)>,
 }
 
-impl<T> SelectView<T> {
+impl<S, E, T> SelectView<S, E, T> {
     pub fn new() -> Self {
         Self {
             btns:     Vec::new(),
             selected: 0,
             width:    0,
+            _marker:  PhantomData,
         }
     }
 
@@ -41,6 +41,7 @@ impl<T> SelectView<T> {
             btns,
             selected: 0,
             width,
+            _marker: PhantomData,
         }
     }
 
@@ -79,7 +80,9 @@ pub enum SelectViewMessage {
     IndexChanged,
 }
 
-impl<T> View for SelectView<T> {
+impl<S, E: EventLike, T> View<S, E> for SelectView<S, E, T> {
+    type Message = SelectViewMessage;
+
     fn render(
         &self,
         printer: &mut Printer,
@@ -104,10 +107,6 @@ impl<T> View for SelectView<T> {
     fn desired_size(&self) -> Vec2 {
         Vec2::new(self.width, self.btns.len() as u16)
     }
-}
-
-impl<S, E: EventLike, T> EventHandler<S, E> for SelectView<T> {
-    type Message = SelectViewMessage;
 
     fn on_event(
         &mut self,

@@ -1,6 +1,5 @@
 use crate::{
     event::{
-        EventHandler,
         EventLike,
     },
     orientation::Orientation,
@@ -11,42 +10,11 @@ use crate::{
     view::{
         ScrollableView,
         View,
-        ViewProxy,
     },
 };
 use std::{
     cell::Cell,
-    marker::PhantomData,
-    ops::{
-        Deref,
-        DerefMut,
-    },
 };
-
-macro_rules! impl_deref_for_inner {
-    ($ident:ident<$inner:ident $(,$gen:ident)*>) => {
-        impl<$inner $(,$gen)*> Deref for $ident<$inner $(,$gen)*> {
-            type Target = $inner;
-
-            #[inline(always)]
-            fn deref(&self) -> &$inner {
-                &self.inner
-            }
-        }
-        impl<$inner $(,$gen)*> DerefMut for $ident<$inner $(,$gen)*> {
-            #[inline(always)]
-            fn deref_mut(&mut self) -> &mut $inner {
-                &mut self.inner
-            }
-        }
-    };
-}
-
-impl_deref_for_inner!(ConsumeEvent<T, M>);
-impl_deref_for_inner!(ScrollView<T>);
-impl_deref_for_inner!(EventMarker<T, E>);
-impl_deref_for_inner!(SizeCacher<T>);
-impl_deref_for_inner!(BoundChecker<T>);
 
 pub struct ConsumeEvent<T, M> {
     inner: T,
@@ -62,28 +30,13 @@ impl<T, M> ConsumeEvent<T, M> {
     }
 }
 
-impl<T, M> ViewProxy for ConsumeEvent<T, M>
+impl<S, E, T, M> View<S, E> for ConsumeEvent<T, M>
 where
-    T: View,
-{
-    type Inner = T;
-
-    #[inline(always)]
-    fn get_inner(&self) -> &Self::Inner {
-        &self.inner
-    }
-
-    #[inline(always)]
-    fn get_inner_mut(&mut self) -> &mut Self::Inner {
-        &mut self.inner
-    }
-}
-
-impl<S, E, T, M> EventHandler<S, E> for ConsumeEvent<T, M>
-where
-    M: Clone,
+    M: Clone, T: View<S, E>,
 {
     type Message = M;
+
+    impl_view_with_inner!(inner);
 
     #[inline(always)]
     fn on_event(
@@ -93,6 +46,10 @@ where
     ) -> Option<Self::Message> {
         Some(self.msg.clone())
     }
+}
+
+impl<S, E, T, M> ScrollableView<S, E> for ConsumeEvent<T, M> where T: ScrollableView<S, E>, M: Clone {
+    impl_scrollable_view_with_inner!(inner);
 }
 
 pub struct ScrollView<T> {
@@ -210,10 +167,12 @@ impl<T> ScrollView<T> {
     }
 }
 
-impl<T> View for ScrollView<T>
+impl<S: RedrawState, E: EventLike, T> View<S, E> for ScrollView<T>
 where
-    T: ScrollableView,
+    T: ScrollableView<S, E>,
 {
+    type Message = T::Message;
+
     fn render(
         &self,
         printer: &mut Printer,
@@ -282,13 +241,6 @@ where
     fn desired_size(&self) -> Vec2 {
         self.inner.desired_size() + self.additional_size()
     }
-}
-
-impl<S: RedrawState, E: EventLike, T> EventHandler<S, E> for ScrollView<T>
-where
-    T: EventHandler<S, E>,
-{
-    type Message = T::Message;
 
     fn on_event(
         &mut self,
@@ -327,59 +279,13 @@ where
     }
 }
 
-pub struct EventMarker<T, E> {
-    inner:   T,
-    _marker: PhantomData<E>,
-}
-
-impl<T, E> EventMarker<T, E> {
-    pub fn new(inner: T) -> Self {
-        Self {
-            inner,
-            _marker: PhantomData,
-        }
-    }
-}
-
-impl<T, E> ViewProxy for EventMarker<T, E>
-where
-    T: View,
-{
-    type Inner = T;
-
-    #[inline(always)]
-    fn get_inner(&self) -> &Self::Inner {
-        &self.inner
-    }
-
-    #[inline(always)]
-    fn get_inner_mut(&mut self) -> &mut Self::Inner {
-        &mut self.inner
-    }
-}
-
-impl<S, T, E> EventHandler<S, E> for EventMarker<T, E>
-where
-    T: EventHandler<S, E>,
-{
-    type Message = T::Message;
-
-    #[inline(always)]
-    fn on_event(
-        &mut self,
-        state: &mut S,
-        event: E,
-    ) -> Option<Self::Message> {
-        self.inner.on_event(state, event)
-    }
-}
-
 pub struct SizeCacher<T> {
-    inner:     T,
+    inner: T,
     prev_size: Vec2,
 }
 
 impl<T> SizeCacher<T> {
+    #[inline(always)]
     pub fn new(inner: T) -> Self {
         Self {
             inner,
@@ -393,37 +299,27 @@ impl<T> SizeCacher<T> {
     }
 }
 
-impl<T> ViewProxy for SizeCacher<T>
+impl<S, E, T> View<S, E> for SizeCacher<T>
 where
-    T: View,
+    T: View<S, E>,
 {
-    type Inner = T;
+    type Message = T::Message;
 
     #[inline(always)]
-    fn get_inner(&self) -> &T {
-        &self.inner
+    fn render(&self, printer: &mut Printer) {
+        self.inner.render(printer);
     }
 
     #[inline(always)]
-    fn get_inner_mut(&mut self) -> &mut T {
-        &mut self.inner
-    }
-
-    #[inline(always)]
-    fn proxy_layout(
-        &mut self,
-        size: Vec2,
-    ) {
+    fn layout(&mut self, size: Vec2) {
         self.prev_size = size;
         self.inner.layout(size);
     }
-}
 
-impl<S, E, T> EventHandler<S, E> for SizeCacher<T>
-where
-    T: EventHandler<S, E>,
-{
-    type Message = T::Message;
+    #[inline(always)]
+    fn desired_size(&self) -> Vec2 {
+        self.inner.desired_size()
+    }
 
     #[inline(always)]
     fn on_event(
@@ -434,6 +330,8 @@ where
         self.inner.on_event(state, event)
     }
 }
+
+impl_scrollable_view_for_inner!(SizeCacher<T>);
 
 pub struct BoundChecker<T> {
     inner: T,
@@ -449,6 +347,11 @@ impl<T> BoundChecker<T> {
         }
     }
 
+    #[inline]
+    pub fn prev_size(&self) -> Vec2 {
+        self.bound.get().size()
+    }
+
     #[inline(always)]
     pub fn contains(
         &self,
@@ -458,37 +361,30 @@ impl<T> BoundChecker<T> {
     }
 }
 
-impl<T> ViewProxy for BoundChecker<T>
+impl<S, E, T> View<S, E> for BoundChecker<T>
 where
-    T: View,
-{
-    type Inner = T;
-
-    #[inline(always)]
-    fn get_inner(&self) -> &T {
-        &self.inner
-    }
-
-    #[inline(always)]
-    fn get_inner_mut(&mut self) -> &mut T {
-        &mut self.inner
-    }
-
-    #[inline(always)]
-    fn proxy_render(
-        &self,
-        printer: &mut Printer,
-    ) {
-        self.bound.set(printer.bound());
-        self.inner.render(printer);
-    }
-}
-
-impl<S, E, T> EventHandler<S, E> for BoundChecker<T>
-where
-    T: EventHandler<S, E>,
+    T: View<S, E>,
 {
     type Message = T::Message;
+
+    #[inline(always)]
+    fn render(&self, printer: &mut Printer) {
+        let bound = self.bound.get();
+        self.bound.set(Rect::new(printer.bound().start(), bound.size()));
+        self.inner.render(printer);
+    }
+
+    #[inline(always)]
+    fn layout(&mut self, size: Vec2) {
+        let bound = self.bound.get();
+        self.bound.set(Rect::new(bound.start(), size));
+        self.inner.layout(size);
+    }
+
+    #[inline(always)]
+    fn desired_size(&self) -> Vec2 {
+        self.inner.desired_size()
+    }
 
     #[inline(always)]
     fn on_event(
@@ -499,3 +395,6 @@ where
         self.inner.on_event(state, event)
     }
 }
+
+impl_scrollable_view_for_inner!(BoundChecker<T>);
+

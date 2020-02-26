@@ -1,24 +1,25 @@
 use crate::{
-    event::{
-        EventHandler,
-        EventLike,
-    },
+    event::EventLike,
     printer::Printer,
+    state::RedrawState,
     vec2::Vec2,
-    view::View, state::RedrawState,
+    view::View,
 };
+use std::marker::PhantomData;
 use unicode_width::UnicodeWidthChar;
 
-pub struct EditView {
-    text:  String,
-    width: usize,
+pub struct EditView<S, E> {
+    text:    String,
+    width:   usize,
+    _marker: PhantomData<(S, E)>,
 }
 
-impl EditView {
+impl<S, E> EditView<S, E> {
     pub fn new() -> Self {
         Self {
-            text:  String::new(),
-            width: 0,
+            text:    String::new(),
+            width:   0,
+            _marker: PhantomData,
         }
     }
 
@@ -33,7 +34,9 @@ pub enum EditViewMessage {
     Submit,
 }
 
-impl View for EditView {
+impl<S: RedrawState, E: EventLike> View<S, E> for EditView<S, E> {
+    type Message = EditViewMessage;
+
     fn desired_size(&self) -> Vec2 {
         Vec2::new(self.width as u16, 1)
     }
@@ -50,10 +53,6 @@ impl View for EditView {
     ) {
         printer.print((0, 0), &self.text);
     }
-}
-
-impl<S: RedrawState, E: EventLike> EventHandler<S, E> for EditView {
-    type Message = EditViewMessage;
 
     fn on_event(
         &mut self,

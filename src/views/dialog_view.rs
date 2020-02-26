@@ -5,11 +5,11 @@ use crate::{
     },
     printer::Printer,
     vec2::Vec2,
-    view::View,
-    view_wrappers::{
-        BoundChecker,
-        SizeCacher,
+    view::{
+        View,
+        ViewProxy,
     },
+    view_wrappers::BoundChecker,
     views::{
         ButtonView,
         LinearView,
@@ -18,8 +18,8 @@ use crate::{
 
 pub struct DialogView<'a, S, E, M, C: 'a> {
     title:         String,
-    content:       SizeCacher<BoundChecker<C>>,
-    buttons:       SizeCacher<BoundChecker<LinearView<'a, S, E, M>>>,
+    content:       BoundChecker<C>,
+    buttons:       BoundChecker<LinearView<'a, S, E, M>>,
     content_focus: bool,
 }
 
@@ -31,8 +31,8 @@ where
     pub fn new(content: C) -> Self {
         Self {
             title:         String::new(),
-            content:       SizeCacher::new(BoundChecker::new(content)),
-            buttons:       SizeCacher::new(BoundChecker::new(LinearView::new())),
+            content:       BoundChecker::new(content),
+            buttons:       BoundChecker::new(LinearView::new()),
             content_focus: true,
         }
     }
@@ -49,7 +49,7 @@ where
         btn: ButtonView,
         mut mapper: impl FnMut(&mut S) -> M + 'a,
     ) {
-        self.buttons.add_child(
+        self.buttons.get_inner_mut().add_child(
             btn.map_e::<E, _>(|_, _, e| e)
                 .map(move |_, state, _| mapper(state)),
         );

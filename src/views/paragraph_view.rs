@@ -1,3 +1,4 @@
+use crate::never::Never;
 use crate::{
     printer::Printer,
     vec2::Vec2,
@@ -6,22 +7,30 @@ use crate::{
         View,
     },
 };
-use std::slice::SliceIndex;
+use std::{
+    marker::PhantomData,
+    slice::SliceIndex,
+};
 use unicode_width::{
     UnicodeWidthChar,
     UnicodeWidthStr,
 };
 
-pub struct ParagraphView {
-    lines: Vec<String>,
-    width: usize,
+pub struct ParagraphView<S, E> {
+    lines:   Vec<String>,
+    width:   usize,
+    _marker: PhantomData<(S, E)>,
 }
 
-impl ParagraphView {
+impl<S, E> ParagraphView<S, E> {
     pub fn new() -> Self {
         let mut lines = Vec::with_capacity(10);
         lines.push(String::with_capacity(100));
-        Self { lines, width: 0 }
+        Self {
+            lines,
+            width: 0,
+            _marker: PhantomData,
+        }
     }
 
     pub fn append(
@@ -69,7 +78,9 @@ impl ParagraphView {
     }
 }
 
-impl View for ParagraphView {
+impl<S, E> View<S, E> for ParagraphView<S, E> {
+    type Message = Never;
+
     fn render(
         &self,
         printer: &mut Printer,
@@ -87,6 +98,14 @@ impl View for ParagraphView {
 
     fn desired_size(&self) -> Vec2 {
         Vec2::new(self.width as u16, self.lines.len() as u16)
+    }
+
+    fn on_event(
+        &mut self,
+        _: &mut S,
+        _: E,
+    ) -> Option<Never> {
+        None
     }
 }
 
@@ -114,7 +133,7 @@ fn scroll_horizontal_render_impl(
     }
 }
 
-impl ScrollableView for ParagraphView {
+impl<S, E> ScrollableView<S, E> for ParagraphView<S, E> {
     fn scroll_vertical_render(
         &self,
         pos: u16,

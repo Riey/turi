@@ -1,12 +1,11 @@
 use crate::{
     backend::Backend,
-    event::EventHandler,
     printer::Printer,
     state::RedrawState,
     view::View,
 };
 
-pub fn simple<S: RedrawState, E, B: Backend, V: View + EventHandler<S, E, Message = bool>>(
+pub fn simple<S: RedrawState, E, B: Backend, V: View<S, E, Message = bool>>(
     state: &mut S,
     backend: &mut B,
     view: &mut V,

@@ -1,13 +1,4 @@
-use crate::{
-    converters::{
-        Map,
-        MapE,
-        MapOptE,
-        OrElse,
-        OrElseFirst,
-    },
-    vec2::Vec2,
-};
+use crate::vec2::Vec2;
 
 pub trait EventLike {
     fn try_mouse_down(&self) -> Option<Vec2>;
@@ -92,77 +83,5 @@ impl EventLike for NoneEvent {
     #[inline(always)]
     fn try_tab(&self) -> bool {
         false
-    }
-}
-
-pub trait EventHandler<S, E> {
-    type Message;
-
-    fn on_event(
-        &mut self,
-        state: &mut S,
-        event: E,
-    ) -> Option<Self::Message>;
-
-    #[inline(always)]
-    fn map<U, F>(
-        self,
-        f: F,
-    ) -> Map<Self, U, F>
-    where
-        Self: Sized,
-        F: FnMut(&mut Self, &mut S, Self::Message) -> U,
-    {
-        Map::new(self, f)
-    }
-
-    #[inline(always)]
-    fn map_e<NE, F>(
-        self,
-        f: F,
-    ) -> MapE<Self, NE, F>
-    where
-        Self: Sized,
-        F: FnMut(&mut Self, &mut S, E) -> NE,
-    {
-        MapE::new(self, f)
-    }
-
-    #[inline(always)]
-    fn map_opt_e<NE, F>(
-        self,
-        f: F,
-    ) -> MapOptE<Self, NE, F>
-    where
-        Self: Sized,
-        F: FnMut(&mut Self, &mut S, NE) -> Option<E>,
-    {
-        MapOptE::new(self, f)
-    }
-
-    #[inline(always)]
-    fn or_else<F>(
-        self,
-        f: F,
-    ) -> OrElse<Self, F>
-    where
-        Self: Sized,
-        F: FnMut(&mut Self, &mut S, E) -> Option<Self::Message>,
-        E: Clone,
-    {
-        OrElse::new(self, f)
-    }
-
-    #[inline(always)]
-    fn or_else_first<F>(
-        self,
-        f: F,
-    ) -> OrElseFirst<Self, F>
-    where
-        Self: Sized,
-        F: FnMut(&mut Self, &mut S, E) -> Option<Self::Message>,
-        E: Clone,
-    {
-        OrElseFirst::new(self, f)
     }
 }

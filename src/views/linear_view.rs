@@ -10,14 +10,11 @@ use crate::{
         EventHandledView,
         View,
     },
-    view_wrappers::{
-        BoundChecker,
-        SizeCacher,
-    },
+    view_wrappers::BoundChecker,
 };
 
 pub struct LinearView<'a, S, E, M> {
-    children:    Vec<SizeCacher<BoundChecker<Box<dyn EventHandledView<S, E, Message = M> + 'a>>>>,
+    children:    Vec<BoundChecker<Box<dyn EventHandledView<S, E, Message = M> + 'a>>>,
     orientation: Orientation,
     focus:       Option<usize>,
 }
@@ -50,8 +47,7 @@ impl<'a, S, E, M> LinearView<'a, S, E, M> {
         &mut self,
         v: impl EventHandledView<S, E, Message = M> + 'a,
     ) {
-        self.children
-            .push(SizeCacher::new(BoundChecker::new(Box::new(v))));
+        self.children.push(BoundChecker::new(Box::new(v)));
     }
 }
 
@@ -65,7 +61,7 @@ impl<'a, S, E, M> View for LinearView<'a, S, E, M> {
                 let mut x = 0;
                 for child in self.children.iter() {
                     printer.with_bound(printer.bound().add_start((x, 0)), |printer| {
-                        child.render(printer)
+                        child.handled_render(printer)
                     });
                     x += child.prev_size().x;
                 }
@@ -74,7 +70,7 @@ impl<'a, S, E, M> View for LinearView<'a, S, E, M> {
                 let mut y = 0;
                 for child in self.children.iter() {
                     printer.with_bound(printer.bound().add_start((0, y)), |printer| {
-                        child.render(printer);
+                        child.handled_render(printer);
                     });
                     y += child.prev_size().y;
                 }
