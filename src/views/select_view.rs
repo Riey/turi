@@ -116,7 +116,7 @@ impl<S: RedrawState, E: EventLike, T> View<S, E> for SelectView<S, E, T> {
         state: &mut S,
         e: E,
     ) -> Option<Self::Message> {
-        if e.try_mouse_down().is_some() || e.try_enter() {
+        if e.try_left_down().is_some() || e.try_enter() {
             Some(SelectViewMessage::Select)
         } else if e.try_up() {
             self.focus_up(state)

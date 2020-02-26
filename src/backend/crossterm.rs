@@ -135,18 +135,36 @@ impl<W: Write> CrosstermBackendGuard<W> {
 }
 
 impl EventLike for Event {
-    fn try_mouse_down(&self) -> Option<Vec2> {
+    fn try_left_down(&self) -> Option<Vec2> {
         match self {
             Event::Mouse(MouseEvent::Down(MouseButton::Left, x, y, ..)) => Some((*x, *y).into()),
             _ => None,
         }
     }
 
-    fn try_mouse_up(&self) -> Option<Vec2> {
+    fn try_left_up(&self) -> Option<Vec2> {
         match self {
             Event::Mouse(MouseEvent::Up(MouseButton::Left, x, y, ..)) => Some((*x, *y).into()),
             _ => None,
         }
+    }
+
+    fn from_left_down(pos: Vec2) -> Self {
+        Event::Mouse(MouseEvent::Down(
+            MouseButton::Left,
+            pos.x,
+            pos.y,
+            KeyModifiers::empty(),
+        ))
+    }
+
+    fn from_left_up(pos: Vec2) -> Self {
+        Event::Mouse(MouseEvent::Up(
+            MouseButton::Left,
+            pos.x,
+            pos.y,
+            KeyModifiers::empty(),
+        ))
     }
 
     fn try_drag(&self) -> Option<Vec2> {
@@ -163,6 +181,30 @@ impl EventLike for Event {
             | Event::Mouse(MouseEvent::Drag(_, x, y, ..))
             | Event::Mouse(MouseEvent::ScrollUp(x, y, ..))
             | Event::Mouse(MouseEvent::ScrollDown(x, y, ..)) => Some((*x, *y).into()),
+            _ => None,
+        }
+    }
+
+    fn try_map_mouse<F>(
+        &self,
+        f: F,
+    ) -> Option<Self>
+    where
+        F: FnOnce(Vec2) -> Vec2,
+    {
+        let mut e = *self;
+        match &mut e {
+            Event::Mouse(MouseEvent::Down(_, x, y, ..))
+            | Event::Mouse(MouseEvent::Up(_, x, y, ..))
+            | Event::Mouse(MouseEvent::Drag(_, x, y, ..))
+            | Event::Mouse(MouseEvent::ScrollUp(x, y, ..))
+            | Event::Mouse(MouseEvent::ScrollDown(x, y, ..)) => {
+                let pos = Vec2::new(*x, *y);
+                let pos = f(pos);
+                *x = pos.x;
+                *y = pos.y;
+                Some(e)
+            }
             _ => None,
         }
     }

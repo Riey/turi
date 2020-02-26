@@ -250,9 +250,9 @@ where
     ) -> Option<Self::Message> {
         // TODO: check focus
 
-        if event.try_mouse_up().is_some() {
+        if event.try_left_up().is_some() {
             self.clicked = false;
-        } else if let Some(pos) = event.try_mouse_down() {
+        } else if let Some(pos) = event.try_left_down() {
             if self.event_mouse_down(pos, state) {
                 return None;
             }
