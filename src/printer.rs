@@ -68,7 +68,7 @@ impl<'a> Printer<'a> {
     ) {
         let start = start.into();
 
-        if !self.bound.contains(start + self.bound.start()) {
+        if !self.bound.contains_inclusive(start + self.bound.start()) {
             return;
         }
 
