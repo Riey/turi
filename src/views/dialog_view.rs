@@ -1,9 +1,13 @@
 use crate::{
-    event::EventLike,
+    event::{
+        EventLike,
+        MouseEventLike,
+        KeyEventLike,
+    },
     printer::Printer,
     vec2::Vec2,
     view::View,
-    view_wrappers::BoundChecker,
+    view_wrappers::{SizeCacher, BoundChecker},
     views::{
         ButtonView,
         LinearView,
@@ -12,8 +16,8 @@ use crate::{
 
 pub struct DialogView<S, E, M, C> {
     title:         String,
-    content:       BoundChecker<C>,
-    buttons:       BoundChecker<LinearView<S, E, M>>,
+    content:       SizeCacher<C>,
+    buttons:       LinearView<S, E, M>,
     content_focus: bool,
 }
 
@@ -26,8 +30,8 @@ where
     pub fn new(content: C) -> Self {
         Self {
             title:         String::new(),
-            content:       BoundChecker::new(content),
-            buttons:       BoundChecker::new(LinearView::new()),
+            content:       SizeCacher::new(content),
+            buttons:       LinearView::new(),
             content_focus: true,
         }
     }
@@ -45,7 +49,6 @@ where
         mut mapper: impl FnMut(&mut S) -> M + 'static,
     ) {
         self.buttons
-            .inner()
             .add_child(btn.map(move |_, state, _| mapper(state)));
     }
 
@@ -54,7 +57,7 @@ where
     }
 }
 
-impl<S, E, M, C> View<S, E> for DialogView<S, E, M, C>
+impl<S, E: EventLike, M, C> View<S, E> for DialogView<S, E, M, C>
 where
     S: 'static,
     C: View<S, E, Message = M>,
@@ -70,7 +73,7 @@ where
         printer.print_rect();
         printer.print((0, 0), &self.title);
         printer.with_bound(printer.bound().with_margin(1), |printer| {
-            let btn_height = self.buttons.prev_size().y;
+            let btn_height = 1;
             let bound = printer.bound();
             let (content_bound, btns_bound) =
                 printer.bound().split_vertical(bound.h() - btn_height);
@@ -105,8 +108,18 @@ where
     fn on_event(
         &mut self,
         state: &mut S,
-        event: E,
+        mut event: E,
     ) -> Option<Self::Message> {
+        if let Some(me) = event.try_mouse_mut() {
+            let is_outline = !me.filter_map_pos(|pos| {
+                let size = self.content.prev_size();
+                if pos.x == 0 || pos.y == 0 || pos.x > size.x || pos.y > size.y {
+                    None
+                } else {
+                    Some(pos - Vec2::new(1, 1))
+                }
+            });
+        }
         if event.try_tab() {
             self.tab();
             None

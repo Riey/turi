@@ -1,4 +1,5 @@
 mod button_view;
+#[cfg(windows)]
 mod dialog_view;
 mod edit_view;
 mod linear_view;
@@ -11,7 +12,6 @@ pub use self::{
         ButtonDecoration,
         ButtonView,
     },
-    dialog_view::DialogView,
     edit_view::{
         EditView,
         EditViewMessage,

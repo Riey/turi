@@ -1,5 +1,5 @@
 use crate::{
-    event::EventLike,
+    event::{EventLike, KeyEventLike},
     printer::Printer,
     state::RedrawState,
     vec2::Vec2,
@@ -59,14 +59,15 @@ impl<S: RedrawState, E: EventLike> View<S, E> for EditView<S, E> {
         state: &mut S,
         e: E,
     ) -> Option<Self::Message> {
-        if e.try_enter() {
+        let ke = e.try_key()?;
+        if ke.try_enter() {
             Some(EditViewMessage::Submit)
-        } else if let Some(ch) = e.try_char() {
+        } else if let Some(ch) = ke.try_char() {
             self.text.push(ch);
             self.width += ch.width().unwrap_or(0);
             state.set_need_redraw(true);
             Some(EditViewMessage::Edit)
-        } else if e.try_backspace() {
+        } else if ke.try_backspace() {
             if let Some(ch) = self.text.pop() {
                 self.width -= ch.width().unwrap_or(0);
                 state.set_need_redraw(true);

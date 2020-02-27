@@ -1,5 +1,9 @@
 use crate::{
-    event::EventLike,
+    event::{
+        EventLike,
+        MouseEventLike,
+        KeyEventLike,
+    },
     printer::Printer,
     vec2::Vec2,
     view::View,
@@ -116,11 +120,17 @@ impl<S: RedrawState, E: EventLike, T> View<S, E> for SelectView<S, E, T> {
         state: &mut S,
         e: E,
     ) -> Option<Self::Message> {
-        if e.try_left_down().is_some() || e.try_enter() {
-            Some(SelectViewMessage::Select)
-        } else if e.try_up() {
+        if e.try_mouse().map(|me| me.try_left_down().is_some()).unwrap_or(false) {
+            return Some(SelectViewMessage::Select);
+        }
+
+        let ke = e.try_key()?;
+
+        if ke.try_enter() {
+           Some(SelectViewMessage::Select)
+        } else if ke.try_up() {
             self.focus_up(state)
-        } else if e.try_down() {
+        } else if ke.try_down() {
             self.focus_down(state)
         } else {
             None

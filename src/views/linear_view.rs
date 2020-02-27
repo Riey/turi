@@ -1,14 +1,19 @@
 use crate::{
-    event::EventLike,
+    event::{
+        EventLike,
+        KeyEventLike,
+        MouseEventLike,
+    },
     orientation::Orientation,
     printer::Printer,
+    state::RedrawState,
     vec2::Vec2,
     view::View,
-    view_wrappers::BoundChecker,
+    view_wrappers::SizeCacher,
 };
 
 pub struct LinearView<S, E, M> {
-    children:    Vec<BoundChecker<Box<dyn View<S, E, Message = M> + 'static>>>,
+    children:    Vec<SizeCacher<Box<dyn View<S, E, Message = M> + 'static>>>,
     orientation: Orientation,
     focus:       Option<usize>,
 }
@@ -41,11 +46,11 @@ impl<S, E, M> LinearView<S, E, M> {
         &mut self,
         v: impl View<S, E, Message = M> + 'static,
     ) {
-        self.children.push(BoundChecker::new(Box::new(v)));
+        self.children.push(SizeCacher::new(Box::new(v)));
     }
 }
 
-impl<S, E: EventLike, M> View<S, E> for LinearView<S, E, M> {
+impl<S: RedrawState, E: EventLike, M> View<S, E> for LinearView<S, E, M> {
     type Message = M;
 
     fn render(
@@ -117,22 +122,80 @@ impl<S, E: EventLike, M> View<S, E> for LinearView<S, E, M> {
     fn on_event(
         &mut self,
         state: &mut S,
-        event: E,
+        mut event: E,
     ) -> Option<Self::Message> {
-        if let Some(pos) = event.try_mouse() {
+        if let Some(me) = event.try_mouse_mut() {
             for child in self.children.iter_mut() {
-                if child.contains(pos) {
+                let contains = !me.filter_map_pos(|pos| {
+                    let size = child.prev_size();
+                    if size >= pos {
+                        None
+                    } else {
+                        Some(pos - size)
+                    }
+                });
+                if contains {
                     return child.on_event(state, event);
                 }
             }
 
             None
-        } else {
+        } else if let Some(ke) = event.try_key() {
+            if !self.children.is_empty() {
+                if self.orientation == Orientation::Horizontal {
+                    if ke.try_left() {
+                        self.focus = match self.focus {
+                            Some(0) => Some(self.children.len() - 1),
+
+                            Some(x) => Some(x - 1),
+
+                            None => Some(0),
+                        };
+                        state.set_need_redraw(true);
+                        return None;
+                    } else if ke.try_right() {
+                        self.focus = match self.focus {
+                            Some(x) if x == self.children.len() - 1 => Some(0),
+
+                            Some(x) => Some(x + 1),
+
+                            None => Some(0),
+                        };
+                        state.set_need_redraw(true);
+                        return None;
+                    }
+                } else if self.orientation == Orientation::Vertical {
+                    if ke.try_up() {
+                        self.focus = match self.focus {
+                            Some(0) => Some(self.children.len() - 1),
+
+                            Some(x) => Some(x - 1),
+
+                            None => Some(0),
+                        };
+                        state.set_need_redraw(true);
+                        return None;
+                    } else if ke.try_down() {
+                        self.focus = match self.focus {
+                            Some(x) if x == self.children.len() - 1 => Some(0),
+
+                            Some(x) => Some(x + 1),
+
+                            None => Some(0),
+                        };
+                        state.set_need_redraw(true);
+                        return None;
+                    }
+                }
+            }
+
             if let Some(focus) = self.focus {
                 self.children[focus].on_event(state, event)
             } else {
                 None
             }
+        } else {
+            None
         }
     }
 }

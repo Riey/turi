@@ -1,5 +1,5 @@
 use crate::{
-    event::EventLike,
+    event::{MouseEventLike, KeyEventLike, EventLike},
     orientation::Orientation,
     printer::Printer,
     rect::Rect,
@@ -250,32 +250,35 @@ where
     ) -> Option<Self::Message> {
         // TODO: check focus
 
-        if event.try_left_up().is_some() {
-            self.clicked = false;
-        } else if let Some(pos) = event.try_left_down() {
-            if self.event_mouse_down(pos, state) {
+        if let Some(me) = event.try_mouse() {
+            if me.try_left_up().is_some() {
+                self.clicked = false;
+            }else if let Some(pos) = me.try_left_down() {
+                if self.event_mouse_down(pos, state) {
+                    return None;
+                }
+            } else if let Some(pos) = me.try_drag() {
+                if self.event_drag(pos, state) {
+                    return None;
+                }
+            }
+        } else if let Some(ke) = event.try_key() {
+            if ke.try_up() && self.orientation == Orientation::Vertical
+                || ke.try_left() && self.orientation == Orientation::Horizontal
+            {
+                if self.down() {
+                    state.set_need_redraw(true);
+                }
+                return None;
+            } else if ke.try_down() && self.orientation == Orientation::Vertical
+                || ke.try_right() && self.orientation == Orientation::Horizontal
+            {
+                if self.up() {
+                    state.set_need_redraw(true);
+                }
                 return None;
             }
-        } else if let Some(pos) = event.try_drag() {
-            if self.event_drag(pos, state) {
-                return None;
-            }
-        } else if event.try_up() && self.orientation == Orientation::Vertical
-            || event.try_left() && self.orientation == Orientation::Horizontal
-        {
-            if self.down() {
-                state.set_need_redraw(true);
-            }
-            return None;
-        } else if event.try_down() && self.orientation == Orientation::Vertical
-            || event.try_right() && self.orientation == Orientation::Horizontal
-        {
-            if self.up() {
-                state.set_need_redraw(true);
-            }
-            return None;
         }
-
         self.inner.on_event(state, event)
     }
 }
