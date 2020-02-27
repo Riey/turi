@@ -9,33 +9,34 @@ use crate::{
     vec2::Vec2,
     view::View,
 };
-use ansi_term::{
-    Color,
-};
+use ansi_term::Color;
 use std::marker::PhantomData;
 use unicode_width::UnicodeWidthStr;
 
 pub struct SelectView<S, E, T> {
-    btns:     Vec<(String, T)>,
-    selected: usize,
-    width:    u16,
+    btns:           Vec<(String, T)>,
+    selected:       usize,
+    width:          u16,
     selected_color: Color,
-    _marker:  PhantomData<(S, E)>,
+    _marker:        PhantomData<(S, E)>,
 }
 
 impl<S: RedrawState, E, T> SelectView<S, E, T> {
     pub fn new() -> Self {
         Self {
-            btns:     Vec::new(),
-            selected: 0,
-            width:    0,
+            btns:           Vec::new(),
+            selected:       0,
+            width:          0,
             selected_color: Color::Yellow,
-            _marker:  PhantomData,
+            _marker:        PhantomData,
         }
     }
 
     #[inline]
-    pub fn selected_color(mut self, color: Color) -> Self {
+    pub fn selected_color(
+        mut self,
+        color: Color,
+    ) -> Self {
         self.selected_color = color;
         self
     }
