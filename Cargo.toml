@@ -12,9 +12,7 @@ default = ["crossterm-backend"]
 crossterm-backend = ["crossterm"]
 
 [dependencies]
-enumflags2 = "0.6.2"
 unicode-width = "0.1.7"
-derive_more = "0.99.2"
 log = "0.4.8"
 ansi_term = "0.12.1"
 

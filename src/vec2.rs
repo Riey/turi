@@ -1,13 +1,7 @@
-use derive_more::{
-    Add,
-    AddAssign,
-    From,
-    Sub,
-    SubAssign,
-};
+use std::ops::{Add, AddAssign, Sub, SubAssign};
 
 #[derive(
-    Add, AddAssign, Sub, SubAssign, Debug, From, Clone, Copy, Ord, PartialOrd, Eq, PartialEq,
+    Debug, Clone, Copy, Ord, PartialOrd, Eq, PartialEq,
 )]
 pub struct Vec2 {
     pub x: u16,
@@ -160,5 +154,63 @@ impl Vec2 {
             y: self.y.min(y),
             ..self
         }
+    }
+}
+
+impl From<(u16, u16)> for Vec2 {
+    #[inline]
+    fn from((x, y): (u16, u16)) -> Self {
+        Vec2 {
+            x,
+            y,
+        }
+    }
+}
+
+impl<T: Into<Vec2>> Add<T> for Vec2 {
+    type Output = Self;
+
+    #[inline]
+    fn add(self, rhs: T) -> Self {
+        let rhs = rhs.into();
+
+        Vec2 {
+            x: self.x + rhs.x,
+            y: self.y + rhs.y,
+        }
+    }
+}
+
+impl<T: Into<Vec2>> AddAssign<T> for Vec2 {
+    #[inline]
+    fn add_assign(&mut self, rhs: T) {
+        let rhs = rhs.into();
+
+        self.x += rhs.x;
+        self.y += rhs.y;
+    }
+}
+
+impl<T: Into<Vec2>> Sub<T> for Vec2 {
+    type Output = Self;
+
+    #[inline]
+    fn sub(self, rhs: T) -> Self {
+        let rhs = rhs.into();
+
+        Vec2 {
+            x: self.x - rhs.x,
+            y: self.y - rhs.y,
+        }
+    }
+}
+
+impl<T: Into<Vec2>> SubAssign<T> for Vec2 {
+    #[inline]
+    fn sub_assign(&mut self, rhs: T) {
+        let rhs = rhs.into();
+
+        self.x -= rhs.x;
+        self.y -= rhs.y;
     }
 }
