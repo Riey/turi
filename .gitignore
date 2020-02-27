@@ -1,5 +1,8 @@
 /target
 /.idea
 /turi.log
+/cargo-timing*
+/flamegraph*
+/perf*
 **/*.rs.bk
 Cargo.lock
