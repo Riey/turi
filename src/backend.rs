@@ -125,7 +125,7 @@ impl<'a> Backend for SlicedBackend<'a> {
         }
 
         if pos.x >= self.1.x {
-            self.0.print_at(pos, text);
+            self.0.print_at(pos - self.1, text);
         }
 
         let mut left = self.1.x - pos.x;
