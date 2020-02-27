@@ -1,5 +1,9 @@
 use crate::{
-    event::EventLike,
+    event::{
+        EventLike,
+        KeyEventLike,
+        MouseEventLike,
+    },
     orientation::Orientation,
     printer::Printer,
     rect::Rect,
@@ -250,32 +254,35 @@ where
     ) -> Option<Self::Message> {
         // TODO: check focus
 
-        if event.try_mouse_up().is_some() {
-            self.clicked = false;
-        } else if let Some(pos) = event.try_mouse_down() {
-            if self.event_mouse_down(pos, state) {
+        if let Some(me) = event.try_mouse() {
+            if me.try_left_up().is_some() {
+                self.clicked = false;
+            } else if let Some(pos) = me.try_left_down() {
+                if self.event_mouse_down(pos, state) {
+                    return None;
+                }
+            } else if let Some(pos) = me.try_drag() {
+                if self.event_drag(pos, state) {
+                    return None;
+                }
+            }
+        } else if let Some(ke) = event.try_key() {
+            if ke.try_up() && self.orientation == Orientation::Vertical
+                || ke.try_left() && self.orientation == Orientation::Horizontal
+            {
+                if self.down() {
+                    state.set_need_redraw(true);
+                }
+                return None;
+            } else if ke.try_down() && self.orientation == Orientation::Vertical
+                || ke.try_right() && self.orientation == Orientation::Horizontal
+            {
+                if self.up() {
+                    state.set_need_redraw(true);
+                }
                 return None;
             }
-        } else if let Some(pos) = event.try_drag() {
-            if self.event_drag(pos, state) {
-                return None;
-            }
-        } else if event.try_up() && self.orientation == Orientation::Vertical
-            || event.try_left() && self.orientation == Orientation::Horizontal
-        {
-            if self.down() {
-                state.set_need_redraw(true);
-            }
-            return None;
-        } else if event.try_down() && self.orientation == Orientation::Vertical
-            || event.try_right() && self.orientation == Orientation::Horizontal
-        {
-            if self.up() {
-                state.set_need_redraw(true);
-            }
-            return None;
         }
-
         self.inner.on_event(state, event)
     }
 }
@@ -339,80 +346,3 @@ where
 }
 
 impl_scrollable_view_for_inner!(SizeCacher<T>);
-
-pub struct BoundChecker<T> {
-    inner: T,
-    bound: Cell<Rect>,
-}
-
-impl<T> BoundChecker<T> {
-    #[inline]
-    pub fn new(inner: T) -> Self {
-        Self {
-            inner,
-            bound: Cell::new(Rect::new((0, 0), (0, 0))),
-        }
-    }
-
-    #[inline]
-    pub fn inner(&mut self) -> &mut T {
-        &mut self.inner
-    }
-
-    #[inline]
-    pub fn prev_size(&self) -> Vec2 {
-        self.bound.get().size()
-    }
-
-    #[inline]
-    pub fn contains(
-        &self,
-        p: Vec2,
-    ) -> bool {
-        self.bound.get().contains(p)
-    }
-}
-
-impl<S, E, T> View<S, E> for BoundChecker<T>
-where
-    T: View<S, E>,
-{
-    type Message = T::Message;
-
-    #[inline]
-    fn render(
-        &self,
-        printer: &mut Printer,
-    ) {
-        let bound = self.bound.get();
-        self.bound
-            .set(Rect::new(printer.bound().start(), bound.size()));
-        self.inner.render(printer);
-    }
-
-    #[inline]
-    fn layout(
-        &mut self,
-        size: Vec2,
-    ) {
-        let bound = self.bound.get();
-        self.bound.set(Rect::new(bound.start(), size));
-        self.inner.layout(size);
-    }
-
-    #[inline]
-    fn desired_size(&self) -> Vec2 {
-        self.inner.desired_size()
-    }
-
-    #[inline]
-    fn on_event(
-        &mut self,
-        state: &mut S,
-        event: E,
-    ) -> Option<Self::Message> {
-        self.inner.on_event(state, event)
-    }
-}
-
-impl_scrollable_view_for_inner!(BoundChecker<T>);

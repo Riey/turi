@@ -1,9 +1,14 @@
 use crate::{
-    event::EventLike,
+    event::{
+        EventLike,
+        KeyEventLike,
+        MouseEventLike,
+    },
     printer::Printer,
+    state::RedrawState,
     vec2::Vec2,
     view::View,
-    view_wrappers::BoundChecker,
+    view_wrappers::SizeCacher,
     views::{
         ButtonView,
         LinearView,
@@ -12,8 +17,8 @@ use crate::{
 
 pub struct DialogView<S, E, M, C> {
     title:         String,
-    content:       BoundChecker<C>,
-    buttons:       BoundChecker<LinearView<S, E, M>>,
+    content:       SizeCacher<C>,
+    buttons:       LinearView<S, E, M>,
     content_focus: bool,
 }
 
@@ -26,8 +31,8 @@ where
     pub fn new(content: C) -> Self {
         Self {
             title:         String::new(),
-            content:       BoundChecker::new(content),
-            buttons:       BoundChecker::new(LinearView::new()),
+            content:       SizeCacher::new(content),
+            buttons:       LinearView::new(),
             content_focus: true,
         }
     }
@@ -45,7 +50,6 @@ where
         mut mapper: impl FnMut(&mut S) -> M + 'static,
     ) {
         self.buttons
-            .inner()
             .add_child(btn.map(move |_, state, _| mapper(state)));
     }
 
@@ -54,9 +58,9 @@ where
     }
 }
 
-impl<S, E, M, C> View<S, E> for DialogView<S, E, M, C>
+impl<S, E: EventLike, M, C> View<S, E> for DialogView<S, E, M, C>
 where
-    S: 'static,
+    S: RedrawState + 'static,
     C: View<S, E, Message = M>,
     E: EventLike + 'static,
     M: 'static,
@@ -70,7 +74,7 @@ where
         printer.print_rect();
         printer.print((0, 0), &self.title);
         printer.with_bound(printer.bound().with_margin(1), |printer| {
-            let btn_height = self.buttons.prev_size().y;
+            let btn_height = 1;
             let bound = printer.bound();
             let (content_bound, btns_bound) =
                 printer.bound().split_vertical(bound.h() - btn_height);
@@ -89,8 +93,10 @@ where
         &mut self,
         size: Vec2,
     ) {
-        let btn_size = self.buttons.desired_size().min(size);
-        let content_size = size.saturating_sub(btn_size);
+        // outline
+        let size = size.saturating_sub((2, 2).into());
+        let btn_size = size.min_y(1);
+        let content_size = size.saturating_sub_y(1);
 
         self.content.layout(content_size);
         self.buttons.layout(btn_size);
@@ -105,25 +111,48 @@ where
     fn on_event(
         &mut self,
         state: &mut S,
-        event: E,
+        mut event: E,
     ) -> Option<Self::Message> {
-        if event.try_tab() {
-            self.tab();
-            None
-        } else if let Some(pos) = event.try_mouse() {
-            if self.content.contains(pos) {
+        if let Some(me) = event.try_mouse_mut() {
+            let size = self.content.prev_size();
+
+            let is_btn = me.filter_map_pos(|pos| {
+                if pos.x > 1 && (pos.y - 1) == size.y {
+                    Some(Vec2::new(pos.x - 1, 0))
+                } else {
+                    None
+                }
+            });
+
+            if is_btn {
+                return self.buttons.on_event(state, event);
+            }
+
+            let is_content = me.filter_map_pos(|pos| {
+                let desired_size = self.content.desired_size();
+                if pos.x > 1 && pos.x <= desired_size.x && pos.y > 1 && pos.y <= desired_size.y {
+                    Some(pos - Vec2::new(1, 1))
+                } else {
+                    None
+                }
+            });
+
+            if is_content {
                 self.content.on_event(state, event)
-            } else if self.buttons.contains(pos) {
-                self.buttons.on_event(state, event)
             } else {
                 None
             }
-        } else {
-            if self.content_focus {
+        } else if let Some(ke) = event.try_key() {
+            if ke.try_tab() {
+                self.tab();
+                None
+            } else if self.content_focus {
                 self.content.on_event(state, event)
             } else {
                 self.buttons.on_event(state, event)
             }
+        } else {
+            None
         }
     }
 }

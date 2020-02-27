@@ -1,5 +1,8 @@
 use crate::{
-    event::EventLike,
+    event::{
+        EventLike,
+        MouseEventLike,
+    },
     printer::Printer,
     vec2::Vec2,
     view::View,
@@ -87,6 +90,6 @@ impl<S, E: EventLike> View<S, E> for ButtonView<S, E> {
         _state: &mut S,
         e: E,
     ) -> Option<()> {
-        e.try_mouse_down().map(|_| ())
+        e.try_mouse()?.try_left_down().map(|_| ())
     }
 }

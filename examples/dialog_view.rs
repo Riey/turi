@@ -12,6 +12,7 @@ use turi::{
         CrosstermBackendGuard,
     },
     executor,
+    state::RedrawState,
     view::View,
     views::{
         ButtonDecoration,
@@ -20,12 +21,11 @@ use turi::{
         EditView,
         EditViewMessage,
     },
-    state::RedrawState,
 };
 
 #[derive(Default, Clone, Copy)]
 struct MyState {
-    btn_cnt: u32,
+    btn_cnt:     u32,
     need_redraw: bool,
 }
 
@@ -40,10 +40,14 @@ impl RedrawState for MyState {
     fn set_need_redraw(
         &mut self,
         need_redraw: bool,
-    ) { self.need_redraw = need_redraw; }
+    ) {
+        self.need_redraw = need_redraw;
+    }
+
     #[inline]
-    fn is_need_redraw(&self) -> bool { self.need_redraw }
-    
+    fn is_need_redraw(&self) -> bool {
+        self.need_redraw
+    }
 }
 
 fn main() {
@@ -87,16 +91,15 @@ fn main() {
         },
     );
 
-    let mut view = dialog
-        .or_else_first(|_view, _state, event: Event| {
-            match event {
-                Event::Key(KeyEvent {
-                    code: KeyCode::Char('c'),
-                    modifiers: KeyModifiers::CONTROL,
-                }) => Some(true),
-                _ => None,
-            }
-        });
+    let mut view = dialog.or_else_first(|_view, _state, event: Event| {
+        match event {
+            Event::Key(KeyEvent {
+                code: KeyCode::Char('c'),
+                modifiers: KeyModifiers::CONTROL,
+            }) => Some(true),
+            _ => None,
+        }
+    });
 
     executor::simple(&mut state, guard.inner(), &mut view, |state, backend| {
         loop {
