@@ -9,10 +9,7 @@ use crate::{
     rect::Rect,
     state::RedrawState,
     vec2::Vec2,
-    view::{
-        ScrollableView,
-        View,
-    },
+    view::View,
 };
 use std::cell::Cell;
 
@@ -47,14 +44,6 @@ where
     ) -> Option<Self::Message> {
         Some(self.msg.clone())
     }
-}
-
-impl<S, E, T, M> ScrollableView<S, E> for ConsumeEvent<T, M>
-where
-    T: ScrollableView<S, E>,
-    M: Clone,
-{
-    impl_scrollable_view_with_inner!(inner);
 }
 
 pub struct ScrollView<T> {
@@ -174,7 +163,7 @@ impl<T> ScrollView<T> {
 
 impl<S: RedrawState, E: EventLike, T> View<S, E> for ScrollView<T>
 where
-    T: ScrollableView<S, E>,
+    T: View<S, E>,
 {
     type Message = T::Message;
 
@@ -191,6 +180,7 @@ where
                 match inner_size.x.checked_sub(printer.bound().w()) {
                     Some(left) => left * self.scroll / (printer.bound().w() - 1),
                     None => {
+                        // Nothing to scroll
                         self.inner.render(printer);
                         return;
                     }
@@ -200,6 +190,7 @@ where
                 match inner_size.y.checked_sub(printer.bound().h()) {
                     Some(left) => left * self.scroll / (printer.bound().h() - 1),
                     None => {
+                        // Nothing to scroll
                         self.inner.render(printer);
                         return;
                     }
@@ -210,14 +201,13 @@ where
         printer.with_bound(
             printer.bound().sub_size(self.additional_size()),
             |printer| {
-                match self.orientation {
-                    Orientation::Horizontal => {
-                        self.inner.scroll_horizontal_render(pos, printer);
-                    }
-                    Orientation::Vertical => {
-                        self.inner.scroll_vertical_render(pos, printer);
-                    }
-                }
+                let pos = match self.orientation {
+                    Orientation::Horizontal => (pos, 0),
+                    Orientation::Vertical => (0, pos),
+                };
+                printer.sliced(pos, |printer| {
+                    self.inner.render(printer);
+                });
             },
         );
 
@@ -344,5 +334,3 @@ where
         self.inner.on_event(state, event)
     }
 }
-
-impl_scrollable_view_for_inner!(SizeCacher<T>);
