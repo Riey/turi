@@ -67,6 +67,11 @@ impl<'a> Printer<'a> {
     }
 
     #[inline]
+    pub fn style(&self) -> Style {
+        self.backend.style()
+    }
+
+    #[inline]
     pub fn refresh(&mut self) {
         self.backend.flush();
     }

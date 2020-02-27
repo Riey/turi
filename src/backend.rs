@@ -133,7 +133,8 @@ impl<'a> Backend for SlicedBackend<'a> {
             let width = ch.width().unwrap_or(0);
             let width = width as u16;
             if left < width {
-                self.0.print_at(Vec2::new(left, pos.y - self.1.y), text.split_at(i).1);
+                self.0
+                    .print_at(Vec2::new(left, pos.y - self.1.y), text.split_at(i).1);
                 return;
             } else {
                 left -= width;
