@@ -4,7 +4,11 @@ version = "0.1.0"
 authors = ["Riey <creeper844@gmail.com>"]
 edition = "2018"
 
+[profile.release]
+debug = true
+
 [features]
+default = ["crossterm-backend"]
 crossterm-backend = ["crossterm"]
 
 [dependencies]
