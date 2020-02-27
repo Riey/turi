@@ -115,6 +115,33 @@ impl<'a> SlicedBackend<'a> {
 
 impl<'a> Backend for SlicedBackend<'a> {
     #[inline]
+    fn print_at(
+        &mut self,
+        pos: Vec2,
+        text: &str,
+    ) {
+        if pos.y < self.1.y {
+            return;
+        }
+
+        if pos.x >= self.1.x {
+            self.0.print_at(pos, text);
+        }
+
+        let mut left = self.1.x - pos.x;
+        for (i, ch) in text.char_indices() {
+            let width = ch.width().unwrap_or(0);
+            let width = width as u16;
+            if left < width {
+                self.0.print_at(Vec2::new(left, pos.y - self.1.y), text.split_at(i).1);
+                return;
+            } else {
+                left -= width;
+            }
+        }
+    }
+
+    #[inline]
     fn clear(&mut self) {
         self.0.clear();
     }
@@ -135,29 +162,6 @@ impl<'a> Backend for SlicedBackend<'a> {
     #[inline]
     fn style(&self) -> Style {
         self.0.style()
-    }
-
-    #[inline]
-    fn print_at(
-        &mut self,
-        pos: Vec2,
-        text: &str,
-    ) {
-        if pos.y < self.1.y {
-            return;
-        }
-
-        let mut left = self.1.x;
-        for (i, ch) in text.char_indices() {
-            let width = ch.width().unwrap_or(0);
-            let width = width as u16;
-            if left < width {
-                self.0.print_at(pos, text.split_at(i).1);
-                return;
-            } else {
-                left -= width;
-            }
-        }
     }
 
     #[inline]
