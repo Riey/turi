@@ -121,7 +121,7 @@ impl<'a> Backend for SlicedBackend<'a> {
 
     #[inline]
     fn size(&self) -> Vec2 {
-        self.0.size() - self.1
+        self.0.size() + self.1
     }
 
     #[inline]
