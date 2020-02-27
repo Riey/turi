@@ -12,8 +12,10 @@ use crate::{
     view_wrappers::{
         ConsumeEvent,
         ScrollView,
+        StyledView,
     },
 };
+use ansi_term::Style;
 
 pub trait View<S, E> {
     type Message;
@@ -33,6 +35,19 @@ pub trait View<S, E> {
         state: &mut S,
         event: E,
     ) -> Option<Self::Message>;
+
+    #[inline]
+    fn styled<F>(
+        self,
+        f: F,
+    ) -> StyledView<Self, F>
+    where
+        Self: Sized,
+        E: Clone,
+        F: FnMut(&mut Self, &mut S, E) -> Style,
+    {
+        StyledView::new(self, f)
+    }
 
     #[inline]
     fn scrollable(
