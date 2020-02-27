@@ -1,13 +1,14 @@
 use crate::{
     event::{
         EventLike,
-        MouseEventLike,
         KeyEventLike,
+        MouseEventLike,
     },
     printer::Printer,
+    state::RedrawState,
     vec2::Vec2,
     view::View,
-    view_wrappers::{SizeCacher, BoundChecker},
+    view_wrappers::SizeCacher,
     views::{
         ButtonView,
         LinearView,
@@ -59,7 +60,7 @@ where
 
 impl<S, E: EventLike, M, C> View<S, E> for DialogView<S, E, M, C>
 where
-    S: 'static,
+    S: RedrawState + 'static,
     C: View<S, E, Message = M>,
     E: EventLike + 'static,
     M: 'static,
@@ -111,32 +112,43 @@ where
         mut event: E,
     ) -> Option<Self::Message> {
         if let Some(me) = event.try_mouse_mut() {
-            let is_outline = !me.filter_map_pos(|pos| {
-                let size = self.content.prev_size();
+            let size = self.content.prev_size();
+            let is_outline = me.filter_map_pos(|pos| {
                 if pos.x == 0 || pos.y == 0 || pos.x > size.x || pos.y > size.y {
                     None
                 } else {
                     Some(pos - Vec2::new(1, 1))
                 }
             });
-        }
-        if event.try_tab() {
-            self.tab();
-            None
-        } else if let Some(pos) = event.try_mouse() {
-            if self.content.contains(pos) {
-                self.content.on_event(state, event)
-            } else if self.buttons.contains(pos) {
+
+            if is_outline {
+                return None;
+            }
+
+            let is_btn = me.filter_map_pos(|pos| {
+                if pos.y == size.y {
+                    Some(Vec2::new(pos.x, 0))
+                } else {
+                    None
+                }
+            });
+
+            if is_btn {
                 self.buttons.on_event(state, event)
             } else {
+                self.content.on_event(state, event)
+            }
+        } else if let Some(ke) = event.try_key() {
+            if ke.try_tab() {
+                self.tab();
                 None
+            } else if self.content_focus {
+                self.content.on_event(state, event)
+            } else {
+                self.buttons.on_event(state, event)
             }
         } else {
-            if self.content_focus {
-                self.content.on_event(state, event)
-            } else {
-                self.buttons.on_event(state, event)
-            }
+            None
         }
     }
 }
