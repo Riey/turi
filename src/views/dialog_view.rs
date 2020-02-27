@@ -93,8 +93,10 @@ where
         &mut self,
         size: Vec2,
     ) {
-        let btn_size = self.buttons.desired_size().min(size);
-        let content_size = size.saturating_sub(btn_size);
+        // outline
+        let size = size.saturating_sub((2, 2).into());
+        let btn_size = size.min_y(1);
+        let content_size = size.saturating_sub_y(1);
 
         self.content.layout(content_size);
         self.buttons.layout(btn_size);
@@ -113,30 +115,32 @@ where
     ) -> Option<Self::Message> {
         if let Some(me) = event.try_mouse_mut() {
             let size = self.content.prev_size();
-            let is_outline = me.filter_map_pos(|pos| {
-                if pos.x == 0 || pos.y == 0 || pos.x > size.x || pos.y > size.y {
-                    None
-                } else {
-                    Some(pos - Vec2::new(1, 1))
-                }
-            });
-
-            if is_outline {
-                return None;
-            }
 
             let is_btn = me.filter_map_pos(|pos| {
-                if pos.y == size.y {
-                    Some(Vec2::new(pos.x, 0))
+                if pos.x > 1 && (pos.y - 1) == size.y {
+                    Some(Vec2::new(pos.x - 1, 0))
                 } else {
                     None
                 }
             });
 
             if is_btn {
-                self.buttons.on_event(state, event)
-            } else {
+                return self.buttons.on_event(state, event);
+            }
+
+            let is_content = me.filter_map_pos(|pos| {
+                let desired_size = self.content.desired_size();
+                if pos.x > 1 && pos.x <= desired_size.x && pos.y > 1 && pos.y <= desired_size.y {
+                    Some(pos - Vec2::new(1, 1))
+                } else {
+                    None
+                }
+            });
+
+            if is_content {
                 self.content.on_event(state, event)
+            } else {
+                None
             }
         } else if let Some(ke) = event.try_key() {
             if ke.try_tab() {
