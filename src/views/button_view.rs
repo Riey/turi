@@ -1,5 +1,8 @@
 use crate::{
-    event::{EventLike, MouseEventLike},
+    event::{
+        EventLike,
+        MouseEventLike,
+    },
     printer::Printer,
     vec2::Vec2,
     view::View,

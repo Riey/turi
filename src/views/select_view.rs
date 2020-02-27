@@ -1,13 +1,13 @@
 use crate::{
     event::{
         EventLike,
-        MouseEventLike,
         KeyEventLike,
+        MouseEventLike,
     },
     printer::Printer,
+    state::RedrawState,
     vec2::Vec2,
     view::View,
-    state::RedrawState,
 };
 use ansi_term::{
     Color,
@@ -50,7 +50,10 @@ impl<S: RedrawState, E, T> SelectView<S, E, T> {
         }
     }
 
-    pub fn focus_down(&mut self, state: &mut S) -> Option<SelectViewMessage> {
+    pub fn focus_down(
+        &mut self,
+        state: &mut S,
+    ) -> Option<SelectViewMessage> {
         let val = self.selected + 1;
 
         if val >= self.btns.len() {
@@ -62,7 +65,10 @@ impl<S: RedrawState, E, T> SelectView<S, E, T> {
         }
     }
 
-    pub fn focus_up(&mut self, state: &mut S) -> Option<SelectViewMessage> {
+    pub fn focus_up(
+        &mut self,
+        state: &mut S,
+    ) -> Option<SelectViewMessage> {
         if self.selected > 0 {
             self.selected -= 1;
             state.set_need_redraw(true);
@@ -120,14 +126,17 @@ impl<S: RedrawState, E: EventLike, T> View<S, E> for SelectView<S, E, T> {
         state: &mut S,
         e: E,
     ) -> Option<Self::Message> {
-        if e.try_mouse().map(|me| me.try_left_down().is_some()).unwrap_or(false) {
+        if e.try_mouse()
+            .map(|me| me.try_left_down().is_some())
+            .unwrap_or(false)
+        {
             return Some(SelectViewMessage::Select);
         }
 
         let ke = e.try_key()?;
 
         if ke.try_enter() {
-           Some(SelectViewMessage::Select)
+            Some(SelectViewMessage::Select)
         } else if ke.try_up() {
             self.focus_up(state)
         } else if ke.try_down() {

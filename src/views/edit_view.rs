@@ -1,5 +1,8 @@
 use crate::{
-    event::{EventLike, KeyEventLike},
+    event::{
+        EventLike,
+        KeyEventLike,
+    },
     printer::Printer,
     state::RedrawState,
     vec2::Vec2,

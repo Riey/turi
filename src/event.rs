@@ -5,8 +5,14 @@ pub trait MouseEventLike: Sized {
     fn try_left_up(&self) -> Option<Vec2>;
     fn try_drag(&self) -> Option<Vec2>;
     fn pos(&self) -> Vec2;
-    fn map_pos(&mut self, f: impl FnOnce(Vec2) -> Vec2);
-    fn filter_map_pos(&mut self, f: impl FnOnce(Vec2) -> Option<Vec2>) -> bool;
+    fn map_pos(
+        &mut self,
+        f: impl FnOnce(Vec2) -> Vec2,
+    );
+    fn filter_map_pos(
+        &mut self,
+        f: impl FnOnce(Vec2) -> Option<Vec2>,
+    ) -> bool;
 
     fn from_left_down(pos: Vec2) -> Self;
     fn from_left_up(pos: Vec2) -> Self;
@@ -34,4 +40,3 @@ pub trait EventLike: Sized {
     fn try_key_mut(&mut self) -> Option<&mut Self::KeyEvent>;
     fn try_resize(&self) -> Option<Vec2>;
 }
-

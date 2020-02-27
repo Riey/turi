@@ -1,5 +1,9 @@
 use crate::{
-    event::{MouseEventLike, KeyEventLike, EventLike},
+    event::{
+        EventLike,
+        KeyEventLike,
+        MouseEventLike,
+    },
     orientation::Orientation,
     printer::Printer,
     rect::Rect,
@@ -253,7 +257,7 @@ where
         if let Some(me) = event.try_mouse() {
             if me.try_left_up().is_some() {
                 self.clicked = false;
-            }else if let Some(pos) = me.try_left_down() {
+            } else if let Some(pos) = me.try_left_down() {
                 if self.event_mouse_down(pos, state) {
                     return None;
                 }
@@ -342,4 +346,3 @@ where
 }
 
 impl_scrollable_view_for_inner!(SizeCacher<T>);
-
