@@ -35,6 +35,17 @@ pub trait View<S, E> {
     ) -> Option<Self::Message>;
 
     #[inline]
+    fn scrollable(
+        self,
+        orientation: Orientation,
+    ) -> ScrollView<Self>
+    where
+        Self: Sized,
+    {
+        ScrollView::new(self, orientation)
+    }
+
+    #[inline]
     fn consume_event<M>(
         self,
         msg: M,
@@ -104,35 +115,6 @@ pub trait View<S, E> {
         F: FnMut(&mut Self, &mut S, E) -> Option<Self::Message>,
     {
         OrElseFirst::new(self, f)
-    }
-}
-
-pub trait ScrollableView<S, E>: View<S, E> {
-    fn scroll_vertical_render(
-        &self,
-        pos: u16,
-        printer: &mut Printer,
-    );
-    fn scroll_horizontal_render(
-        &self,
-        pos: u16,
-        printer: &mut Printer,
-    );
-    fn scroll_both_render(
-        &self,
-        pos: Vec2,
-        printer: &mut Printer,
-    );
-
-    #[inline]
-    fn scrollbar(
-        self,
-        orientation: Orientation,
-    ) -> ScrollView<Self>
-    where
-        Self: Sized,
-    {
-        ScrollView::new(self, orientation)
     }
 }
 

@@ -1,5 +1,8 @@
 use crate::{
-    backend::Backend,
+    backend::{
+        Backend,
+        SlicedBackend,
+    },
     rect::Rect,
     vec2::Vec2,
 };
@@ -21,6 +24,23 @@ impl<'a> Printer<'a> {
             bound: Rect::new((0, 0), backend.size()),
             backend,
         }
+    }
+
+    pub fn sliced<T>(
+        &mut self,
+        pos: impl Into<Vec2>,
+        f: impl FnOnce(&mut Printer) -> T,
+    ) -> T {
+        let pos = pos.into();
+        let mut backend = SlicedBackend::new(self.backend, pos);
+        let mut printer = Printer {
+            bound:   Rect::new(
+                self.bound.start().saturating_sub(pos),
+                self.bound.size() + pos,
+            ),
+            backend: &mut backend,
+        };
+        f(&mut printer)
     }
 
     pub fn with_bound<T>(
@@ -80,7 +100,7 @@ impl<'a> Printer<'a> {
                     left = num;
                 }
                 None => {
-                    self.raw_print(start, &text[..pos]);
+                    self.raw_print(start, text.split_at(pos).0);
                     return;
                 }
             }

@@ -13,10 +13,7 @@ use turi::{
     },
     executor,
     orientation::Orientation,
-    view::{
-        ScrollableView,
-        View,
-    },
+    view::View,
     views::ParagraphView,
 };
 
@@ -44,7 +41,7 @@ fn main() {
 
     let mut view = view
         .consume_event(false)
-        .scrollbar(Orientation::Horizontal)
+        .scrollable(Orientation::Horizontal)
         .or_else_first(|_view, _state, event: Event| {
             match event {
                 Event::Key(KeyEvent {

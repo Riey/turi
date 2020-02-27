@@ -25,68 +25,6 @@ macro_rules! impl_view_with_inner {
 }
 
 #[macro_export]
-macro_rules! impl_scrollable_view_with_inner {
-    ($inner:ident) => {
-        #[inline]
-        fn scroll_vertical_render(
-            &self,
-            pos: u16,
-            printer: &mut Printer,
-        ) {
-            self.$inner.scroll_vertical_render(pos, printer);
-        }
-        #[inline]
-        fn scroll_horizontal_render(
-            &self,
-            pos: u16,
-            printer: &mut Printer,
-        ) {
-            self.$inner.scroll_horizontal_render(pos, printer);
-        }
-        #[inline]
-        fn scroll_both_render(
-            &self,
-            pos: Vec2,
-            printer: &mut Printer,
-        ) {
-            self.$inner.scroll_both_render(pos, printer);
-        }
-    };
-}
-
-#[macro_export]
-macro_rules! impl_scrollable_view_for_inner {
-    ($ident:ident<$inner:ident $(,$gen:ident)*>) => {
-        impl<S, E, $inner $(,$gen)*> ScrollableView<S, E> for $ident<$inner $(,$gen)*> where $inner: ScrollableView<S, E> {
-            #[inline]
-            fn scroll_vertical_render(
-                &self,
-                pos: u16,
-                printer: &mut Printer,
-            ) {
-                self.inner.scroll_vertical_render(pos, printer);
-            }
-            #[inline]
-            fn scroll_horizontal_render(
-                &self,
-                pos: u16,
-                printer: &mut Printer,
-            ) {
-                self.inner.scroll_horizontal_render(pos, printer);
-            }
-            #[inline]
-            fn scroll_both_render(
-                &self,
-                pos: Vec2,
-                printer: &mut Printer,
-            ) {
-                self.inner.scroll_both_render(pos, printer);
-            }
-        }
-    };
-}
-
-#[macro_export]
 macro_rules! impl_deref_for_inner {
     ($ident:ident<$inner:ident $(,$gen:ident)*>) => {
         impl<$inner $(,$gen)*> std::ops::Deref for $ident<$inner $(,$gen)*> {

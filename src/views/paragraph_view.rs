@@ -2,19 +2,10 @@ use crate::{
     never::Never,
     printer::Printer,
     vec2::Vec2,
-    view::{
-        ScrollableView,
-        View,
-    },
+    view::View,
 };
-use std::{
-    marker::PhantomData,
-    slice::SliceIndex,
-};
-use unicode_width::{
-    UnicodeWidthChar,
-    UnicodeWidthStr,
-};
+use std::marker::PhantomData;
+use unicode_width::UnicodeWidthStr;
 
 pub struct ParagraphView<S, E> {
     lines:   Vec<String>,
@@ -106,65 +97,5 @@ impl<S, E> View<S, E> for ParagraphView<S, E> {
         _: E,
     ) -> Option<Never> {
         None
-    }
-}
-
-fn scroll_horizontal_render_impl(
-    lines: &Vec<String>,
-    pos: usize,
-    printer: &mut Printer,
-    idx: impl SliceIndex<[String], Output = [String]>,
-) {
-    for (y, line) in lines[idx].iter().enumerate() {
-        let mut left = pos;
-
-        for (idx, ch) in line.char_indices() {
-            let width = ch.width().unwrap_or(0);
-            match left.checked_sub(width) {
-                Some(num) => {
-                    left = num;
-                }
-                None => {
-                    printer.print((0, y as u16), &line[idx..]);
-                    break;
-                }
-            }
-        }
-    }
-}
-
-impl<S, E> ScrollableView<S, E> for ParagraphView<S, E> {
-    fn scroll_vertical_render(
-        &self,
-        pos: u16,
-        printer: &mut Printer,
-    ) {
-        for (y, line) in self.lines[pos as usize..(pos + printer.bound().h()) as usize]
-            .iter()
-            .enumerate()
-        {
-            printer.print((0, y as u16), line);
-        }
-    }
-
-    fn scroll_horizontal_render(
-        &self,
-        pos: u16,
-        printer: &mut Printer,
-    ) {
-        scroll_horizontal_render_impl(&self.lines, pos as usize, printer, ..);
-    }
-
-    fn scroll_both_render(
-        &self,
-        pos: Vec2,
-        printer: &mut Printer,
-    ) {
-        scroll_horizontal_render_impl(
-            &self.lines,
-            pos.x as usize,
-            printer,
-            pos.y as usize..(pos.y + printer.bound().h()) as usize,
-        );
     }
 }
