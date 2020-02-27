@@ -14,3 +14,5 @@ pub mod vec2;
 pub mod view;
 pub mod view_wrappers;
 pub mod views;
+
+pub use ansi_term;
