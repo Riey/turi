@@ -2,39 +2,34 @@ use enum_map::{
     Enum,
     EnumMap,
 };
+use enumset::{EnumSet, EnumSetType};
 use std::mem::MaybeUninit;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum PaletteColor<Label> {
+pub enum PaletteColor {
     Background,
     View,
     Primary,
     Title,
     Highlight,
     HighlightInactive,
-    Custom(Label),
+    Custom(u8),
 }
 
-pub struct LabelArray<T, A>([T; 6], A);
-
-impl<Label, T> Enum<T> for PaletteColor<Label>
-where
-    Label: Enum<T>,
-    T: Sized,
-    Label::Array: Sized,
+impl<T> Enum<T> for PaletteColor
 {
-    type Array = LabelArray<T, Label::Array>;
+    type Array = [T; 6 + 256];
 
-    const POSSIBLE_VALUES: usize = 6 + Label::POSSIBLE_VALUES;
+    const POSSIBLE_VALUES: usize = 6 + 256;
 
     #[inline]
     fn slice(array: &Self::Array) -> &[T] {
-        unsafe { std::slice::from_raw_parts(array as *const _ as *const _, Self::POSSIBLE_VALUES) }
+        &array[..]
     }
 
     #[inline]
     fn slice_mut(array: &mut Self::Array) -> &mut [T] {
-        unsafe { std::slice::from_raw_parts_mut(array as *mut _ as *mut _, Self::POSSIBLE_VALUES) }
+        &mut array[..]
     }
 
     #[inline]
@@ -46,7 +41,7 @@ where
             3 => PaletteColor::Title,
             4 => PaletteColor::Highlight,
             5 => PaletteColor::HighlightInactive,
-            x => PaletteColor::Custom(Label::from_usize(x - 6)),
+            x => PaletteColor::Custom((x - 6) as u8),
         }
     }
 
@@ -59,7 +54,7 @@ where
             PaletteColor::Title => 3,
             PaletteColor::Highlight => 4,
             PaletteColor::HighlightInactive => 5,
-            PaletteColor::Custom(labal) => labal.to_usize() + 6,
+            PaletteColor::Custom(labal) => labal as usize + 6,
         }
     }
 
@@ -68,16 +63,16 @@ where
         unsafe {
             let mut arr = MaybeUninit::<Self::Array>::uninit();
 
-            (*arr.as_mut_ptr()).0[0] = f(PaletteColor::Background);
-            (*arr.as_mut_ptr()).0[1] = f(PaletteColor::View);
-            (*arr.as_mut_ptr()).0[2] = f(PaletteColor::Primary);
-            (*arr.as_mut_ptr()).0[3] = f(PaletteColor::Title);
-            (*arr.as_mut_ptr()).0[4] = f(PaletteColor::Highlight);
-            (*arr.as_mut_ptr()).0[5] = f(PaletteColor::HighlightInactive);
+            (*arr.as_mut_ptr())[0] = f(PaletteColor::Background);
+            (*arr.as_mut_ptr())[1] = f(PaletteColor::View);
+            (*arr.as_mut_ptr())[2] = f(PaletteColor::Primary);
+            (*arr.as_mut_ptr())[3] = f(PaletteColor::Title);
+            (*arr.as_mut_ptr())[4] = f(PaletteColor::Highlight);
+            (*arr.as_mut_ptr())[5] = f(PaletteColor::HighlightInactive);
 
-            let label_arr = Label::from_function(|label| f(PaletteColor::Custom(label)));
-
-            (*arr.as_mut_ptr()).1 = label_arr;
+            for i in 0..256 {
+                (*arr.as_mut_ptr())[i + 6] = f(PaletteColor::Custom(i as u8));
+            }
 
             arr.assume_init()
         }
@@ -106,16 +101,36 @@ impl Default for BaseColor {
 }
 
 #[derive(Clone, Copy, Debug)]
-pub enum Color<Label> {
+pub enum Color {
     Base(BaseColor),
-    Palette(PaletteColor<Label>),
+    Palette(PaletteColor),
 }
 
-pub struct Theme<Label: Enum<BaseColor>> {
-    palette: EnumMap<PaletteColor<Label>, BaseColor>,
+#[derive(EnumSetType, Debug)]
+pub enum Effect {
+    Bold,
+    Dimmed,
+    Italic,
+    Underline,
+    Blink,
+    Reverse,
+    Hidden,
+    StrikeThrough,
 }
 
-impl<Label: Enum<BaseColor>> Theme<Label> {
+#[derive(Clone, Copy, Debug)]
+pub struct Style {
+    pub fg: Color,
+    pub bg: Color,
+    pub effects: EnumSet<Effect>,
+}
+
+#[derive(Clone, Copy, Debug)]
+pub struct Theme {
+    palette: EnumMap<PaletteColor, BaseColor>,
+}
+
+impl Theme {
     pub fn new() -> Self {
         Self {
             palette: EnumMap::new(),
@@ -125,7 +140,7 @@ impl<Label: Enum<BaseColor>> Theme<Label> {
     #[inline]
     pub fn resolve_palette(
         &self,
-        palette: PaletteColor<Label>,
+        palette: PaletteColor,
     ) -> BaseColor {
         self.palette[palette]
     }
@@ -133,7 +148,7 @@ impl<Label: Enum<BaseColor>> Theme<Label> {
     #[inline]
     pub fn resolve_color(
         &self,
-        color: Color<Label>,
+        color: Color,
     ) -> BaseColor {
         match color {
             Color::Base(base) => base,
