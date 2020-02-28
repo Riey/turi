@@ -164,8 +164,10 @@ where
 
             if is_btn {
                 let mut x = me.pos().x;
-                for btn in self.buttons.iter_mut() {
+                for (i, btn) in self.buttons.iter_mut().enumerate() {
                     if btn.width() > x {
+                        state.set_need_redraw(self.focus == DialogFocus::Button(i));
+                        self.focus = DialogFocus::Button(i);
                         return btn.on_event(state, event);
                     } else {
                         x -= btn.width();
@@ -185,6 +187,8 @@ where
             });
 
             if is_content {
+                state.set_need_redraw(self.focus == DialogFocus::Content);
+                self.focus = DialogFocus::Content;
                 self.content.on_event(state, event)
             } else {
                 None
