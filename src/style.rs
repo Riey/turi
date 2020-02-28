@@ -142,6 +142,24 @@ pub struct Style {
 
 impl Style {
     #[inline]
+    pub fn outline() -> Self {
+        Self {
+            fg:      Color::Palette(PaletteColor::Primary),
+            bg:      Color::Palette(PaletteColor::Background),
+            effects: EnumSet::empty(),
+        }
+    }
+
+    #[inline]
+    pub fn title() -> Self {
+        Self {
+            fg:      Color::Palette(PaletteColor::Title),
+            bg:      Color::Palette(PaletteColor::Background),
+            effects: EnumSet::empty(),
+        }
+    }
+
+    #[inline]
     pub fn view() -> Self {
         Self {
             fg:      Color::Palette(PaletteColor::Primary),
@@ -203,25 +221,21 @@ pub struct Theme {
 
 impl Default for Theme {
     fn default() -> Self {
-        Self::new(
-            enum_map! {
-                PaletteColor::View => BasicColor::Light(BaseColor::Black),
-                PaletteColor::Background => BasicColor::Dark(BaseColor::Black),
-                PaletteColor::Primary => BasicColor::Light(BaseColor::White),
-                PaletteColor::Title => BasicColor::Light(BaseColor::Cyan),
-                PaletteColor::Highlight => BasicColor::Dark(BaseColor::Yellow),
-                PaletteColor::HighlightInactive => BasicColor::Light(BaseColor::Black),
-                PaletteColor::Custom(_) => BasicColor::Reset,
-            },
-        )
+        Self::new(enum_map! {
+            PaletteColor::View => BasicColor::Light(BaseColor::Black),
+            PaletteColor::Background => BasicColor::Dark(BaseColor::Black),
+            PaletteColor::Primary => BasicColor::Light(BaseColor::White),
+            PaletteColor::Title => BasicColor::Light(BaseColor::Cyan),
+            PaletteColor::Highlight => BasicColor::Dark(BaseColor::Yellow),
+            PaletteColor::HighlightInactive => BasicColor::Light(BaseColor::Black),
+            PaletteColor::Custom(_) => BasicColor::Reset,
+        })
     }
 }
 
 impl Theme {
     pub fn new(palette: EnumMap<PaletteColor, BasicColor>) -> Self {
-        Self {
-            palette,
-        }
+        Self { palette }
     }
 
     #[inline]
