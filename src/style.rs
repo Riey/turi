@@ -93,6 +93,33 @@ pub enum BasicColor {
     Reset,
 }
 
+impl From<BasicColor> for Option<AnsiColor> {
+    #[inline]
+    fn from(c: BasicColor) -> Self {
+        match c {
+            BasicColor::Reset => None,
+            BasicColor::Ansi(ansi) => Some(ansi),
+        }
+    }
+}
+
+impl From<Option<AnsiColor>> for BasicColor {
+    #[inline]
+    fn from(c: Option<AnsiColor>) -> Self {
+        match c {
+            Some(ansi) => ansi.into(),
+            None => BasicColor::Reset,
+        }
+    }
+}
+
+impl From<AnsiColor> for BasicColor {
+    #[inline]
+    fn from(c: AnsiColor) -> Self {
+        BasicColor::Ansi(c)
+    }
+}
+
 #[derive(Clone, Copy, Debug)]
 pub enum Color {
     Basic(BasicColor),
@@ -215,16 +242,6 @@ impl Default for Theme {
             PaletteColor::HighlightInactive => BasicColor::Ansi(AnsiColor::Black),
             PaletteColor::Custom(_) => BasicColor::Reset,
         })
-    }
-}
-
-impl From<BasicColor> for Option<AnsiColor> {
-    #[inline]
-    fn from(c: BasicColor) -> Self {
-        match c {
-            BasicColor::Reset => None,
-            BasicColor::Ansi(ansi) => Some(ansi),
-        }
     }
 }
 
