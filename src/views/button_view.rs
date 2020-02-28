@@ -1,6 +1,7 @@
 use crate::{
     event::{
         EventLike,
+        KeyEventLike,
         MouseEventLike,
     },
     printer::Printer,
@@ -30,6 +31,16 @@ impl<S, E> ButtonView<S, E> {
             text_width,
             _marker: PhantomData,
         }
+    }
+
+    #[inline]
+    pub fn text(&self) -> &str {
+        &self.text
+    }
+
+    #[inline]
+    pub fn width(&self) -> u16 {
+        self.text_width
     }
 }
 
@@ -90,6 +101,10 @@ impl<S, E: EventLike> View<S, E> for ButtonView<S, E> {
         _state: &mut S,
         e: E,
     ) -> Option<()> {
-        e.try_mouse()?.try_left_down().map(|_| ())
+        if e.try_key().map(|ke| ke.try_enter()).unwrap_or(false) {
+            Some(())
+        } else {
+            e.try_mouse()?.try_left_down().map(|_| ())
+        }
     }
 }
