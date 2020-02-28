@@ -123,6 +123,7 @@ impl<'a> Printer<'a> {
             .print_at(self.bound.start() + start.into(), text);
     }
 
+    #[inline]
     pub fn print_styled(
         &mut self,
         start: impl Into<Vec2>,
@@ -133,6 +134,7 @@ impl<'a> Printer<'a> {
         });
     }
 
+    #[inline]
     pub fn print_vertical_line(
         &mut self,
         pos: u16,
@@ -140,6 +142,7 @@ impl<'a> Printer<'a> {
         self.print_vertical_line_at((pos, 0), self.bound.h() as usize);
     }
 
+    #[inline]
     pub fn print_vertical_line_at(
         &mut self,
         start: impl Into<Vec2>,
@@ -154,6 +157,7 @@ impl<'a> Printer<'a> {
         }
     }
 
+    #[inline]
     pub fn print_vertical_block_line_at(
         &mut self,
         start: impl Into<Vec2>,
@@ -168,6 +172,7 @@ impl<'a> Printer<'a> {
         }
     }
 
+    #[inline]
     pub fn print_horizontal_line(
         &mut self,
         pos: u16,
@@ -175,6 +180,7 @@ impl<'a> Printer<'a> {
         self.print_horizontal_line_at((0, pos), self.bound().w() as usize);
     }
 
+    #[inline]
     pub fn print_horizontal_line_at(
         &mut self,
         start: impl Into<Vec2>,
@@ -184,6 +190,7 @@ impl<'a> Printer<'a> {
         self.raw_print(start, &BAR_STRING[..size * "─".len()]);
     }
 
+    #[inline]
     pub fn print_horizontal_block_line_at(
         &mut self,
         start: impl Into<Vec2>,

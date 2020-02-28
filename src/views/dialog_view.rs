@@ -1,4 +1,5 @@
 use crate::{
+    converters::Map,
     event::{
         EventLike,
         KeyEventLike,
@@ -9,17 +10,26 @@ use crate::{
     vec2::Vec2,
     view::View,
     view_wrappers::SizeCacher,
-    views::{
-        ButtonView,
-        LinearView,
-    },
+    views::ButtonView,
 };
 
+use ansi_term::Color;
+
+#[derive(Clone, Copy, Eq, PartialEq, Debug)]
+enum DialogFocus {
+    Content,
+    Button(usize),
+}
+
+type DialogButton<S, E, M> =
+    Map<ButtonView<S, E>, M, Box<dyn FnMut(&mut ButtonView<S, E>, &mut S, ()) -> M>>;
+
 pub struct DialogView<S, E, M, C> {
-    title:         String,
-    content:       SizeCacher<C>,
-    buttons:       LinearView<S, E, M>,
-    content_focus: bool,
+    title:       String,
+    content:     SizeCacher<C>,
+    buttons:     Vec<DialogButton<S, E, M>>,
+    focus:       DialogFocus,
+    focus_color: Color,
 }
 
 impl<S, E, M, C> DialogView<S, E, M, C>
@@ -30,13 +40,15 @@ where
 {
     pub fn new(content: C) -> Self {
         Self {
-            title:         String::new(),
-            content:       SizeCacher::new(content),
-            buttons:       LinearView::new(),
-            content_focus: true,
+            title:       String::new(),
+            content:     SizeCacher::new(content),
+            buttons:     Vec::with_capacity(10),
+            focus:       DialogFocus::Content,
+            focus_color: Color::Yellow,
         }
     }
 
+    #[inline]
     pub fn set_title(
         &mut self,
         title: String,
@@ -50,15 +62,30 @@ where
         mut mapper: impl FnMut(&mut S) -> M + 'static,
     ) {
         self.buttons
-            .add_child(btn.map(move |_, state, _| mapper(state)));
+            .push(btn.map(Box::new(move |_, state, _| mapper(state))));
     }
 
+    #[inline]
+    pub fn focus_color(
+        mut self,
+        focus_color: Color,
+    ) -> Self {
+        self.focus_color = focus_color;
+        self
+    }
+
+    #[inline]
     fn tab(&mut self) {
-        self.content_focus = !self.content_focus;
+        self.focus = match self.focus {
+            DialogFocus::Content if !self.buttons.is_empty() => DialogFocus::Button(0),
+            DialogFocus::Content => DialogFocus::Content,
+            DialogFocus::Button(n) if n == self.buttons.len() - 1 => DialogFocus::Content,
+            DialogFocus::Button(n) => DialogFocus::Button(n + 1),
+        };
     }
 }
 
-impl<S, E: EventLike, M, C> View<S, E> for DialogView<S, E, M, C>
+impl<S, E, M, C> View<S, E> for DialogView<S, E, M, C>
 where
     S: RedrawState + 'static,
     C: View<S, E, Message = M>,
@@ -83,8 +110,21 @@ where
                 self.content.render(printer);
             });
 
+            let mut x = 0;
+            let style = printer.style();
+
             printer.with_bound(btns_bound, |printer| {
-                self.buttons.render(printer);
+                for (i, btn) in self.buttons.iter().enumerate() {
+                    if self.focus == DialogFocus::Button(i) {
+                        printer.print_styled(
+                            (x, 0),
+                            &style.fg(self.focus_color).reverse().paint(btn.text()),
+                        );
+                    } else {
+                        printer.print((x, 0), btn.text());
+                    }
+                    x += btn.width();
+                }
             });
         });
     }
@@ -95,17 +135,15 @@ where
     ) {
         // outline
         let size = size.saturating_sub((2, 2).into());
-        let btn_size = size.min_y(1);
         let content_size = size.saturating_sub_y(1);
 
         self.content.layout(content_size);
-        self.buttons.layout(btn_size);
     }
 
     fn desired_size(&self) -> Vec2 {
         let content = self.content.desired_size();
-        let buttons = self.buttons.desired_size();
-        Vec2::new(content.x.max(buttons.x), content.y + buttons.y) + Vec2::new(2, 2)
+        let buttons = self.buttons.iter().map(|b| b.width()).sum::<u16>();
+        Vec2::new(content.x.max(buttons), content.y + 1) + Vec2::new(2, 2)
     }
 
     fn on_event(
@@ -125,7 +163,16 @@ where
             });
 
             if is_btn {
-                return self.buttons.on_event(state, event);
+                let mut x = me.pos().x;
+                for btn in self.buttons.iter_mut() {
+                    if btn.width() > x {
+                        return btn.on_event(state, event);
+                    } else {
+                        x -= btn.width();
+                    }
+                }
+
+                return None;
             }
 
             let is_content = me.filter_map_pos(|pos| {
@@ -145,11 +192,29 @@ where
         } else if let Some(ke) = event.try_key() {
             if ke.try_tab() {
                 self.tab();
+                state.set_need_redraw(true);
                 None
-            } else if self.content_focus {
+            } else if self.focus == DialogFocus::Content {
                 self.content.on_event(state, event)
+            } else if let DialogFocus::Button(x) = &mut self.focus {
+                if ke.try_left() {
+                    if let Some(new_x) = x.checked_sub(1) {
+                        *x = new_x;
+                        state.set_need_redraw(true);
+                    }
+                    None
+                } else if ke.try_right() {
+                    let new_x = *x + 1;
+                    if new_x < self.buttons.len() {
+                        *x = new_x;
+                        state.set_need_redraw(true);
+                    }
+                    None
+                } else {
+                    self.buttons[*x].on_event(state, event)
+                }
             } else {
-                self.buttons.on_event(state, event)
+                None
             }
         } else {
             None
