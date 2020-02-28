@@ -4,5 +4,6 @@
 /cargo-timing*
 /flamegraph*
 /perf*
+/*.bench
 **/*.rs.bk
 Cargo.lock
