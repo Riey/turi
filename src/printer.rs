@@ -45,7 +45,7 @@ impl<'a> Printer<'a> {
                 self.bound.start().saturating_sub(pos),
                 self.bound.size() + pos,
             ),
-            style: self.style,
+            style:   self.style,
             backend: &mut backend,
             theme:   self.theme,
         };

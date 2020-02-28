@@ -143,8 +143,8 @@ impl Style {
     #[inline]
     pub fn view() -> Self {
         Self {
-            fg: Color::Palette(PaletteColor::Primary),
-            bg: Color::Palette(PaletteColor::View),
+            fg:      Color::Palette(PaletteColor::Primary),
+            bg:      Color::Palette(PaletteColor::View),
             effects: EnumSet::empty(),
         }
     }
@@ -152,8 +152,8 @@ impl Style {
     #[inline]
     pub fn highlight() -> Self {
         Self {
-            fg: Color::Palette(PaletteColor::Highlight),
-            bg: Color::Palette(PaletteColor::View),
+            fg:      Color::Palette(PaletteColor::Highlight),
+            bg:      Color::Palette(PaletteColor::View),
             effects: Effect::Reverse.into(),
         }
     }
@@ -161,8 +161,8 @@ impl Style {
     #[inline]
     pub fn highlight_inactive() -> Self {
         Self {
-            fg: Color::Palette(PaletteColor::HighlightInactive),
-            bg: Color::Palette(PaletteColor::View),
+            fg:      Color::Palette(PaletteColor::HighlightInactive),
+            bg:      Color::Palette(PaletteColor::View),
             effects: Effect::Reverse.into(),
         }
     }
@@ -198,6 +198,12 @@ impl Style {
 #[derive(Clone, Copy, Debug)]
 pub struct Theme {
     palette: EnumMap<PaletteColor, BasicColor>,
+}
+
+impl Default for Theme {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl Theme {

@@ -115,8 +115,8 @@ fn remove_effect(effect: Effect) -> Attribute {
 }
 
 pub struct CrosstermBackend<W: Write> {
-    out:   W,
-    size:  Vec2,
+    out:  W,
+    size: Vec2,
 }
 
 impl<W: Write> CrosstermBackend<W> {
@@ -124,10 +124,7 @@ impl<W: Write> CrosstermBackend<W> {
         out: W,
         size: Vec2,
     ) -> Self {
-        Self {
-            out,
-            size,
-        }
+        Self { out, size }
     }
 
     pub fn resize(
@@ -151,19 +148,31 @@ impl<W: Write> Backend for CrosstermBackend<W> {
         self.size
     }
 
-    fn set_fg(&mut self, color: BasicColor) {
+    fn set_fg(
+        &mut self,
+        color: BasicColor,
+    ) {
         queue!(self.out, SetForegroundColor(color.into()),).unwrap();
     }
 
-    fn set_bg(&mut self, color: BasicColor) {
+    fn set_bg(
+        &mut self,
+        color: BasicColor,
+    ) {
         queue!(self.out, SetBackgroundColor(color.into()),).unwrap();
     }
 
-    fn set_effect(&mut self, effect: Effect) {
+    fn set_effect(
+        &mut self,
+        effect: Effect,
+    ) {
         queue!(self.out, SetAttribute(effect.into())).unwrap();
     }
 
-    fn unset_effect(&mut self, effect: Effect) {
+    fn unset_effect(
+        &mut self,
+        effect: Effect,
+    ) {
         queue!(self.out, SetAttribute(remove_effect(effect))).unwrap();
     }
 
