@@ -63,37 +63,17 @@ impl<'a> Printer<'a> {
         ret
     }
 
-    fn update_style(
-        &mut self,
-        style: &mut Style,
-    ) {
-        if self.style.fg != style.fg {
-            self.backend.set_fg(self.theme.resolve_color(style.fg));
-        }
-
-        if self.style.bg != style.bg {
-            self.backend.set_bg(self.theme.resolve_color(style.bg));
-        }
-
-        for old in self.style.effects - style.effects {
-            self.backend.unset_effect(old);
-        }
-
-        for new in style.effects - self.style.effects {
-            self.backend.set_effect(new);
-        }
-
-        swap(&mut self.style, style);
-    }
-
     pub fn with_style<T>(
         &mut self,
         mut style: Style,
         f: impl FnOnce(&mut Self) -> T,
     ) -> T {
-        self.update_style(&mut style);
+        let old_style = self.backend.style();
+        self.backend.set_style(self.theme.resolve_style(&style));
+        swap(&mut style, &mut self.style);
         let ret = f(self);
-        self.update_style(&mut style);
+        swap(&mut style, &mut self.style);
+        self.backend.set_style(old_style);
         ret
     }
 

@@ -1,11 +1,5 @@
-use crate::{
-    style::{
-        BaseColor,
-        BasicColor,
-        Effect,
-    },
-    vec2::Vec2,
-};
+use crate::vec2::Vec2;
+use ansi_term::Style;
 use crossterm::{
     cursor::{
         Hide,
@@ -23,14 +17,7 @@ use crossterm::{
     },
     execute,
     queue,
-    style::{
-        Attribute,
-        Color,
-        Print,
-        SetAttribute,
-        SetBackgroundColor,
-        SetForegroundColor,
-    },
+    style::Print,
     terminal::{
         disable_raw_mode,
         enable_raw_mode,
@@ -52,71 +39,10 @@ use crate::{
 };
 use crossterm::event::MouseButton;
 
-impl From<BasicColor> for Color {
-    fn from(b: BasicColor) -> Color {
-        match b {
-            BasicColor::Dark(dark) => {
-                match dark {
-                    BaseColor::Black => Color::Black,
-                    BaseColor::Red => Color::DarkRed,
-                    BaseColor::Green => Color::DarkGreen,
-                    BaseColor::Blue => Color::DarkBlue,
-                    BaseColor::Yellow => Color::DarkYellow,
-                    BaseColor::Magenta => Color::DarkMagenta,
-                    BaseColor::Cyan => Color::DarkCyan,
-                    BaseColor::White => Color::Grey,
-                }
-            }
-            BasicColor::Light(light) => {
-                match light {
-                    BaseColor::Black => Color::DarkGrey,
-                    BaseColor::Red => Color::Red,
-                    BaseColor::Green => Color::Green,
-                    BaseColor::Blue => Color::Blue,
-                    BaseColor::Yellow => Color::Yellow,
-                    BaseColor::Magenta => Color::Magenta,
-                    BaseColor::Cyan => Color::Cyan,
-                    BaseColor::White => Color::White,
-                }
-            }
-            BasicColor::Reset => Color::Reset,
-            BasicColor::Ansi(ansi) => Color::AnsiValue(ansi),
-            BasicColor::Rgb(r, g, b) => Color::Rgb { r, g, b },
-        }
-    }
-}
-
-impl From<Effect> for Attribute {
-    #[inline]
-    fn from(effect: Effect) -> Self {
-        match effect {
-            Effect::Blink => Attribute::RapidBlink,
-            Effect::Reverse => Attribute::Reverse,
-            Effect::Underline => Attribute::Underlined,
-            Effect::Italic => Attribute::Italic,
-            Effect::Bold => Attribute::Bold,
-            Effect::Hidden => Attribute::Hidden,
-            Effect::StrikeThrough => Attribute::CrossedOut,
-        }
-    }
-}
-
-#[inline]
-fn remove_effect(effect: Effect) -> Attribute {
-    match effect {
-        Effect::Blink => Attribute::NoBlink,
-        Effect::Reverse => Attribute::NoReverse,
-        Effect::Underline => Attribute::NoUnderline,
-        Effect::Italic => Attribute::NoItalic,
-        Effect::Bold => Attribute::NoBold,
-        Effect::Hidden => Attribute::NoHidden,
-        Effect::StrikeThrough => Attribute::NotCrossedOut,
-    }
-}
-
 pub struct CrosstermBackend<W: Write> {
-    out:  W,
-    size: Vec2,
+    out:   W,
+    size:  Vec2,
+    style: Style,
 }
 
 impl<W: Write> CrosstermBackend<W> {
@@ -124,7 +50,11 @@ impl<W: Write> CrosstermBackend<W> {
         out: W,
         size: Vec2,
     ) -> Self {
-        Self { out, size }
+        Self {
+            out,
+            size,
+            style: Style::new(),
+        }
     }
 
     pub fn resize(
@@ -148,32 +78,18 @@ impl<W: Write> Backend for CrosstermBackend<W> {
         self.size
     }
 
-    fn set_fg(
-        &mut self,
-        color: BasicColor,
-    ) {
-        queue!(self.out, SetForegroundColor(color.into()),).unwrap();
+    fn style(&self) -> Style {
+        self.style
     }
 
-    fn set_bg(
+    fn set_style(
         &mut self,
-        color: BasicColor,
+        style: Style,
     ) {
-        queue!(self.out, SetBackgroundColor(color.into()),).unwrap();
-    }
+        let diff = self.style.infix(style);
+        self.style = style;
 
-    fn set_effect(
-        &mut self,
-        effect: Effect,
-    ) {
-        queue!(self.out, SetAttribute(effect.into())).unwrap();
-    }
-
-    fn unset_effect(
-        &mut self,
-        effect: Effect,
-    ) {
-        queue!(self.out, SetAttribute(remove_effect(effect))).unwrap();
+        queue!(self.out, Print(diff)).unwrap();
     }
 
     fn print_at(

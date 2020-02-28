@@ -1,10 +1,5 @@
-use crate::{
-    style::{
-        BasicColor,
-        Effect,
-    },
-    vec2::Vec2,
-};
+use crate::vec2::Vec2;
+use ansi_term::Style;
 
 #[cfg(feature = "crossterm-backend")]
 mod crossterm;
@@ -19,22 +14,11 @@ use unicode_width::UnicodeWidthChar;
 pub trait Backend {
     fn clear(&mut self);
     fn size(&self) -> Vec2;
-    fn set_bg(
+    fn set_style(
         &mut self,
-        color: BasicColor,
+        style: Style,
     );
-    fn set_fg(
-        &mut self,
-        color: BasicColor,
-    );
-    fn set_effect(
-        &mut self,
-        effect: Effect,
-    );
-    fn unset_effect(
-        &mut self,
-        effect: Effect,
-    );
+    fn style(&self) -> Style;
     fn print_at(
         &mut self,
         pos: Vec2,
@@ -69,35 +53,16 @@ impl<'a, B: Backend> Backend for &'a mut B {
     }
 
     #[inline]
-    fn set_bg(
+    fn set_style(
         &mut self,
-        color: BasicColor,
+        style: Style,
     ) {
-        (**self).set_bg(color);
+        (**self).set_style(style);
     }
 
     #[inline]
-    fn set_fg(
-        &mut self,
-        color: BasicColor,
-    ) {
-        (**self).set_fg(color);
-    }
-
-    #[inline]
-    fn set_effect(
-        &mut self,
-        effect: Effect,
-    ) {
-        (**self).set_effect(effect);
-    }
-
-    #[inline]
-    fn unset_effect(
-        &mut self,
-        effect: Effect,
-    ) {
-        (**self).unset_effect(effect);
+    fn style(&self) -> Style {
+        (**self).style()
     }
 }
 
@@ -125,31 +90,15 @@ impl Backend for DummyBackend {
     fn flush(&mut self) {}
 
     #[inline]
-    fn set_bg(
+    fn set_style(
         &mut self,
-        _color: BasicColor,
+        _style: Style,
     ) {
     }
 
     #[inline]
-    fn set_fg(
-        &mut self,
-        _color: BasicColor,
-    ) {
-    }
-
-    #[inline]
-    fn set_effect(
-        &mut self,
-        _effect: Effect,
-    ) {
-    }
-
-    #[inline]
-    fn unset_effect(
-        &mut self,
-        _effect: Effect,
-    ) {
+    fn style(&self) -> Style {
+        Style::new()
     }
 }
 
@@ -209,34 +158,15 @@ impl<'a> Backend for SlicedBackend<'a> {
     }
 
     #[inline]
-    fn set_bg(
+    fn set_style(
         &mut self,
-        color: BasicColor,
+        style: Style,
     ) {
-        self.0.set_bg(color);
+        self.0.set_style(style);
     }
 
     #[inline]
-    fn set_fg(
-        &mut self,
-        color: BasicColor,
-    ) {
-        self.0.set_fg(color);
-    }
-
-    #[inline]
-    fn set_effect(
-        &mut self,
-        effect: Effect,
-    ) {
-        self.0.set_effect(effect);
-    }
-
-    #[inline]
-    fn unset_effect(
-        &mut self,
-        effect: Effect,
-    ) {
-        self.0.unset_effect(effect);
+    fn style(&self) -> Style {
+        self.0.style()
     }
 }
