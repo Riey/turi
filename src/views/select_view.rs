@@ -9,7 +9,6 @@ use crate::{
     vec2::Vec2,
     view::View,
 };
-use ansi_term::Color;
 use std::marker::PhantomData;
 use unicode_width::UnicodeWidthStr;
 
@@ -17,7 +16,6 @@ pub struct SelectView<S, E, T> {
     btns:           Vec<(String, T)>,
     selected:       usize,
     width:          u16,
-    selected_color: Color,
     _marker:        PhantomData<(S, E)>,
 }
 
@@ -27,18 +25,8 @@ impl<S: RedrawState, E, T> SelectView<S, E, T> {
             btns:           Vec::new(),
             selected:       0,
             width:          0,
-            selected_color: Color::Yellow,
             _marker:        PhantomData,
         }
-    }
-
-    #[inline]
-    pub fn selected_color(
-        mut self,
-        color: Color,
-    ) -> Self {
-        self.selected_color = color;
-        self
     }
 
     pub fn with_items<I: IntoIterator<Item = (String, T)>>(items: I) -> Self {
@@ -54,7 +42,6 @@ impl<S: RedrawState, E, T> SelectView<S, E, T> {
             btns,
             selected: 0,
             width,
-            selected_color: Color::Yellow,
             _marker: PhantomData,
         }
     }
@@ -111,10 +98,8 @@ impl<S: RedrawState, E: EventLike, T> View<S, E> for SelectView<S, E, T> {
     ) {
         for (i, (text, _)) in self.btns.iter().enumerate() {
             if i == self.selected {
-                let style = printer.style();
-                printer.with_style(style.fg(self.selected_color).reverse(), |printer| {
-                    printer.print((0, i as u16), text);
-                })
+                // TODO: selected
+                printer.print((0, i as u16), text);
             } else {
                 printer.print((0, i as u16), text);
             }

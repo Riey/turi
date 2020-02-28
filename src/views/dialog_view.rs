@@ -13,8 +13,6 @@ use crate::{
     views::ButtonView,
 };
 
-use ansi_term::Color;
-
 #[derive(Clone, Copy, Eq, PartialEq, Debug)]
 enum DialogFocus {
     Content,
@@ -29,7 +27,6 @@ pub struct DialogView<S, E, M, C> {
     content:     SizeCacher<C>,
     buttons:     Vec<DialogButton<S, E, M>>,
     focus:       DialogFocus,
-    focus_color: Color,
 }
 
 impl<S, E, M, C> DialogView<S, E, M, C>
@@ -44,7 +41,6 @@ where
             content:     SizeCacher::new(content),
             buttons:     Vec::with_capacity(10),
             focus:       DialogFocus::Content,
-            focus_color: Color::Yellow,
         }
     }
 
@@ -63,15 +59,6 @@ where
     ) {
         self.buttons
             .push(btn.map(Box::new(move |_, state, _| mapper(state))));
-    }
-
-    #[inline]
-    pub fn focus_color(
-        mut self,
-        focus_color: Color,
-    ) -> Self {
-        self.focus_color = focus_color;
-        self
     }
 
     #[inline]
@@ -111,15 +98,12 @@ where
             });
 
             let mut x = 0;
-            let style = printer.style();
 
             printer.with_bound(btns_bound, |printer| {
                 for (i, btn) in self.buttons.iter().enumerate() {
                     if self.focus == DialogFocus::Button(i) {
-                        printer.print_styled(
-                            (x, 0),
-                            &style.fg(self.focus_color).reverse().paint(btn.text()),
-                        );
+                        // TODO: focused
+                        printer.print((x, 0), btn.text());
                     } else {
                         printer.print((x, 0), btn.text());
                     }

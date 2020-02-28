@@ -14,8 +14,8 @@ use crate::{
         ScrollView,
         StyledView,
     },
+    style::Style,
 };
-use ansi_term::Style;
 
 pub trait View<S, E> {
     type Message;

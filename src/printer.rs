@@ -121,6 +121,18 @@ impl<'a> Printer<'a> {
     }
 
     #[inline]
+    pub fn print_styled(
+        &mut self,
+        start: impl Into<Vec2>,
+        style: Style,
+        text: &str,
+    ) {
+        self.with_style(style, |printer| {
+            printer.print(start, text);
+        });
+    }
+
+    #[inline]
     pub fn print_vertical_line(
         &mut self,
         pos: u16,

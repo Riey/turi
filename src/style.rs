@@ -136,6 +136,24 @@ pub struct Style {
     pub effects: EnumSet<Effect>,
 }
 
+impl Style {
+    #[inline]
+    pub fn fg(mut self, fg: BasicColor) -> Self {
+        self.fg = fg;
+        self
+    }
+    #[inline]
+    pub fn bg(mut self, bg: BasicColor) -> Self {
+        self.bg = bg;
+        self
+    }
+    #[inline]
+    pub fn effects(mut self, effects: impl Into<EnumSet<Effect>>) -> Self {
+        self.effects |= effects;
+        self
+    }
+}
+
 #[derive(Clone, Copy, Debug)]
 pub struct Theme {
     palette: EnumMap<PaletteColor, BasicColor>,

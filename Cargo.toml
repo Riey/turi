@@ -14,7 +14,9 @@ crossterm-backend = ["crossterm"]
 [dependencies]
 unicode-width = "0.1.7"
 log = "0.4.8"
-ansi_term = "0.12.1"
+enum-map = "0.6.2"
+enumset = "0.4.5"
+enumset_derive = "0.4.4"
 
 [dependencies.crossterm]
 version = "0.16"

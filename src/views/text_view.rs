@@ -6,17 +6,17 @@ use crate::{
 };
 use unicode_width::UnicodeWidthStr;
 
-use ansi_term::ANSIString;
 use std::marker::PhantomData;
 
-pub struct TextView<'a, S, E> {
-    text:       ANSIString<'a>,
+pub struct TextView<S, E> {
+    text:       String,
     text_width: u16,
     _marker:    PhantomData<(S, E)>,
 }
 
-impl<'a, S, E> TextView<'a, S, E> {
-    pub fn new(text: ANSIString<'a>) -> Self {
+impl<S, E> TextView<S, E> {
+    pub fn new(text: impl Into<String>) -> Self {
+        let text = text.into();
         let text_width = text.width() as u16;
         Self {
             text,
@@ -26,26 +26,30 @@ impl<'a, S, E> TextView<'a, S, E> {
     }
 }
 
-impl<'a, S, E> View<S, E> for TextView<'a, S, E> {
+impl<S, E> View<S, E> for TextView<S, E> {
     type Message = Never;
 
+    #[inline]
     fn desired_size(&self) -> Vec2 {
         Vec2::new(self.text_width, 1)
     }
 
+    #[inline]
     fn layout(
         &mut self,
         _size: Vec2,
     ) {
     }
 
+    #[inline]
     fn render(
         &self,
         printer: &mut Printer,
     ) {
-        printer.print_styled((0, 0), &self.text);
+        printer.print((0, 0), &self.text);
     }
 
+    #[inline]
     fn on_event(
         &mut self,
         _state: &mut S,

@@ -10,8 +10,8 @@ use crate::{
     state::RedrawState,
     vec2::Vec2,
     view::View,
+    style::Style,
 };
-use ansi_term::Style;
 use std::cell::Cell;
 
 pub struct StyledView<T, F> {
@@ -28,7 +28,7 @@ impl<T, F> StyledView<T, F> {
         Self {
             inner,
             f,
-            style: Style::new(),
+            style: Style::default(),
         }
     }
 }
