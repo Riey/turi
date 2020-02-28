@@ -8,12 +8,10 @@ use crate::{
     },
     orientation::Orientation,
     printer::Printer,
-    style::Style,
     vec2::Vec2,
     view_wrappers::{
         ConsumeEvent,
         ScrollView,
-        StyledView,
     },
 };
 
@@ -35,19 +33,6 @@ pub trait View<S, E> {
         state: &mut S,
         event: E,
     ) -> Option<Self::Message>;
-
-    #[inline]
-    fn styled<F>(
-        self,
-        f: F,
-    ) -> StyledView<Self, F>
-    where
-        Self: Sized,
-        E: Clone,
-        F: FnMut(&mut Self, &mut S, E) -> Style,
-    {
-        StyledView::new(self, f)
-    }
 
     #[inline]
     fn scrollable(

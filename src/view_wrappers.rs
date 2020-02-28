@@ -8,73 +8,10 @@ use crate::{
     printer::Printer,
     rect::Rect,
     state::RedrawState,
-    style::Style,
     vec2::Vec2,
     view::View,
 };
 use std::cell::Cell;
-
-pub struct StyledView<T, F> {
-    inner: T,
-    f:     F,
-    style: Style,
-}
-
-impl<T, F> StyledView<T, F> {
-    pub fn new(
-        inner: T,
-        f: F,
-    ) -> Self {
-        Self {
-            inner,
-            f,
-            style: Style::default(),
-        }
-    }
-}
-
-impl<S, E, T, F> View<S, E> for StyledView<T, F>
-where
-    T: View<S, E>,
-    E: Clone,
-    F: FnMut(&mut T, &mut S, E) -> Style,
-{
-    type Message = T::Message;
-
-    #[inline]
-    fn render(
-        &self,
-        printer: &mut Printer,
-    ) {
-        printer.with_style(self.style, |printer| {
-            self.inner.render(printer);
-        });
-    }
-
-    #[inline]
-    fn layout(
-        &mut self,
-        size: Vec2,
-    ) {
-        self.inner.layout(size)
-    }
-
-    #[inline]
-    fn desired_size(&self) -> Vec2 {
-        self.inner.desired_size()
-    }
-
-    #[inline]
-    fn on_event(
-        &mut self,
-        state: &mut S,
-        event: E,
-    ) -> Option<Self::Message> {
-        let style = (self.f)(&mut self.inner, state, event.clone());
-        self.style = style;
-        self.inner.on_event(state, event)
-    }
-}
 
 pub struct ConsumeEvent<T, M> {
     inner: T,
