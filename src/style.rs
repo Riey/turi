@@ -9,6 +9,11 @@ use enumset::{
 };
 use std::mem::MaybeUninit;
 
+pub use ansi_term::{
+    Color as AnsiColor,
+    Style as AnsiStyle,
+};
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum PaletteColor {
     Background,
@@ -82,34 +87,40 @@ impl<T> Enum<T> for PaletteColor {
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum BaseColor {
-    Black,
-    Red,
-    Green,
-    Yellow,
-    Blue,
-    Magenta,
-    Cyan,
-    White,
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug)]
 pub enum BasicColor {
-    Light(BaseColor),
-    Dark(BaseColor),
-    Ansi(u8),
-    Rgb(u8, u8, u8),
+    Ansi(AnsiColor),
     Reset,
 }
 
-impl Default for BasicColor {
-    fn default() -> Self {
-        BasicColor::Reset
+impl From<BasicColor> for Option<AnsiColor> {
+    #[inline]
+    fn from(c: BasicColor) -> Self {
+        match c {
+            BasicColor::Reset => None,
+            BasicColor::Ansi(ansi) => Some(ansi),
+        }
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+impl From<Option<AnsiColor>> for BasicColor {
+    #[inline]
+    fn from(c: Option<AnsiColor>) -> Self {
+        match c {
+            Some(ansi) => ansi.into(),
+            None => BasicColor::Reset,
+        }
+    }
+}
+
+impl From<AnsiColor> for BasicColor {
+    #[inline]
+    fn from(c: AnsiColor) -> Self {
+        BasicColor::Ansi(c)
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
 pub enum Color {
     Basic(BasicColor),
     Palette(PaletteColor),
@@ -125,6 +136,7 @@ impl Default for Color {
 #[derive(EnumSetType, Debug)]
 pub enum Effect {
     Bold,
+    Dim,
     Italic,
     Underline,
     Blink,
@@ -224,10 +236,10 @@ impl Default for Theme {
         Self::new(enum_map! {
             PaletteColor::View => BasicColor::Reset,
             PaletteColor::Background => BasicColor::Reset,
-            PaletteColor::Primary => BasicColor::Light(BaseColor::White),
-            PaletteColor::Title => BasicColor::Light(BaseColor::Cyan),
-            PaletteColor::Highlight => BasicColor::Dark(BaseColor::Yellow),
-            PaletteColor::HighlightInactive => BasicColor::Light(BaseColor::Black),
+            PaletteColor::Primary => BasicColor::Ansi(AnsiColor::White),
+            PaletteColor::Title => BasicColor::Ansi(AnsiColor::Cyan),
+            PaletteColor::Highlight => BasicColor::Ansi(AnsiColor::Yellow),
+            PaletteColor::HighlightInactive => BasicColor::Ansi(AnsiColor::Black),
             PaletteColor::Custom(_) => BasicColor::Reset,
         })
     }
@@ -254,6 +266,25 @@ impl Theme {
         match color {
             Color::Basic(basic) => basic,
             Color::Palette(pallete) => self.resolve_palette(pallete),
+        }
+    }
+
+    #[inline]
+    pub fn resolve_style(
+        &self,
+        style: &Style,
+    ) -> AnsiStyle {
+        AnsiStyle {
+            foreground:       self.resolve_color(style.fg).into(),
+            background:       self.resolve_color(style.bg).into(),
+            is_bold:          style.effects.contains(Effect::Bold),
+            is_blink:         style.effects.contains(Effect::Blink),
+            is_dimmed:        style.effects.contains(Effect::Dim),
+            is_italic:        style.effects.contains(Effect::Italic),
+            is_underline:     style.effects.contains(Effect::Underline),
+            is_reverse:       style.effects.contains(Effect::Reverse),
+            is_hidden:        style.effects.contains(Effect::Hidden),
+            is_strikethrough: style.effects.contains(Effect::StrikeThrough),
         }
     }
 }

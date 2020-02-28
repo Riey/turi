@@ -18,6 +18,7 @@ log = "0.4.8"
 enum-map = "0.6.2"
 enumset = "0.4.5"
 enumset_derive = "0.4.4"
+ansi_term = "0.12.1"
 
 [dependencies.crossterm]
 version = "0.16"
