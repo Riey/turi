@@ -3,7 +3,6 @@ use crate::{
         BaseColor,
         BasicColor,
         Effect,
-        Style,
     },
     vec2::Vec2,
 };
@@ -117,7 +116,6 @@ fn remove_effect(effect: Effect) -> Attribute {
 
 pub struct CrosstermBackend<W: Write> {
     out:   W,
-    style: Style,
     size:  Vec2,
 }
 
@@ -128,7 +126,6 @@ impl<W: Write> CrosstermBackend<W> {
     ) -> Self {
         Self {
             out,
-            style: Style::default(),
             size,
         }
     }
@@ -137,7 +134,6 @@ impl<W: Write> CrosstermBackend<W> {
         &mut self,
         size: Vec2,
     ) {
-        log::trace!("Resize to {:?}", size);
         self.size = size;
     }
 
@@ -155,31 +151,20 @@ impl<W: Write> Backend for CrosstermBackend<W> {
         self.size
     }
 
-    fn set_style(
-        &mut self,
-        style: Style,
-    ) {
-        if self.style.fg != style.fg {
-            queue!(self.out, SetForegroundColor(style.fg.into()),).unwrap();
-        }
-
-        if self.style.bg != style.bg {
-            queue!(self.out, SetBackgroundColor(style.bg.into()),).unwrap();
-        }
-
-        for removed in self.style.effects.difference(style.effects) {
-            queue!(self.out, SetAttribute(remove_effect(removed))).unwrap();
-        }
-
-        for new in style.effects.difference(self.style.effects) {
-            queue!(self.out, SetAttribute(new.into())).unwrap();
-        }
-
-        self.style = style;
+    fn set_fg(&mut self, color: BasicColor) {
+        queue!(self.out, SetForegroundColor(color.into()),).unwrap();
     }
 
-    fn style(&self) -> Style {
-        self.style
+    fn set_bg(&mut self, color: BasicColor) {
+        queue!(self.out, SetBackgroundColor(color.into()),).unwrap();
+    }
+
+    fn set_effect(&mut self, effect: Effect) {
+        queue!(self.out, SetAttribute(effect.into())).unwrap();
+    }
+
+    fn unset_effect(&mut self, effect: Effect) {
+        queue!(self.out, SetAttribute(remove_effect(effect))).unwrap();
     }
 
     fn print_at(

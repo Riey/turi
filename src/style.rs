@@ -108,7 +108,7 @@ impl Default for BasicColor {
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Color {
     Basic(BasicColor),
     Palette(PaletteColor),
@@ -134,8 +134,8 @@ pub enum Effect {
 
 #[derive(Clone, Copy, Debug, Default)]
 pub struct Style {
-    pub fg:      BasicColor,
-    pub bg:      BasicColor,
+    pub fg:      Color,
+    pub bg:      Color,
     pub effects: EnumSet<Effect>,
 }
 
@@ -143,7 +143,7 @@ impl Style {
     #[inline]
     pub fn fg(
         mut self,
-        fg: BasicColor,
+        fg: Color,
     ) -> Self {
         self.fg = fg;
         self
@@ -152,7 +152,7 @@ impl Style {
     #[inline]
     pub fn bg(
         mut self,
-        bg: BasicColor,
+        bg: Color,
     ) -> Self {
         self.bg = bg;
         self

@@ -10,11 +10,12 @@ use crate::{
     },
     vec2::Vec2,
 };
-use std::mem::replace;
+use std::mem::swap;
 use unicode_width::UnicodeWidthChar;
 
 pub struct Printer<'a> {
     bound:   Rect,
+    style:   Style,
     backend: &'a mut dyn Backend,
     theme:   &'a Theme,
 }
@@ -26,6 +27,7 @@ impl<'a> Printer<'a> {
     ) -> Self {
         Self {
             bound: Rect::new((0, 0), backend.size()),
+            style: Style::default(),
             backend,
             theme,
         }
@@ -43,6 +45,7 @@ impl<'a> Printer<'a> {
                 self.bound.start().saturating_sub(pos),
                 self.bound.size() + pos,
             ),
+            style: self.style,
             backend: &mut backend,
             theme:   self.theme,
         };
@@ -51,45 +54,57 @@ impl<'a> Printer<'a> {
 
     pub fn with_bound<T>(
         &mut self,
-        bound: Rect,
+        mut bound: Rect,
         f: impl FnOnce(&mut Self) -> T,
     ) -> T {
-        let old_bound = replace(&mut self.bound, bound);
+        swap(&mut self.bound, &mut bound);
         let ret = f(self);
-        self.bound = old_bound;
+        swap(&mut self.bound, &mut bound);
         ret
+    }
+
+    fn update_style(
+        &mut self,
+        style: &mut Style,
+    ) {
+        if self.style.fg != style.fg {
+            self.backend.set_fg(self.theme.resolve_color(style.fg));
+        }
+
+        if self.style.bg != style.bg {
+            self.backend.set_bg(self.theme.resolve_color(style.bg));
+        }
+
+        for old in self.style.effects - style.effects {
+            self.backend.unset_effect(old);
+        }
+
+        for new in style.effects - self.style.effects {
+            self.backend.set_effect(new);
+        }
+
+        swap(&mut self.style, style);
     }
 
     pub fn with_style<T>(
         &mut self,
-        style: Style,
+        mut style: Style,
         f: impl FnOnce(&mut Self) -> T,
     ) -> T {
-        let old_style = self.backend.style();
-        self.backend.set_style(style);
+        self.update_style(&mut style);
         let ret = f(self);
-        self.backend.set_style(old_style);
+        self.update_style(&mut style);
         ret
     }
 
     #[inline]
     pub fn style(&self) -> Style {
-        self.backend.style()
-    }
-
-    #[inline]
-    pub fn refresh(&mut self) {
-        self.backend.flush();
+        self.style
     }
 
     #[inline]
     pub fn bound(&self) -> Rect {
         self.bound
-    }
-
-    #[inline]
-    pub fn clear(&mut self) {
-        self.backend.clear();
     }
 
     pub fn print(
