@@ -19,7 +19,7 @@ impl<S, E> FpsView<S, E> {
     pub fn new() -> Self {
         Self {
             prev_draw: Cell::new(Instant::now()),
-            _marker: PhantomData,
+            _marker:   PhantomData,
         }
     }
 }

@@ -45,8 +45,10 @@ impl<S, E, M> LinearView<S, E, M> {
     }
 
     #[inline]
-    pub fn child(mut self, 
-                 v: impl View<S, E, Message = M> + 'static,) -> Self {
+    pub fn child(
+        mut self,
+        v: impl View<S, E, Message = M> + 'static,
+    ) -> Self {
         self.add_child(v);
         self
     }
