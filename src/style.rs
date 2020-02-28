@@ -222,7 +222,7 @@ pub struct Theme {
 impl Default for Theme {
     fn default() -> Self {
         Self::new(enum_map! {
-            PaletteColor::View => BasicColor::Light(BaseColor::Black),
+            PaletteColor::View => BasicColor::Reset,
             PaletteColor::Background => BasicColor::Reset,
             PaletteColor::Primary => BasicColor::Light(BaseColor::White),
             PaletteColor::Title => BasicColor::Light(BaseColor::Cyan),
