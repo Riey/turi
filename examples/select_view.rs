@@ -11,6 +11,7 @@ use turi::{
         CrosstermBackendGuard,
     },
     executor,
+    style::Theme,
     view::View,
     views::{
         SelectView,

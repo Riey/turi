@@ -13,6 +13,7 @@ use turi::{
     },
     executor,
     orientation::Orientation,
+    style::Theme,
     view::View,
     views::ParagraphView,
 };
