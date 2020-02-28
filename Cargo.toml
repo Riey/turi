@@ -10,6 +10,7 @@ debug = true
 [features]
 default = ["crossterm-backend"]
 crossterm-backend = ["crossterm"]
+bench = []
 
 [dependencies]
 unicode-width = "0.1.7"

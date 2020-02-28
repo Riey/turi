@@ -35,3 +35,25 @@ pub fn simple<S: RedrawState, E, B: Backend, V: View<S, E, Message = bool>>(
         }
     }
 }
+
+#[cfg(feature = "bench")]
+pub fn bench<B: Backend, E, V: View<bool, E>>(
+    backend: &mut B,
+    view: &mut V,
+    events: impl IntoIterator<Item = E>,
+) {
+    let theme = Theme::default();
+    let mut printer = Printer::new(backend, &theme);
+
+    let mut need_redraw = true;
+
+    for event in events {
+        if need_redraw {
+            view.layout(printer.bound().size());
+            view.render(&mut printer);
+            need_redraw = false;
+        }
+
+        view.on_event(&mut need_redraw, event);
+    }
+}
