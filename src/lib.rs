@@ -10,7 +10,6 @@ pub mod event;
 pub mod executor;
 pub mod never;
 pub mod orientation;
-#[cfg(windows)]
 pub mod printer;
 pub mod rect;
 pub mod state;

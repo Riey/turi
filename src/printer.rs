@@ -5,10 +5,7 @@ use crate::{
     },
     rect::Rect,
     vec2::Vec2,
-};
-use ansi_term::{
-    ANSIString,
-    Style,
+    style::Style,
 };
 use std::mem::replace;
 use unicode_width::UnicodeWidthChar;
@@ -121,17 +118,6 @@ impl<'a> Printer<'a> {
     ) {
         self.backend
             .print_at(self.bound.start() + start.into(), text);
-    }
-
-    #[inline]
-    pub fn print_styled(
-        &mut self,
-        start: impl Into<Vec2>,
-        text: &ANSIString,
-    ) {
-        self.with_style(*text.style_ref(), |printer| {
-            printer.print(start, text);
-        });
     }
 
     #[inline]
