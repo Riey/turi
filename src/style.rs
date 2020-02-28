@@ -1,4 +1,5 @@
 use enum_map::{
+    enum_map,
     Enum,
     EnumMap,
 };
@@ -202,14 +203,24 @@ pub struct Theme {
 
 impl Default for Theme {
     fn default() -> Self {
-        Self::new()
+        Self::new(
+            enum_map! {
+                PaletteColor::View => BasicColor::Light(BaseColor::Black),
+                PaletteColor::Background => BasicColor::Dark(BaseColor::Black),
+                PaletteColor::Primary => BasicColor::Light(BaseColor::White),
+                PaletteColor::Title => BasicColor::Light(BaseColor::Cyan),
+                PaletteColor::Highlight => BasicColor::Dark(BaseColor::Yellow),
+                PaletteColor::HighlightInactive => BasicColor::Light(BaseColor::Black),
+                PaletteColor::Custom(_) => BasicColor::Reset,
+            },
+        )
     }
 }
 
 impl Theme {
-    pub fn new() -> Self {
+    pub fn new(palette: EnumMap<PaletteColor, BasicColor>) -> Self {
         Self {
-            palette: EnumMap::new(),
+            palette,
         }
     }
 
