@@ -1,7 +1,6 @@
 #[macro_use]
 pub mod macros;
 
-#[cfg(windows)]
 pub mod backend;
 #[cfg(windows)]
 pub mod converters;

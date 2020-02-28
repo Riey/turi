@@ -1,5 +1,5 @@
 use crate::vec2::Vec2;
-use ansi_term::Style;
+use crate::style::Style;
 
 #[cfg(feature = "crossterm-backend")]
 mod crossterm;

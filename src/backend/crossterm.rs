@@ -1,5 +1,12 @@
-use crate::vec2::Vec2;
-use ansi_term::Style;
+use crate::{
+    style::{
+        BaseColor,
+        BasicColor,
+        Effect,
+        Style,
+    },
+    vec2::Vec2,
+};
 use crossterm::{
     cursor::{
         Hide,
@@ -17,7 +24,14 @@ use crossterm::{
     },
     execute,
     queue,
-    style::Print,
+    style::{
+        Attribute,
+        Color,
+        Print,
+        SetAttribute,
+        SetBackgroundColor,
+        SetForegroundColor,
+    },
     terminal::{
         disable_raw_mode,
         enable_raw_mode,
@@ -38,6 +52,68 @@ use crate::{
     },
 };
 use crossterm::event::MouseButton;
+
+impl From<BasicColor> for Color {
+    fn from(b: BasicColor) -> Color {
+        match b {
+            BasicColor::Dark(dark) => {
+                match dark {
+                    BaseColor::Black => Color::Black,
+                    BaseColor::Red => Color::DarkRed,
+                    BaseColor::Green => Color::DarkGreen,
+                    BaseColor::Blue => Color::DarkBlue,
+                    BaseColor::Yellow => Color::DarkYellow,
+                    BaseColor::Magenta => Color::DarkMagenta,
+                    BaseColor::Cyan => Color::DarkCyan,
+                    BaseColor::White => Color::Grey,
+                }
+            }
+            BasicColor::Light(light) => {
+                match light {
+                    BaseColor::Black => Color::DarkGrey,
+                    BaseColor::Red => Color::Red,
+                    BaseColor::Green => Color::Green,
+                    BaseColor::Blue => Color::Blue,
+                    BaseColor::Yellow => Color::Yellow,
+                    BaseColor::Magenta => Color::Magenta,
+                    BaseColor::Cyan => Color::Cyan,
+                    BaseColor::White => Color::White,
+                }
+            }
+            BasicColor::Reset => Color::Reset,
+            BasicColor::Ansi(ansi) => Color::AnsiValue(ansi),
+            BasicColor::Rgb(r, g, b) => Color::Rgb { r, g, b },
+        }
+    }
+}
+
+impl From<Effect> for Attribute {
+    #[inline]
+    fn from(effect: Effect) -> Self {
+        match effect {
+            Effect::Blink => Attribute::RapidBlink,
+            Effect::Reverse => Attribute::Reverse,
+            Effect::Underline => Attribute::Underlined,
+            Effect::Italic => Attribute::Italic,
+            Effect::Bold => Attribute::Bold,
+            Effect::Hidden => Attribute::Hidden,
+            Effect::StrikeThrough => Attribute::CrossedOut,
+        }
+    }
+}
+
+#[inline]
+fn remove_effect(effect: Effect) -> Attribute {
+    match effect {
+        Effect::Blink => Attribute::NoBlink,
+        Effect::Reverse => Attribute::NoReverse,
+        Effect::Underline => Attribute::NoUnderline,
+        Effect::Italic => Attribute::NoItalic,
+        Effect::Bold => Attribute::NoBold,
+        Effect::Hidden => Attribute::NoHidden,
+        Effect::StrikeThrough => Attribute::NotCrossedOut,
+    }
+}
 
 pub struct CrosstermBackend<W: Write> {
     out:   W,
@@ -83,6 +159,22 @@ impl<W: Write> Backend for CrosstermBackend<W> {
         &mut self,
         style: Style,
     ) {
+        if self.style.fg != style.fg {
+            queue!(self.out, SetForegroundColor(style.fg.into()),).unwrap();
+        }
+
+        if self.style.bg != style.bg {
+            queue!(self.out, SetBackgroundColor(style.bg.into()),).unwrap();
+        }
+
+        for removed in self.style.effects.difference(style.effects) {
+            queue!(self.out, SetAttribute(remove_effect(removed))).unwrap();
+        }
+
+        for new in style.effects.difference(self.style.effects) {
+            queue!(self.out, SetAttribute(new.into())).unwrap();
+        }
+
         self.style = style;
     }
 
@@ -95,12 +187,7 @@ impl<W: Write> Backend for CrosstermBackend<W> {
         pos: Vec2,
         text: &str,
     ) {
-        queue!(
-            self.out,
-            MoveTo(pos.x, pos.y),
-            Print(self.style.paint(text))
-        )
-        .unwrap();
+        queue!(self.out, MoveTo(pos.x, pos.y), Print(text),).unwrap();
     }
 
     fn flush(&mut self) {

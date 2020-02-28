@@ -79,37 +79,48 @@ impl<T> Enum<T> for PaletteColor
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum BaseColor {
     Black,
     Red,
     Green,
     Yellow,
     Blue,
-    Purple,
+    Magenta,
     Cyan,
     White,
+}
+
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum BasicColor {
+    Light(BaseColor),
+    Dark(BaseColor),
     Ansi(u8),
     Rgb(u8, u8, u8),
     Reset,
 }
 
-impl Default for BaseColor {
+impl Default for BasicColor {
     fn default() -> Self {
-        BaseColor::Reset
+        BasicColor::Reset
     }
 }
 
 #[derive(Clone, Copy, Debug)]
 pub enum Color {
-    Base(BaseColor),
+    Basic(BasicColor),
     Palette(PaletteColor),
+}
+
+impl Default for Color {
+    #[inline]
+    fn default() -> Self { Color::Basic(BasicColor::Reset) }
 }
 
 #[derive(EnumSetType, Debug)]
 pub enum Effect {
     Bold,
-    Dimmed,
     Italic,
     Underline,
     Blink,
@@ -118,16 +129,16 @@ pub enum Effect {
     StrikeThrough,
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Default)]
 pub struct Style {
-    pub fg: Color,
-    pub bg: Color,
+    pub fg: BasicColor,
+    pub bg: BasicColor,
     pub effects: EnumSet<Effect>,
 }
 
 #[derive(Clone, Copy, Debug)]
 pub struct Theme {
-    palette: EnumMap<PaletteColor, BaseColor>,
+    palette: EnumMap<PaletteColor, BasicColor>,
 }
 
 impl Theme {
@@ -141,7 +152,7 @@ impl Theme {
     pub fn resolve_palette(
         &self,
         palette: PaletteColor,
-    ) -> BaseColor {
+    ) -> BasicColor {
         self.palette[palette]
     }
 
@@ -149,9 +160,9 @@ impl Theme {
     pub fn resolve_color(
         &self,
         color: Color,
-    ) -> BaseColor {
+    ) -> BasicColor {
         match color {
-            Color::Base(base) => base,
+            Color::Basic(basic) => basic,
             Color::Palette(pallete) => self.resolve_palette(pallete),
         }
     }
