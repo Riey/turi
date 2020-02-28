@@ -5,6 +5,7 @@ use crate::{
     },
     printer::Printer,
     state::RedrawState,
+    style::Style,
     vec2::Vec2,
     view::View,
 };
@@ -54,7 +55,9 @@ impl<S: RedrawState, E: EventLike> View<S, E> for EditView<S, E> {
         &self,
         printer: &mut Printer,
     ) {
-        printer.print((0, 0), &self.text);
+        printer.with_style(Style::view(), |printer| {
+            printer.print((0, 0), &self.text);
+        });
     }
 
     fn on_event(

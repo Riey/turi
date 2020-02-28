@@ -5,6 +5,7 @@ use crate::{
         MouseEventLike,
     },
     printer::Printer,
+    style::Style,
     vec2::Vec2,
     view::View,
 };
@@ -92,7 +93,9 @@ impl<S, E: EventLike> View<S, E> for ButtonView<S, E> {
         &self,
         printer: &mut Printer,
     ) {
-        printer.print((0, 0), &self.text);
+        printer.with_style(Style::view(), |printer| {
+            printer.print((0, 0), &self.text);
+        });
     }
 
     #[inline]

@@ -11,6 +11,7 @@ use turi::{
         CrosstermBackendGuard,
     },
     executor,
+    style::Theme,
     view::View,
     views::{
         SelectView,
@@ -58,16 +59,23 @@ fn main() {
                 _ => None,
             }
         });
+    let theme = Theme::default();
 
-    executor::simple(&mut state, guard.inner(), &mut view, |state, backend| {
-        loop {
-            match crossterm::event::read().unwrap() {
-                Event::Resize(x, y) => {
-                    backend.resize((x, y).into());
-                    *state = true;
+    executor::simple(
+        &mut state,
+        guard.inner(),
+        &theme,
+        &mut view,
+        |state, backend| {
+            loop {
+                match crossterm::event::read().unwrap() {
+                    Event::Resize(x, y) => {
+                        backend.resize((x, y).into());
+                        *state = true;
+                    }
+                    e => break e,
                 }
-                e => break e,
             }
-        }
-    });
+        },
+    );
 }

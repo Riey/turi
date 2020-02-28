@@ -7,13 +7,12 @@ use crate::{
     },
     printer::Printer,
     state::RedrawState,
+    style::Style,
     vec2::Vec2,
     view::View,
     view_wrappers::SizeCacher,
     views::ButtonView,
 };
-
-use ansi_term::Color;
 
 #[derive(Clone, Copy, Eq, PartialEq, Debug)]
 enum DialogFocus {
@@ -25,11 +24,10 @@ type DialogButton<S, E, M> =
     Map<ButtonView<S, E>, M, Box<dyn FnMut(&mut ButtonView<S, E>, &mut S, ()) -> M>>;
 
 pub struct DialogView<S, E, M, C> {
-    title:       String,
-    content:     SizeCacher<C>,
-    buttons:     Vec<DialogButton<S, E, M>>,
-    focus:       DialogFocus,
-    focus_color: Color,
+    title:   String,
+    content: SizeCacher<C>,
+    buttons: Vec<DialogButton<S, E, M>>,
+    focus:   DialogFocus,
 }
 
 impl<S, E, M, C> DialogView<S, E, M, C>
@@ -40,11 +38,10 @@ where
 {
     pub fn new(content: C) -> Self {
         Self {
-            title:       String::new(),
-            content:     SizeCacher::new(content),
-            buttons:     Vec::with_capacity(10),
-            focus:       DialogFocus::Content,
-            focus_color: Color::Yellow,
+            title:   String::new(),
+            content: SizeCacher::new(content),
+            buttons: Vec::with_capacity(10),
+            focus:   DialogFocus::Content,
         }
     }
 
@@ -63,15 +60,6 @@ where
     ) {
         self.buttons
             .push(btn.map(Box::new(move |_, state, _| mapper(state))));
-    }
-
-    #[inline]
-    pub fn focus_color(
-        mut self,
-        focus_color: Color,
-    ) -> Self {
-        self.focus_color = focus_color;
-        self
     }
 
     #[inline]
@@ -98,33 +86,37 @@ where
         &self,
         printer: &mut Printer,
     ) {
-        printer.print_rect();
-        printer.print((0, 0), &self.title);
-        printer.with_bound(printer.bound().with_margin(1), |printer| {
-            let btn_height = 1;
-            let bound = printer.bound();
-            let (content_bound, btns_bound) =
-                printer.bound().split_vertical(bound.h() - btn_height);
+        printer.with_style(Style::outline(), |printer| {
+            printer.print_rect();
+        });
+        printer.with_style(Style::title(), |printer| {
+            printer.print((0, 0), &self.title);
+        });
+        printer.with_style(Style::view(), |printer| {
+            printer.with_bound(printer.bound().with_margin(1), |printer| {
+                let btn_height = 1;
+                let bound = printer.bound();
+                let (content_bound, btns_bound) =
+                    printer.bound().split_vertical(bound.h() - btn_height);
 
-            printer.with_bound(content_bound, |printer| {
-                self.content.render(printer);
-            });
+                printer.with_bound(content_bound, |printer| {
+                    self.content.render(printer);
+                });
 
-            let mut x = 0;
-            let style = printer.style();
+                let mut x = 0;
 
-            printer.with_bound(btns_bound, |printer| {
-                for (i, btn) in self.buttons.iter().enumerate() {
-                    if self.focus == DialogFocus::Button(i) {
-                        printer.print_styled(
-                            (x, 0),
-                            &style.fg(self.focus_color).reverse().paint(btn.text()),
-                        );
-                    } else {
-                        printer.print((x, 0), btn.text());
+                printer.with_bound(btns_bound, |printer| {
+                    for (i, btn) in self.buttons.iter().enumerate() {
+                        if self.focus == DialogFocus::Button(i) {
+                            printer.with_style(Style::highlight(), |printer| {
+                                printer.print((x, 0), btn.text());
+                            });
+                        } else {
+                            printer.print((x, 0), btn.text());
+                        }
+                        x += btn.width();
                     }
-                    x += btn.width();
-                }
+                });
             });
         });
     }
