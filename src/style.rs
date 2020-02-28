@@ -141,6 +141,33 @@ pub struct Style {
 
 impl Style {
     #[inline]
+    pub fn view() -> Self {
+        Self {
+            fg: Color::Palette(PaletteColor::Primary),
+            bg: Color::Palette(PaletteColor::View),
+            effects: EnumSet::empty(),
+        }
+    }
+
+    #[inline]
+    pub fn highlight() -> Self {
+        Self {
+            fg: Color::Palette(PaletteColor::Highlight),
+            bg: Color::Palette(PaletteColor::View),
+            effects: Effect::Reverse.into(),
+        }
+    }
+
+    #[inline]
+    pub fn highlight_inactive() -> Self {
+        Self {
+            fg: Color::Palette(PaletteColor::HighlightInactive),
+            bg: Color::Palette(PaletteColor::View),
+            effects: Effect::Reverse.into(),
+        }
+    }
+
+    #[inline]
     pub fn fg(
         mut self,
         fg: Color,
