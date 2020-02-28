@@ -7,6 +7,7 @@ use crate::{
     },
     printer::Printer,
     state::RedrawState,
+    style::Style,
     vec2::Vec2,
     view::View,
     view_wrappers::SizeCacher,
@@ -85,30 +86,37 @@ where
         &self,
         printer: &mut Printer,
     ) {
-        printer.print_rect();
-        printer.print((0, 0), &self.title);
-        printer.with_bound(printer.bound().with_margin(1), |printer| {
-            let btn_height = 1;
-            let bound = printer.bound();
-            let (content_bound, btns_bound) =
-                printer.bound().split_vertical(bound.h() - btn_height);
+        printer.with_style(Style::outline(), |printer| {
+            printer.print_rect();
+        });
+        printer.with_style(Style::title(), |printer| {
+            printer.print((0, 0), &self.title);
+        });
+        printer.with_style(Style::view(), |printer| {
+            printer.with_bound(printer.bound().with_margin(1), |printer| {
+                let btn_height = 1;
+                let bound = printer.bound();
+                let (content_bound, btns_bound) =
+                    printer.bound().split_vertical(bound.h() - btn_height);
 
-            printer.with_bound(content_bound, |printer| {
-                self.content.render(printer);
-            });
+                printer.with_bound(content_bound, |printer| {
+                    self.content.render(printer);
+                });
 
-            let mut x = 0;
+                let mut x = 0;
 
-            printer.with_bound(btns_bound, |printer| {
-                for (i, btn) in self.buttons.iter().enumerate() {
-                    if self.focus == DialogFocus::Button(i) {
-                        // TODO: focused
-                        printer.print((x, 0), btn.text());
-                    } else {
-                        printer.print((x, 0), btn.text());
+                printer.with_bound(btns_bound, |printer| {
+                    for (i, btn) in self.buttons.iter().enumerate() {
+                        if self.focus == DialogFocus::Button(i) {
+                            printer.with_style(Style::highlight(), |printer| {
+                                printer.print((x, 0), btn.text());
+                            });
+                        } else {
+                            printer.print((x, 0), btn.text());
+                        }
+                        x += btn.width();
                     }
-                    x += btn.width();
-                }
+                });
             });
         });
     }

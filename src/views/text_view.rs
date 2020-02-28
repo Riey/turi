@@ -1,6 +1,7 @@
 use crate::{
     never::Never,
     printer::Printer,
+    style::Style,
     vec2::Vec2,
     view::View,
 };
@@ -46,7 +47,9 @@ impl<S, E> View<S, E> for TextView<S, E> {
         &self,
         printer: &mut Printer,
     ) {
-        printer.print((0, 0), &self.text);
+        printer.with_style(Style::view(), |printer| {
+            printer.print((0, 0), &self.text);
+        });
     }
 
     #[inline]

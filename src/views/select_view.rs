@@ -6,6 +6,7 @@ use crate::{
     },
     printer::Printer,
     state::RedrawState,
+    style::Style,
     vec2::Vec2,
     view::View,
 };
@@ -96,14 +97,17 @@ impl<S: RedrawState, E: EventLike, T> View<S, E> for SelectView<S, E, T> {
         &self,
         printer: &mut Printer,
     ) {
-        for (i, (text, _)) in self.btns.iter().enumerate() {
-            if i == self.selected {
-                // TODO: selected
-                printer.print((0, i as u16), text);
-            } else {
-                printer.print((0, i as u16), text);
+        printer.with_style(Style::view(), |printer| {
+            for (i, (text, _)) in self.btns.iter().enumerate() {
+                if i == self.selected {
+                    printer.with_style(Style::highlight(), |printer| {
+                        printer.print((0, i as u16), text);
+                    });
+                } else {
+                    printer.print((0, i as u16), text);
+                }
             }
-        }
+        });
     }
 
     fn layout(

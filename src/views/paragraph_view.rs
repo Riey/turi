@@ -1,6 +1,7 @@
 use crate::{
     never::Never,
     printer::Printer,
+    style::Style,
     vec2::Vec2,
     view::View,
 };
@@ -76,9 +77,11 @@ impl<S, E> View<S, E> for ParagraphView<S, E> {
         &self,
         printer: &mut Printer,
     ) {
-        for (y, line) in self.lines.iter().enumerate() {
-            printer.print((0, y as u16), line);
-        }
+        printer.with_style(Style::view(), |printer| {
+            for (y, line) in self.lines.iter().enumerate() {
+                printer.print((0, y as u16), line);
+            }
+        });
     }
 
     fn layout(
