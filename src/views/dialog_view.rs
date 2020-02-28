@@ -11,7 +11,10 @@ use crate::{
     vec2::Vec2,
     view::View,
     view_wrappers::SizeCacher,
-    views::ButtonView,
+    views::{
+        ButtonDecoration,
+        ButtonView,
+    },
 };
 
 #[derive(Clone, Copy, Eq, PartialEq, Debug)]
@@ -48,18 +51,39 @@ where
     #[inline]
     pub fn set_title(
         &mut self,
-        title: String,
+        title: impl Into<String>,
     ) {
-        self.title = title;
+        self.title = title.into();
+    }
+
+    #[inline]
+    pub fn title(
+        mut self,
+        title: impl Into<String>,
+    ) -> Self {
+        self.set_title(title);
+        self
+    }
+
+    #[inline]
+    pub fn button(
+        mut self,
+        label: impl Into<String>,
+        f: impl FnMut(&mut S) -> M + 'static,
+    ) -> Self {
+        self.add_button(label, f);
+        self
     }
 
     pub fn add_button(
         &mut self,
-        btn: ButtonView<S, E>,
-        mut mapper: impl FnMut(&mut S) -> M + 'static,
+        label: impl Into<String>,
+        mut f: impl FnMut(&mut S) -> M + 'static,
     ) {
-        self.buttons
-            .push(btn.map(Box::new(move |_, state, _| mapper(state))));
+        self.buttons.push(
+            ButtonView::new(label.into(), ButtonDecoration::Angle)
+                .map(Box::new(move |_, state, _| f(state))),
+        );
     }
 
     #[inline]
