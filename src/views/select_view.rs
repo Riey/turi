@@ -13,19 +13,19 @@ use std::marker::PhantomData;
 use unicode_width::UnicodeWidthStr;
 
 pub struct SelectView<S, E, T> {
-    btns:           Vec<(String, T)>,
-    selected:       usize,
-    width:          u16,
-    _marker:        PhantomData<(S, E)>,
+    btns:     Vec<(String, T)>,
+    selected: usize,
+    width:    u16,
+    _marker:  PhantomData<(S, E)>,
 }
 
 impl<S: RedrawState, E, T> SelectView<S, E, T> {
     pub fn new() -> Self {
         Self {
-            btns:           Vec::new(),
-            selected:       0,
-            width:          0,
-            _marker:        PhantomData,
+            btns:     Vec::new(),
+            selected: 0,
+            width:    0,
+            _marker:  PhantomData,
         }
     }
 

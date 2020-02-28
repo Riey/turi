@@ -4,8 +4,11 @@ use crate::{
         SlicedBackend,
     },
     rect::Rect,
+    style::{
+        Style,
+        Theme,
+    },
     vec2::Vec2,
-    style::Style,
 };
 use std::mem::replace;
 use unicode_width::UnicodeWidthChar;
@@ -13,13 +16,18 @@ use unicode_width::UnicodeWidthChar;
 pub struct Printer<'a> {
     bound:   Rect,
     backend: &'a mut dyn Backend,
+    theme:   &'a Theme,
 }
 
 impl<'a> Printer<'a> {
-    pub fn new(backend: &'a mut dyn Backend) -> Self {
+    pub fn new(
+        backend: &'a mut dyn Backend,
+        theme: &'a Theme,
+    ) -> Self {
         Self {
             bound: Rect::new((0, 0), backend.size()),
             backend,
+            theme,
         }
     }
 
@@ -36,6 +44,7 @@ impl<'a> Printer<'a> {
                 self.bound.size() + pos,
             ),
             backend: &mut backend,
+            theme:   self.theme,
         };
         f(&mut printer)
     }

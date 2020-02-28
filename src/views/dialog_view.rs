@@ -23,10 +23,10 @@ type DialogButton<S, E, M> =
     Map<ButtonView<S, E>, M, Box<dyn FnMut(&mut ButtonView<S, E>, &mut S, ()) -> M>>;
 
 pub struct DialogView<S, E, M, C> {
-    title:       String,
-    content:     SizeCacher<C>,
-    buttons:     Vec<DialogButton<S, E, M>>,
-    focus:       DialogFocus,
+    title:   String,
+    content: SizeCacher<C>,
+    buttons: Vec<DialogButton<S, E, M>>,
+    focus:   DialogFocus,
 }
 
 impl<S, E, M, C> DialogView<S, E, M, C>
@@ -37,10 +37,10 @@ where
 {
     pub fn new(content: C) -> Self {
         Self {
-            title:       String::new(),
-            content:     SizeCacher::new(content),
-            buttons:     Vec::with_capacity(10),
-            focus:       DialogFocus::Content,
+            title:   String::new(),
+            content: SizeCacher::new(content),
+            buttons: Vec::with_capacity(10),
+            focus:   DialogFocus::Content,
         }
     }
 

@@ -8,13 +8,13 @@ use crate::{
     },
     orientation::Orientation,
     printer::Printer,
+    style::Style,
     vec2::Vec2,
     view_wrappers::{
         ConsumeEvent,
         ScrollView,
         StyledView,
     },
-    style::Style,
 };
 
 pub trait View<S, E> {

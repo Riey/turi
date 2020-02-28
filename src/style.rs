@@ -2,7 +2,10 @@ use enum_map::{
     Enum,
     EnumMap,
 };
-use enumset::{EnumSet, EnumSetType};
+use enumset::{
+    EnumSet,
+    EnumSetType,
+};
 use std::mem::MaybeUninit;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -16,8 +19,7 @@ pub enum PaletteColor {
     Custom(u8),
 }
 
-impl<T> Enum<T> for PaletteColor
-{
+impl<T> Enum<T> for PaletteColor {
     type Array = [T; 6 + 256];
 
     const POSSIBLE_VALUES: usize = 6 + 256;
@@ -91,7 +93,6 @@ pub enum BaseColor {
     White,
 }
 
-
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum BasicColor {
     Light(BaseColor),
@@ -115,7 +116,9 @@ pub enum Color {
 
 impl Default for Color {
     #[inline]
-    fn default() -> Self { Color::Basic(BasicColor::Reset) }
+    fn default() -> Self {
+        Color::Basic(BasicColor::Reset)
+    }
 }
 
 #[derive(EnumSetType, Debug)]
@@ -131,24 +134,35 @@ pub enum Effect {
 
 #[derive(Clone, Copy, Debug, Default)]
 pub struct Style {
-    pub fg: BasicColor,
-    pub bg: BasicColor,
+    pub fg:      BasicColor,
+    pub bg:      BasicColor,
     pub effects: EnumSet<Effect>,
 }
 
 impl Style {
     #[inline]
-    pub fn fg(mut self, fg: BasicColor) -> Self {
+    pub fn fg(
+        mut self,
+        fg: BasicColor,
+    ) -> Self {
         self.fg = fg;
         self
     }
+
     #[inline]
-    pub fn bg(mut self, bg: BasicColor) -> Self {
+    pub fn bg(
+        mut self,
+        bg: BasicColor,
+    ) -> Self {
         self.bg = bg;
         self
     }
+
     #[inline]
-    pub fn effects(mut self, effects: impl Into<EnumSet<Effect>>) -> Self {
+    pub fn effects(
+        mut self,
+        effects: impl Into<EnumSet<Effect>>,
+    ) -> Self {
         self.effects |= effects;
         self
     }

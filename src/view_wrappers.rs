@@ -8,9 +8,9 @@ use crate::{
     printer::Printer,
     rect::Rect,
     state::RedrawState,
+    style::Style,
     vec2::Vec2,
     view::View,
-    style::Style,
 };
 use std::cell::Cell;
 
