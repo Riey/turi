@@ -27,7 +27,8 @@ impl<S, E, M> LinearView<S, E, M> {
         }
     }
 
-    pub fn with_orientation(
+    #[inline]
+    pub fn orientation(
         mut self,
         orientation: Orientation,
     ) -> Self {
@@ -35,6 +36,7 @@ impl<S, E, M> LinearView<S, E, M> {
         self
     }
 
+    #[inline]
     pub fn set_orientation(
         &mut self,
         orientation: Orientation,
@@ -42,6 +44,14 @@ impl<S, E, M> LinearView<S, E, M> {
         self.orientation = orientation;
     }
 
+    #[inline]
+    pub fn child(mut self, 
+                 v: impl View<S, E, Message = M> + 'static,) -> Self {
+        self.add_child(v);
+        self
+    }
+
+    #[inline]
     pub fn add_child(
         &mut self,
         v: impl View<S, E, Message = M> + 'static,
@@ -125,17 +135,36 @@ impl<S: RedrawState, E: EventLike, M> View<S, E> for LinearView<S, E, M> {
         mut event: E,
     ) -> Option<Self::Message> {
         if let Some(me) = event.try_mouse_mut() {
-            for child in self.children.iter_mut() {
-                let contains = !me.filter_map_pos(|pos| {
-                    let size = child.prev_size();
-                    if size >= pos {
-                        None
-                    } else {
-                        Some(pos - size)
+            match self.orientation {
+                Orientation::Horizontal => {
+                    for child in self.children.iter_mut() {
+                        let contains = !me.filter_map_pos(|pos| {
+                            let size = child.prev_size();
+                            if size.x >= pos.x {
+                                None
+                            } else {
+                                Some(pos.sub_x(size.x))
+                            }
+                        });
+                        if contains {
+                            return child.on_event(state, event);
+                        }
                     }
-                });
-                if contains {
-                    return child.on_event(state, event);
+                }
+                Orientation::Vertical => {
+                    for child in self.children.iter_mut() {
+                        let contains = !me.filter_map_pos(|pos| {
+                            let size = child.prev_size();
+                            if size.y >= pos.y {
+                                None
+                            } else {
+                                Some(pos.sub_y(size.y))
+                            }
+                        });
+                        if contains {
+                            return child.on_event(state, event);
+                        }
+                    }
                 }
             }
 
