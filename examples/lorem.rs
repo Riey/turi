@@ -15,7 +15,11 @@ use turi::{
     orientation::Orientation,
     style::Theme,
     view::View,
-    views::ParagraphView,
+    views::{
+        FpsView,
+        LinearView,
+        ParagraphView,
+    },
 };
 
 fn main() {
@@ -40,9 +44,14 @@ fn main() {
 
     view.append(include_str!("lorem.txt"));
 
-    let mut view = view
+    let view = view
         .consume_event(false)
-        .scrollable(Orientation::Horizontal)
+        .scrollable(Orientation::Horizontal);
+
+    let mut view = LinearView::new()
+        .orientation(Orientation::Vertical)
+        .child(FpsView::new().consume_event(false))
+        .child(view)
         .or_else_first(|_view, _state, event: Event| {
             match event {
                 Event::Key(KeyEvent {
@@ -52,6 +61,7 @@ fn main() {
                 _ => None,
             }
         });
+
     let theme = Theme::default();
 
     executor::simple(
