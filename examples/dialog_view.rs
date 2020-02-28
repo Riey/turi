@@ -16,8 +16,6 @@ use turi::{
     style::Theme,
     view::View,
     views::{
-        ButtonDecoration,
-        ButtonView,
         DialogView,
         EditView,
         EditViewMessage,
@@ -69,7 +67,7 @@ fn main() {
 
     let mut state = MyState::new();
 
-    let mut dialog = DialogView::new(EditView::new().map(|v, _s, m| {
+    let mut view = DialogView::new(EditView::new().map(|v, _s, m| {
         match m {
             EditViewMessage::Edit => {
                 log::trace!("edit: {}", v.text());
@@ -80,19 +78,14 @@ fn main() {
                 true
             }
         }
-    }));
-
-    dialog.set_title("TITLE".into());
-    dialog.add_button(
-        ButtonView::new("Click".into(), ButtonDecoration::Angle),
-        |s: &mut MyState| {
-            s.btn_cnt += 1;
-            log::trace!("btn click count: {}", s.btn_cnt);
-            false
-        },
-    );
-
-    let mut view = dialog.or_else_first(|_view, _state, event: Event| {
+    }))
+    .title("Title")
+    .button("Click", |s: &mut MyState| {
+        s.btn_cnt += 1;
+        log::trace!("btn click count: {}", s.btn_cnt);
+        false
+    })
+    .or_else_first(|_view, _state, event: Event| {
         match event {
             Event::Key(KeyEvent {
                 code: KeyCode::Char('c'),
