@@ -6,12 +6,10 @@ use crate::{
     },
     orientation::Orientation,
     printer::Printer,
-    rect::Rect,
     state::RedrawState,
     vec2::Vec2,
     view::View,
 };
-use std::cell::Cell;
 
 pub struct ConsumeEvent<T, M> {
     inner: T,
@@ -51,7 +49,6 @@ pub struct ScrollView<T> {
     orientation: Orientation,
     scroll:      u16,
     clicked:     bool,
-    prev_bound:  Cell<Rect>,
 }
 
 impl<T> ScrollView<T> {
@@ -64,7 +61,6 @@ impl<T> ScrollView<T> {
             orientation,
             scroll: 0,
             clicked: false,
-            prev_bound: Cell::new(Rect::new((0, 0), (0, 0))),
         }
     }
 
@@ -113,12 +109,9 @@ impl<T> ScrollView<T> {
         pos: Vec2,
         state: &mut impl RedrawState,
     ) -> bool {
-        let prev_bound = self.prev_bound.get();
-        let pos = pos - prev_bound.start();
-
         match self.orientation {
             Orientation::Vertical => {
-                if pos.x + 1 == prev_bound.x() + prev_bound.w() {
+                if pos.x == self.inner.prev_size().x {
                     self.clicked = true;
                     self.scroll = pos.y;
                     state.set_need_redraw(true);
@@ -128,7 +121,7 @@ impl<T> ScrollView<T> {
                 }
             }
             Orientation::Horizontal => {
-                if pos.y + 1 == prev_bound.y() + prev_bound.h() {
+                if pos.y == self.inner.prev_size().y {
                     self.clicked = true;
                     self.scroll = pos.x;
                     state.set_need_redraw(true);
@@ -147,8 +140,6 @@ impl<T> ScrollView<T> {
         state: &mut impl RedrawState,
     ) -> bool {
         if self.clicked {
-            let prev_bound = self.prev_bound.get();
-            let pos = pos - prev_bound.start();
             self.scroll = match self.orientation {
                 Orientation::Vertical => pos.y,
                 Orientation::Horizontal => pos.x,
@@ -171,8 +162,6 @@ where
         &self,
         printer: &mut Printer,
     ) {
-        self.prev_bound.set(printer.bound());
-
         let inner_size = self.inner.desired_size();
 
         let pos = match self.orientation {
@@ -213,12 +202,12 @@ where
 
         match self.orientation {
             Orientation::Horizontal => {
-                let pos = printer.bound().y() + printer.bound().h();
+                let pos = printer.bound().h();
                 printer.print_horizontal_line(pos);
                 printer.print((self.scroll, pos), self.scroll_block_text());
             }
             Orientation::Vertical => {
-                let pos = printer.bound().x() + printer.bound().w();
+                let pos = printer.bound().w();
                 printer.print_vertical_line(pos);
                 printer.print((pos, self.scroll), self.scroll_block_text());
             }
