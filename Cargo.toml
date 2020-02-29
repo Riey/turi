@@ -8,8 +8,9 @@ edition = "2018"
 debug = true
 
 [features]
-default = ["crossterm-backend"]
+default = ["crossterm-backend", "test-backend"]
 crossterm-backend = ["crossterm"]
+test-backend = []
 bench = []
 
 [dependencies]
@@ -22,3 +23,7 @@ ansi_term = "0.12.1"
 [dependencies.crossterm]
 version = "0.16"
 optional = true
+
+[dev-dependencies]
+log = "0.4.8"
+simplelog = "0.7.4"

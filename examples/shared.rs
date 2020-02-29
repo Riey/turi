@@ -15,11 +15,19 @@ use turi::{
     style::Theme,
     view::View,
 };
+use simplelog::*;
 
 pub fn run<S: RedrawState>(
     mut state: S,
     view: impl View<S, Event, Message = bool>,
 ) {
+    WriteLogger::init(
+        LevelFilter::Trace,
+        ConfigBuilder::new().add_filter_ignore_str("mio").build(),
+        std::fs::File::create("turi.log").unwrap(),
+    )
+    .unwrap();
+
     let out = std::io::stdout();
     let out = out.lock();
     let mut out = BufWriter::with_capacity(1024 * 1024 * 10, out);
@@ -56,4 +64,8 @@ pub fn run<S: RedrawState>(
             }
         },
     )
+}
+
+#[allow(dead_code)]
+fn main() {
 }
