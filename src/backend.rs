@@ -1,9 +1,6 @@
 use crate::vec2::Vec2;
 use ansi_term::Style;
 
-#[cfg(feature = "bench")]
-mod bench;
-
 #[cfg(feature = "crossterm-backend")]
 mod crossterm;
 
