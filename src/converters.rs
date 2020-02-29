@@ -1,11 +1,11 @@
 use crate::view::View;
 use std::marker::PhantomData;
 
-impl_deref_for_inner!(Map<H, U, F>);
-impl_deref_for_inner!(MapE<H, NE, F>);
-impl_deref_for_inner!(MapOptE<H, NE, F>);
-impl_deref_for_inner!(OrElse<H, F>);
-impl_deref_for_inner!(OrElseFirst<H, F>);
+crate::impl_deref_for_inner!(Map<H, U, F>);
+crate::impl_deref_for_inner!(MapE<H, NE, F>);
+crate::impl_deref_for_inner!(MapOptE<H, NE, F>);
+crate::impl_deref_for_inner!(OrElse<H, F>);
+crate::impl_deref_for_inner!(OrElseFirst<H, F>);
 
 pub struct Map<H, U, F> {
     inner:   H,
@@ -33,7 +33,7 @@ where
 {
     type Message = U;
 
-    impl_view_with_inner!(inner);
+    crate::impl_view_with_inner!(inner);
 
     #[inline]
     fn on_event(
@@ -73,7 +73,7 @@ where
 {
     type Message = H::Message;
 
-    impl_view_with_inner!(inner);
+    crate::impl_view_with_inner!(inner);
 
     #[inline]
     fn on_event(
@@ -112,7 +112,7 @@ where
 {
     type Message = H::Message;
 
-    impl_view_with_inner!(inner);
+    crate::impl_view_with_inner!(inner);
 
     #[inline]
     fn on_event(
@@ -151,7 +151,7 @@ where
 {
     type Message = H::Message;
 
-    impl_view_with_inner!(inner);
+    crate::impl_view_with_inner!(inner);
 
     #[inline]
     fn on_event(
@@ -185,7 +185,7 @@ where
 {
     type Message = H::Message;
 
-    impl_view_with_inner!(inner);
+    crate::impl_view_with_inner!(inner);
 
     #[inline]
     fn on_event(

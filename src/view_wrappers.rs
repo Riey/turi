@@ -32,7 +32,7 @@ where
 {
     type Message = M;
 
-    impl_view_with_inner!(inner);
+    crate::impl_view_with_inner!(inner);
 
     #[inline]
     fn on_event(
