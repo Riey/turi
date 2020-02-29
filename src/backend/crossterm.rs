@@ -3,7 +3,6 @@ use ansi_term::Style;
 use crossterm::{
     cursor::{
         Hide,
-        MoveTo,
         Show,
     },
     event::{
@@ -28,6 +27,7 @@ use crossterm::{
     },
 };
 use std::io::Write;
+use std::fmt;
 
 use crate::{
     backend::Backend,
@@ -38,6 +38,24 @@ use crate::{
     },
 };
 use crossterm::event::MouseButton;
+use crossterm::Command;
+
+#[derive(Clone, Copy)]
+struct TuriMoveTo(pub Vec2);
+
+impl fmt::Display for TuriMoveTo {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        write!(formatter, "\x1B[{};{}H", self.0.y + 1, self.0.x + 1)
+    }
+}
+
+impl Command for TuriMoveTo {
+    type AnsiType = Self;
+    fn ansi_code(&self) -> Self::AnsiType { *self }
+    #[cfg(windows)]
+    fn execute_winapi(&self) -> crossterm::Result<()> { crossterm::cursor::MoveTo(self.0.x, self.0.y).execute_winapi() }
+}
+
 
 pub struct CrosstermBackend<W: Write> {
     out:   W,
@@ -97,7 +115,7 @@ impl<W: Write> Backend for CrosstermBackend<W> {
         pos: Vec2,
         text: &str,
     ) {
-        queue!(self.out, MoveTo(pos.x, pos.y), Print(text),).unwrap();
+        queue!(self.out, TuriMoveTo(pos), Print(text),).unwrap();
     }
 
     fn flush(&mut self) {
