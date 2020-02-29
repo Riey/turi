@@ -11,7 +11,6 @@ use crate::{
     vec2::Vec2,
 };
 use std::mem::swap;
-use unicode_width::UnicodeWidthChar;
 
 pub struct Printer<'a> {
     bound:   Rect,
@@ -98,21 +97,8 @@ impl<'a> Printer<'a> {
             return;
         }
 
-        let mut left = (self.bound.end().x - start.x) as usize;
-
-        for (pos, ch) in text.char_indices() {
-            match left.checked_sub(ch.width().unwrap_or(0)) {
-                Some(num) => {
-                    left = num;
-                }
-                None => {
-                    self.raw_print(start, text.split_at(pos).0);
-                    return;
-                }
-            }
-        }
-
-        self.raw_print(start, text);
+        let sub_str = crate::util::slice_str_with_width(text, (self.bound.end().x - start.x) as usize).0;
+        self.raw_print(start, sub_str);
     }
 
     fn raw_print(
