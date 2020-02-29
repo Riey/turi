@@ -26,8 +26,10 @@ use crossterm::{
         LeaveAlternateScreen,
     },
 };
-use std::io::Write;
-use std::fmt;
+use std::{
+    fmt,
+    io::Write,
+};
 
 use crate::{
     backend::Backend,
@@ -37,25 +39,35 @@ use crate::{
         MouseEventLike,
     },
 };
-use crossterm::event::MouseButton;
-use crossterm::Command;
+use crossterm::{
+    event::MouseButton,
+    Command,
+};
 
 #[derive(Clone, Copy)]
 struct TuriMoveTo(pub Vec2);
 
 impl fmt::Display for TuriMoveTo {
-    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(
+        &self,
+        formatter: &mut fmt::Formatter,
+    ) -> fmt::Result {
         write!(formatter, "\x1B[{};{}H", self.0.y + 1, self.0.x + 1)
     }
 }
 
 impl Command for TuriMoveTo {
     type AnsiType = Self;
-    fn ansi_code(&self) -> Self::AnsiType { *self }
-    #[cfg(windows)]
-    fn execute_winapi(&self) -> crossterm::Result<()> { crossterm::cursor::MoveTo(self.0.x, self.0.y).execute_winapi() }
-}
 
+    fn ansi_code(&self) -> Self::AnsiType {
+        *self
+    }
+
+    #[cfg(windows)]
+    fn execute_winapi(&self) -> crossterm::Result<()> {
+        crossterm::cursor::MoveTo(self.0.x, self.0.y).execute_winapi()
+    }
+}
 
 pub struct CrosstermBackend<W: Write> {
     out:   W,

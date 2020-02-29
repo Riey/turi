@@ -93,43 +93,16 @@ pub enum BasicColor {
     Reset,
 }
 
-impl From<BasicColor> for Option<AnsiColor> {
-    #[inline]
-    fn from(c: BasicColor) -> Self {
-        match c {
-            BasicColor::Reset => None,
-            BasicColor::Ansi(ansi) => Some(ansi),
-        }
-    }
-}
-
-impl From<Option<AnsiColor>> for BasicColor {
-    #[inline]
-    fn from(c: Option<AnsiColor>) -> Self {
-        match c {
-            Some(ansi) => ansi.into(),
-            None => BasicColor::Reset,
-        }
-    }
-}
-
-impl From<AnsiColor> for BasicColor {
-    #[inline]
-    fn from(c: AnsiColor) -> Self {
-        BasicColor::Ansi(c)
-    }
-}
-
 #[derive(Clone, Copy, Debug)]
 pub enum Color {
-    Basic(BasicColor),
+    Ansi(Option<AnsiColor>),
     Palette(PaletteColor),
 }
 
 impl Default for Color {
     #[inline]
     fn default() -> Self {
-        Color::Basic(BasicColor::Reset)
+        Color::Ansi(None)
     }
 }
 
@@ -228,25 +201,25 @@ impl Style {
 
 #[derive(Clone, Copy, Debug)]
 pub struct Theme {
-    palette: EnumMap<PaletteColor, BasicColor>,
+    palette: EnumMap<PaletteColor, Option<AnsiColor>>,
 }
 
 impl Default for Theme {
     fn default() -> Self {
         Self::new(enum_map! {
-            PaletteColor::View => BasicColor::Reset,
-            PaletteColor::Background => BasicColor::Reset,
-            PaletteColor::Primary => BasicColor::Ansi(AnsiColor::White),
-            PaletteColor::Title => BasicColor::Ansi(AnsiColor::Cyan),
-            PaletteColor::Highlight => BasicColor::Ansi(AnsiColor::Yellow),
-            PaletteColor::HighlightInactive => BasicColor::Ansi(AnsiColor::Black),
-            PaletteColor::Custom(_) => BasicColor::Reset,
+            PaletteColor::View => None,
+            PaletteColor::Background => None,
+            PaletteColor::Primary => Some(AnsiColor::White),
+            PaletteColor::Title => Some(AnsiColor::Cyan),
+            PaletteColor::Highlight => Some(AnsiColor::Yellow),
+            PaletteColor::HighlightInactive => Some(AnsiColor::Black),
+            PaletteColor::Custom(_) => None,
         })
     }
 }
 
 impl Theme {
-    pub fn new(palette: EnumMap<PaletteColor, BasicColor>) -> Self {
+    pub fn new(palette: EnumMap<PaletteColor, Option<AnsiColor>>) -> Self {
         Self { palette }
     }
 
@@ -254,7 +227,7 @@ impl Theme {
     pub fn resolve_palette(
         &self,
         palette: PaletteColor,
-    ) -> BasicColor {
+    ) -> Option<AnsiColor> {
         self.palette[palette]
     }
 
@@ -262,9 +235,9 @@ impl Theme {
     pub fn resolve_color(
         &self,
         color: Color,
-    ) -> BasicColor {
+    ) -> Option<AnsiColor> {
         match color {
-            Color::Basic(basic) => basic,
+            Color::Ansi(ansi) => ansi,
             Color::Palette(pallete) => self.resolve_palette(pallete),
         }
     }
@@ -275,8 +248,8 @@ impl Theme {
         style: &Style,
     ) -> AnsiStyle {
         AnsiStyle {
-            foreground:       self.resolve_color(style.fg).into(),
-            background:       self.resolve_color(style.bg).into(),
+            foreground:       self.resolve_color(style.fg),
+            background:       self.resolve_color(style.bg),
             is_bold:          style.effects.contains(Effect::Bold),
             is_blink:         style.effects.contains(Effect::Blink),
             is_dimmed:        style.effects.contains(Effect::Dim),
