@@ -4,7 +4,6 @@ use crossterm::event::{
     KeyEvent,
     KeyModifiers,
 };
-use simplelog::*;
 use std::io::BufWriter;
 use turi::{
     backend::{
@@ -21,14 +20,6 @@ pub fn run<S: RedrawState>(
     mut state: S,
     view: impl View<S, Event, Message = bool>,
 ) {
-    WriteLogger::init(
-        LevelFilter::Trace,
-        ConfigBuilder::new().add_filter_ignore_str("mio").build(),
-        std::fs::File::create("turi.log").unwrap(),
-    )
-    .unwrap();
-    log_panics::init();
-
     let out = std::io::stdout();
     let out = out.lock();
     let mut out = BufWriter::with_capacity(1024 * 1024 * 10, out);
