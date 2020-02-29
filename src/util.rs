@@ -23,3 +23,16 @@ pub fn find_str_width_pos(text: &str, mut width: usize) -> (usize, usize) {
 
     (text.len(), width)
 }
+
+
+#[test]
+fn slice_test() {
+    assert_eq!(slice_str_with_width("123456", 3), ("123", "456", 0));
+    assert_eq!(slice_str_with_width("abcdefghi", 5), ("abcde", "fghi", 0));
+}
+
+#[test]
+fn slice_left_test() {
+    assert_eq!(slice_str_with_width("가나다라", 3), ("가", "나다라", 1));
+}
+
