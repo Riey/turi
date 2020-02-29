@@ -4,6 +4,7 @@ use crossterm::event::{
     KeyEvent,
     KeyModifiers,
 };
+use simplelog::*;
 use std::io::BufWriter;
 use turi::{
     backend::{
@@ -15,7 +16,6 @@ use turi::{
     style::Theme,
     view::View,
 };
-use simplelog::*;
 
 pub fn run<S: RedrawState>(
     mut state: S,
@@ -67,5 +67,4 @@ pub fn run<S: RedrawState>(
 }
 
 #[allow(dead_code)]
-fn main() {
-}
+fn main() {}

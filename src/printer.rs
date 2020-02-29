@@ -97,7 +97,8 @@ impl<'a> Printer<'a> {
             return;
         }
 
-        let sub_str = crate::util::slice_str_with_width(text, (self.bound.end().x - start.x) as usize).0;
+        let sub_str =
+            crate::util::slice_str_with_width(text, (self.bound.end().x - start.x) as usize).0;
         self.raw_print(start, sub_str);
     }
 

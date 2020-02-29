@@ -1,6 +1,8 @@
-use crate::backend::Backend;
-use crate::vec2::Vec2;
-use crate::style::AnsiStyle as Style;
+use crate::{
+    backend::Backend,
+    style::AnsiStyle as Style,
+    vec2::Vec2,
+};
 
 #[derive(Clone, Copy, Debug, Default)]
 pub struct DummyBackend;

@@ -1,6 +1,8 @@
-use crate::backend::Backend;
-use crate::vec2::Vec2;
-use crate::style::AnsiStyle as Style;
+use crate::{
+    backend::Backend,
+    style::AnsiStyle as Style,
+    vec2::Vec2,
+};
 
 pub struct SlicedBackend<'a>(&'a mut dyn Backend, Vec2);
 
@@ -28,10 +30,12 @@ impl<'a> Backend for SlicedBackend<'a> {
             self.0.print_at(pos - self.1, text);
         }
 
-        let (_, sub_str, left) = crate::util::slice_str_with_width(text, (self.1.x - pos.x) as usize);
+        let (_, sub_str, left) =
+            crate::util::slice_str_with_width(text, (self.1.x - pos.x) as usize);
 
         if !sub_str.is_empty() {
-            self.0.print_at((left as u16, pos.y - self.1.y).into(), sub_str);
+            self.0
+                .print_at((left as u16, pos.y - self.1.y).into(), sub_str);
         }
     }
 

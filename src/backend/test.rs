@@ -82,7 +82,6 @@ impl Backend for TestBackend {
         }
 
         line.replace_range(start..end, text);
-
     }
 
     #[inline]

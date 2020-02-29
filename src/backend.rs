@@ -16,10 +16,12 @@ pub use self::crossterm::{
     CrosstermBackendGuard,
 };
 
-pub use self::dummy::DummyBackend;
 #[cfg(feature = "test-backend")]
 pub use self::test::TestBackend;
-pub use self::sliced::SlicedBackend;
+pub use self::{
+    dummy::DummyBackend,
+    sliced::SlicedBackend,
+};
 
 pub trait Backend {
     fn clear(&mut self);
@@ -75,4 +77,3 @@ impl<'a, B: Backend> Backend for &'a mut B {
         (**self).style()
     }
 }
-
