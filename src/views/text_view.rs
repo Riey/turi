@@ -1,3 +1,4 @@
+use crate::event::Event;
 use crate::{
     never::Never,
     printer::Printer,
@@ -9,13 +10,13 @@ use unicode_width::UnicodeWidthStr;
 
 use std::marker::PhantomData;
 
-pub struct TextView<S, E> {
+pub struct TextView<S> {
     text:       String,
     text_width: u16,
-    _marker:    PhantomData<(S, E)>,
+    _marker:    PhantomData<S>,
 }
 
-impl<S, E> TextView<S, E> {
+impl<S> TextView<S> {
     pub fn new(text: impl Into<String>) -> Self {
         let text = text.into();
         let text_width = text.width() as u16;
@@ -27,7 +28,7 @@ impl<S, E> TextView<S, E> {
     }
 }
 
-impl<S, E> View<S, E> for TextView<S, E> {
+impl<S> View<S> for TextView<S> {
     type Message = Never;
 
     #[inline]
@@ -56,7 +57,7 @@ impl<S, E> View<S, E> for TextView<S, E> {
     fn on_event(
         &mut self,
         _state: &mut S,
-        _event: E,
+        _event: Event,
     ) -> Option<Never> {
         None
     }

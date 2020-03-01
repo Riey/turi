@@ -1,9 +1,5 @@
 use crate::{
-    event::{
-        EventLike,
-        KeyEventLike,
-        MouseEventLike,
-    },
+    event::{KeyEventType, Event, KeyEvent, KeyCode, KeyModifiers},
     printer::Printer,
     style::Style,
     vec2::Vec2,
@@ -12,13 +8,13 @@ use crate::{
 use std::marker::PhantomData;
 use unicode_width::UnicodeWidthStr;
 
-pub struct ButtonView<S, E> {
+pub struct ButtonView<S> {
     text:       String,
     text_width: u16,
-    _marker:    PhantomData<(S, E)>,
+    _marker:    PhantomData<S>,
 }
 
-impl<S, E> ButtonView<S, E> {
+impl<S> ButtonView<S> {
     pub fn new(
         mut text: String,
         decoration: ButtonDecoration,
@@ -73,7 +69,7 @@ impl Default for ButtonDecoration {
     }
 }
 
-impl<S, E: EventLike> View<S, E> for ButtonView<S, E> {
+impl<S> View<S> for ButtonView<S> {
     type Message = ();
 
     #[inline]
@@ -102,12 +98,13 @@ impl<S, E: EventLike> View<S, E> for ButtonView<S, E> {
     fn on_event(
         &mut self,
         _state: &mut S,
-        e: E,
+        e: Event,
     ) -> Option<()> {
-        if e.try_key().map(|ke| ke.try_enter()).unwrap_or(false) {
-            Some(())
-        } else {
-            e.try_mouse()?.try_left_down().map(|_| ())
+        match e {
+            Event::Key(KeyEvent(KeyEventType::Key(KeyCode::Enter), modi)) if modi.is_empty() => {
+                Some(())
+            }
+            _ => None,
         }
     }
 }

@@ -1,31 +1,32 @@
 use crate::{
     backend::Backend,
+    event::Event,
     printer::Printer,
     state::RedrawState,
     style::Theme,
     vec2::Vec2,
     view::View,
 };
+use std::time::Duration;
 
-pub fn simple<S: RedrawState, E, B: Backend, V: View<S, E, Message = bool>>(
+pub fn simple<S: RedrawState, B: Backend, V: View<S, Message = bool>>(
     state: &mut S,
     backend: &mut B,
     theme: &Theme,
     view: &mut V,
-    mut event_source: impl FnMut(&mut S, &mut B) -> E,
 ) {
+    state.set_need_redraw(false);
     backend.clear();
-    state.set_need_redraw(true);
+    view.layout(backend.size());
+    view.render(&mut Printer::new(backend, theme));
+    backend.flush();
 
     loop {
-        if state.is_need_redraw() {
-            backend.clear();
-            view.layout(backend.size());
-            view.render(&mut Printer::new(backend, theme));
-            backend.flush();
-            state.set_need_redraw(false);
-        }
-        let e = event_source(state, backend);
+        let e = match backend.poll_event(Duration::from_millis(10)) {
+            Some(e) => e,
+            None => continue,
+        };
+
         match view.on_event(state, e) {
             Some(exit) => {
                 if exit {
@@ -34,14 +35,22 @@ pub fn simple<S: RedrawState, E, B: Backend, V: View<S, E, Message = bool>>(
             }
             None => continue,
         }
+
+        if state.is_need_redraw() {
+            backend.clear();
+            view.layout(backend.size());
+            view.render(&mut Printer::new(backend, theme));
+            backend.flush();
+            state.set_need_redraw(false);
+        }
     }
 }
 
 #[cfg(feature = "bench")]
-pub fn bench<B: Backend, E, V: View<bool, E>>(
+pub fn bench<B: Backend, V: View<bool>>(
     backend: &mut B,
     view: &mut V,
-    events: impl IntoIterator<Item = E>,
+    events: impl IntoIterator<Item = Event>,
 ) {
     let theme = Theme::default();
     let mut printer = Printer::new(backend, &theme);
@@ -60,14 +69,14 @@ pub fn bench<B: Backend, E, V: View<bool, E>>(
 }
 
 #[cfg(feature = "test-backend")]
-pub fn test<E, V: View<bool, E>>(
+pub fn test<E, V: View<bool>>(
     view: &mut V,
-    events: impl IntoIterator<Item = E>,
+    events: impl IntoIterator<Item = Event>,
     size: Vec2,
     cb: impl FnOnce(&[String]),
 ) {
     let theme = Theme::default();
-    let mut backend = crate::backend::TestBackend::new(size);
+    let mut backend = crate::backend::TestBackend::new(size, events.into_iter());
     let mut printer = Printer::new(&mut backend, &theme);
 
     let mut state = false;
@@ -75,8 +84,8 @@ pub fn test<E, V: View<bool, E>>(
     view.layout(size);
     view.render(&mut printer);
 
-    for event in events {
-        view.on_event(&mut state, event);
+    while let Some(e) = printer.backend().poll_event(Duration::new(0, 0)) {
+        view.on_event(&mut state, e);
     }
 
     if state {

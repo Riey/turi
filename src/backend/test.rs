@@ -1,25 +1,28 @@
 use crate::{
     backend::Backend,
+    event::Event,
     style::AnsiStyle as Style,
     vec2::Vec2,
 };
 
-use std::iter;
+use std::{time::Duration, iter};
 use unicode_width::UnicodeWidthStr;
 
-pub struct TestBackend {
+pub struct TestBackend<I: Iterator<Item = Event>> {
     lines: Vec<String>,
     style: Style,
     size:  Vec2,
+    events: I,
 }
 
-impl TestBackend {
-    pub fn new(size: Vec2) -> Self {
+impl<I: Iterator<Item = Event>> TestBackend<I> {
+    pub fn new(size: Vec2, events: I) -> Self {
         Self {
             lines: iter::repeat_with(|| " ".repeat(size.x as usize))
                 .take(size.y as usize)
                 .collect(),
             style: Style::default(),
+            events,
             size,
         }
     }
@@ -29,7 +32,7 @@ impl TestBackend {
     }
 }
 
-impl Backend for TestBackend {
+impl<I: Iterator<Item = Event>> Backend for TestBackend<I> {
     #[inline]
     fn clear(&mut self) {
         for line in &mut self.lines {
@@ -86,11 +89,16 @@ impl Backend for TestBackend {
 
     #[inline]
     fn flush(&mut self) {}
+
+    #[inline]
+    fn poll_event(&mut self, _: Duration) -> Option<Event> {
+        self.events.next()
+    }
 }
 
 #[test]
 fn test_backend_test() {
-    let mut backend = TestBackend::new(Vec2::new(10, 5));
+    let mut backend = TestBackend::new(Vec2::new(10, 5), std::iter::empty());
     backend.print_at(Vec2::new(2, 2), "가나다");
     backend.print_at(Vec2::new(2, 1), "ABC");
     backend.print_at(Vec2::new(7, 2), "라");

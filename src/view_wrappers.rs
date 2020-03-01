@@ -1,8 +1,11 @@
 use crate::{
     event::{
-        EventLike,
-        KeyEventLike,
-        MouseEventLike,
+        Event,
+        KeyCode,
+        KeyEvent,
+        KeyEventType,
+        MouseButton,
+        MouseEvent,
     },
     orientation::Orientation,
     printer::Printer,
@@ -25,10 +28,10 @@ impl<T, M> ConsumeEvent<T, M> {
     }
 }
 
-impl<S, E, T, M> View<S, E> for ConsumeEvent<T, M>
+impl<S, T, M> View<S> for ConsumeEvent<T, M>
 where
     M: Clone,
-    T: View<S, E>,
+    T: View<S>,
 {
     type Message = M;
 
@@ -38,7 +41,7 @@ where
     fn on_event(
         &mut self,
         _state: &mut S,
-        _event: E,
+        _event: Event,
     ) -> Option<Self::Message> {
         Some(self.msg.clone())
     }
@@ -152,9 +155,9 @@ impl<T> ScrollView<T> {
     }
 }
 
-impl<S: RedrawState, E: EventLike, T> View<S, E> for ScrollView<T>
+impl<S: RedrawState, T> View<S> for ScrollView<T>
 where
-    T: View<S, E>,
+    T: View<S>,
 {
     type Message = T::Message;
 
@@ -229,39 +232,54 @@ where
     fn on_event(
         &mut self,
         state: &mut S,
-        event: E,
+        event: Event,
     ) -> Option<Self::Message> {
         // TODO: check focus
 
-        if let Some(me) = event.try_mouse() {
-            if me.try_left_up().is_some() {
-                self.clicked = false;
-            } else if let Some(pos) = me.try_left_down() {
-                if self.event_mouse_down(pos, state) {
-                    return None;
-                }
-            } else if let Some(pos) = me.try_drag() {
-                if self.event_drag(pos, state) {
-                    return None;
+        match event {
+            Event::Mouse(me) => {
+                match me {
+                    MouseEvent::Down(MouseButton::Left, pos) => {
+                        if self.event_mouse_down(pos, state) {
+                            return None;
+                        }
+                    }
+                    MouseEvent::Drag(MouseButton::Left, pos) => {
+                        if self.event_drag(pos, state) {
+                            return None;
+                        }
+                    }
+                    MouseEvent::Up(MouseButton::Left, _) => {
+                        self.clicked = false;
+                    }
+                    _ => {}
                 }
             }
-        } else if let Some(ke) = event.try_key() {
-            if ke.try_up() && self.orientation == Orientation::Vertical
-                || ke.try_left() && self.orientation == Orientation::Horizontal
-            {
-                if self.down() {
-                    state.set_need_redraw(true);
+            Event::Key(KeyEvent(ty, modifiers)) => {
+                if modifiers.is_empty() {
+                    let (up, down) = match self.orientation {
+                        Orientation::Vertical => (KeyCode::Down, KeyCode::Up),
+                        Orientation::Horizontal => (KeyCode::Right, KeyCode::Left),
+                    };
+                    match ty {
+                        KeyEventType::Key(code) if code == down => {
+                            if self.down() {
+                                state.set_need_redraw(true);
+                            }
+                            return None;
+                        }
+                        KeyEventType::Key(code) if code == up => {
+                            if self.up() {
+                                state.set_need_redraw(true);
+                            }
+                            return None;
+                        }
+                        _ => {}
+                    }
                 }
-                return None;
-            } else if ke.try_down() && self.orientation == Orientation::Vertical
-                || ke.try_right() && self.orientation == Orientation::Horizontal
-            {
-                if self.up() {
-                    state.set_need_redraw(true);
-                }
-                return None;
             }
         }
+
         self.inner.on_event(state, event)
     }
 }
@@ -286,9 +304,9 @@ impl<T> SizeCacher<T> {
     }
 }
 
-impl<S, E, T> View<S, E> for SizeCacher<T>
+impl<S, T> View<S> for SizeCacher<T>
 where
-    T: View<S, E>,
+    T: View<S>,
 {
     type Message = T::Message;
 
@@ -318,7 +336,7 @@ where
     fn on_event(
         &mut self,
         state: &mut S,
-        event: E,
+        event: Event,
     ) -> Option<Self::Message> {
         self.inner.on_event(state, event)
     }

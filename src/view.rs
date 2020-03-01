@@ -1,21 +1,20 @@
 use crate::{
     converters::{
         Map,
-        MapE,
-        MapOptE,
         OrElse,
         OrElseFirst,
     },
     orientation::Orientation,
     printer::Printer,
     vec2::Vec2,
+    event::Event,
     view_wrappers::{
         ConsumeEvent,
         ScrollView,
     },
 };
 
-pub trait View<S, E> {
+pub trait View<S> {
     type Message;
 
     fn render(
@@ -31,7 +30,7 @@ pub trait View<S, E> {
     fn on_event(
         &mut self,
         state: &mut S,
-        event: E,
+        event: Event,
     ) -> Option<Self::Message>;
 
     #[inline]
@@ -70,37 +69,13 @@ pub trait View<S, E> {
     }
 
     #[inline]
-    fn map_e<NE, F>(
-        self,
-        f: F,
-    ) -> MapE<Self, NE, F>
-    where
-        Self: Sized,
-        F: FnMut(&mut Self, &mut S, NE) -> E,
-    {
-        MapE::new(self, f)
-    }
-
-    #[inline]
-    fn map_opt_e<NE, F>(
-        self,
-        f: F,
-    ) -> MapOptE<Self, NE, F>
-    where
-        Self: Sized,
-        F: FnMut(&mut Self, &mut S, NE) -> Option<E>,
-    {
-        MapOptE::new(self, f)
-    }
-
-    #[inline]
     fn or_else<F>(
         self,
         f: F,
     ) -> OrElse<Self, F>
     where
         Self: Sized,
-        F: FnMut(&mut Self, &mut S, E) -> Option<Self::Message>,
+        F: FnMut(&mut Self, &mut S, Event) -> Option<Self::Message>,
     {
         OrElse::new(self, f)
     }
@@ -112,13 +87,13 @@ pub trait View<S, E> {
     ) -> OrElseFirst<Self, F>
     where
         Self: Sized,
-        F: FnMut(&mut Self, &mut S, E) -> Option<Self::Message>,
+        F: FnMut(&mut Self, &mut S, Event) -> Option<Self::Message>,
     {
         OrElseFirst::new(self, f)
     }
 }
 
-impl<S, E, M> View<S, E> for Box<dyn View<S, E, Message = M>> {
+impl<S, M> View<S> for Box<dyn View<S, Message = M>> {
     type Message = M;
 
     #[inline]
@@ -146,7 +121,7 @@ impl<S, E, M> View<S, E> for Box<dyn View<S, E, Message = M>> {
     fn on_event(
         &mut self,
         state: &mut S,
-        event: E,
+        event: Event,
     ) -> Option<M> {
         (**self).on_event(state, event)
     }

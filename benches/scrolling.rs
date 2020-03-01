@@ -2,19 +2,20 @@
 
 extern crate test;
 
-use crossterm::event::{
-    Event,
-    KeyModifiers,
-    MouseButton,
-    MouseEvent,
-};
 use turi::{
     executor,
     orientation::Orientation,
     vec2::Vec2,
     view::View,
     views::TextView,
+    event::{
+        Event,
+        KeyModifiers,
+        MouseButton,
+        MouseEvent,
+},
 };
+use enumset::EnumSet;
 
 #[bench]
 fn crossterm_scroll_bench(b: &mut test::Bencher) {
@@ -25,15 +26,11 @@ fn crossterm_scroll_bench(b: &mut test::Bencher) {
     for _ in 0..512 {
         events.push(Event::Mouse(MouseEvent::Down(
             MouseButton::Left,
-            50,
-            9,
-            KeyModifiers::empty(),
+            (50, 9).into(),
         )));
         events.push(Event::Mouse(MouseEvent::Down(
             MouseButton::Left,
-            45,
-            9,
-            KeyModifiers::empty(),
+            (45, 9).into(),
         )));
     }
 

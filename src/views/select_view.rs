@@ -1,8 +1,6 @@
 use crate::{
     event::{
-        EventLike,
-        KeyEventLike,
-        MouseEventLike,
+        Event,
     },
     printer::Printer,
     state::RedrawState,
@@ -13,14 +11,14 @@ use crate::{
 use std::marker::PhantomData;
 use unicode_width::UnicodeWidthStr;
 
-pub struct SelectView<S, E, T> {
+pub struct SelectView<S, T> {
     btns:     Vec<(String, T)>,
     selected: usize,
     width:    u16,
-    _marker:  PhantomData<(S, E)>,
+    _marker:  PhantomData<S>,
 }
 
-impl<S: RedrawState, E, T> SelectView<S, E, T> {
+impl<S: RedrawState, T> SelectView<S, T> {
     pub fn new() -> Self {
         Self {
             btns:     Vec::new(),
@@ -90,7 +88,7 @@ pub enum SelectViewMessage {
     IndexChanged,
 }
 
-impl<S: RedrawState, E: EventLike, T> View<S, E> for SelectView<S, E, T> {
+impl<S: RedrawState, T> View<S> for SelectView<S, T> {
     type Message = SelectViewMessage;
 
     fn render(
@@ -123,8 +121,10 @@ impl<S: RedrawState, E: EventLike, T> View<S, E> for SelectView<S, E, T> {
     fn on_event(
         &mut self,
         state: &mut S,
-        e: E,
+        e: Event,
     ) -> Option<Self::Message> {
+        todo!()
+        /*
         if e.try_mouse()
             .map(|me| me.try_left_down().is_some())
             .unwrap_or(false)
@@ -143,5 +143,6 @@ impl<S: RedrawState, E: EventLike, T> View<S, E> for SelectView<S, E, T> {
         } else {
             None
         }
+        */
     }
 }

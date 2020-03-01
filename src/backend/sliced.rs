@@ -1,8 +1,11 @@
 use crate::{
+    event::Event,
     backend::Backend,
     style::AnsiStyle as Style,
     vec2::Vec2,
 };
+
+use std::time::Duration;
 
 pub struct SlicedBackend<'a>(&'a mut dyn Backend, Vec2);
 
@@ -65,5 +68,10 @@ impl<'a> Backend for SlicedBackend<'a> {
     #[inline]
     fn style(&self) -> Style {
         self.0.style()
+    }
+
+    #[inline]
+    fn poll_event(&mut self, wait: Duration) -> Option<Event> {
+        self.0.poll_event(wait)
     }
 }

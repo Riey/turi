@@ -1,3 +1,4 @@
+use crate::event::Event;
 use crate::{
     never::Never,
     printer::Printer,
@@ -8,13 +9,13 @@ use crate::{
 use std::marker::PhantomData;
 use unicode_width::UnicodeWidthStr;
 
-pub struct ParagraphView<S, E> {
+pub struct ParagraphView<S> {
     lines:   Vec<String>,
     width:   usize,
-    _marker: PhantomData<(S, E)>,
+    _marker: PhantomData<S>,
 }
 
-impl<S, E> ParagraphView<S, E> {
+impl<S> ParagraphView<S> {
     pub fn new() -> Self {
         let mut lines = Vec::with_capacity(10);
         lines.push(String::with_capacity(100));
@@ -70,7 +71,7 @@ impl<S, E> ParagraphView<S, E> {
     }
 }
 
-impl<S, E> View<S, E> for ParagraphView<S, E> {
+impl<S> View<S> for ParagraphView<S> {
     type Message = Never;
 
     fn render(
@@ -97,7 +98,7 @@ impl<S, E> View<S, E> for ParagraphView<S, E> {
     fn on_event(
         &mut self,
         _: &mut S,
-        _: E,
+        _: Event,
     ) -> Option<Never> {
         None
     }

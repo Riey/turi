@@ -1,7 +1,9 @@
+use crate::event::KeyEvent;
 use crate::{
     event::{
-        EventLike,
-        KeyEventLike,
+        Event,
+        KeyEventType,
+        KeyCode,
     },
     printer::Printer,
     state::RedrawState,
@@ -12,13 +14,13 @@ use crate::{
 use std::marker::PhantomData;
 use unicode_width::UnicodeWidthChar;
 
-pub struct EditView<S, E> {
+pub struct EditView<S> {
     text:    String,
     width:   usize,
-    _marker: PhantomData<(S, E)>,
+    _marker: PhantomData<S>,
 }
 
-impl<S, E> EditView<S, E> {
+impl<S> EditView<S> {
     pub fn new() -> Self {
         Self {
             text:    String::new(),
@@ -38,7 +40,7 @@ pub enum EditViewMessage {
     Submit,
 }
 
-impl<S: RedrawState, E: EventLike> View<S, E> for EditView<S, E> {
+impl<S: RedrawState> View<S> for EditView<S> {
     type Message = EditViewMessage;
 
     fn desired_size(&self) -> Vec2 {
@@ -63,26 +65,34 @@ impl<S: RedrawState, E: EventLike> View<S, E> for EditView<S, E> {
     fn on_event(
         &mut self,
         state: &mut S,
-        e: E,
+        e: Event,
     ) -> Option<Self::Message> {
-        let ke = e.try_key()?;
-        if ke.try_enter() {
-            Some(EditViewMessage::Submit)
-        } else if let Some(ch) = ke.try_char() {
-            self.text.push(ch);
-            self.width += ch.width().unwrap_or(0);
-            state.set_need_redraw(true);
-            Some(EditViewMessage::Edit)
-        } else if ke.try_backspace() {
-            if let Some(ch) = self.text.pop() {
-                self.width -= ch.width().unwrap_or(0);
-                state.set_need_redraw(true);
-                Some(EditViewMessage::Edit)
-            } else {
-                None
+        match e {
+            Event::Mouse(..) => todo!(),
+            Event::Key(KeyEvent(ty, modi)) if modi.is_empty() => {
+                match ty {
+                    KeyEventType::Key(KeyCode::Enter) => {
+                        Some(EditViewMessage::Submit)
+                    }
+                    KeyEventType::Key(KeyCode::Backspace) => {
+                        if let Some(ch) = self.text.pop() {
+                            self.width -= ch.width().unwrap_or(0);
+                            state.set_need_redraw(true);
+                            Some(EditViewMessage::Edit)
+                        } else {
+                            None
+                        }
+                    }
+                    KeyEventType::Char(ch) => {
+                        self.text.push(ch);
+                        self.width += ch.width().unwrap_or(0);
+                        state.set_need_redraw(true);
+                        Some(EditViewMessage::Edit)
+                    }
+                    _ => None,
+                }
             }
-        } else {
-            None
+            _ => None,
         }
     }
 }

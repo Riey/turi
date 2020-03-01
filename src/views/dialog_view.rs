@@ -1,9 +1,7 @@
 use crate::{
     converters::Map,
     event::{
-        EventLike,
-        KeyEventLike,
-        MouseEventLike,
+        Event,
     },
     printer::Printer,
     state::RedrawState,
@@ -23,20 +21,19 @@ enum DialogFocus {
     Button(usize),
 }
 
-type DialogButton<S, E, M> =
-    Map<ButtonView<S, E>, M, Box<dyn FnMut(&mut ButtonView<S, E>, &mut S, ()) -> M>>;
+type DialogButton<S, M> =
+    Map<ButtonView<S>, M, Box<dyn FnMut(&mut ButtonView<S>, &mut S, ()) -> M>>;
 
-pub struct DialogView<S, E, M, C> {
+pub struct DialogView<S, M, C> {
     title:   String,
     content: SizeCacher<C>,
-    buttons: Vec<DialogButton<S, E, M>>,
+    buttons: Vec<DialogButton<S, M>>,
     focus:   DialogFocus,
 }
 
-impl<S, E, M, C> DialogView<S, E, M, C>
+impl<S, M, C> DialogView<S, M, C>
 where
     S: 'static,
-    E: EventLike + 'static,
     M: 'static,
 {
     pub fn new(content: C) -> Self {
@@ -97,11 +94,10 @@ where
     }
 }
 
-impl<S, E, M, C> View<S, E> for DialogView<S, E, M, C>
+impl<S, M, C> View<S> for DialogView<S, M, C>
 where
     S: RedrawState + 'static,
-    C: View<S, E, Message = M>,
-    E: EventLike + 'static,
+    C: View<S, Message = M>,
     M: 'static,
 {
     type Message = M;
@@ -165,8 +161,10 @@ where
     fn on_event(
         &mut self,
         state: &mut S,
-        mut event: E,
+        mut event: Event,
     ) -> Option<Self::Message> {
+        todo!()
+        /*
         if let Some(me) = event.try_mouse_mut() {
             let size = self.content.prev_size();
 
@@ -239,5 +237,6 @@ where
         } else {
             None
         }
+         */
     }
 }

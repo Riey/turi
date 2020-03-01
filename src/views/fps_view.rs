@@ -2,7 +2,7 @@ use crate::{
     never::Never,
     style::Style,
     vec2::Vec2,
-    view::View,
+    view::View, event::Event,
 };
 use std::{
     cell::Cell,
@@ -10,12 +10,12 @@ use std::{
     time::Instant,
 };
 
-pub struct FpsView<S, E> {
+pub struct FpsView<S> {
     prev_draw: Cell<Instant>,
-    _marker:   PhantomData<(S, E)>,
+    _marker:   PhantomData<S>,
 }
 
-impl<S, E> FpsView<S, E> {
+impl<S> FpsView<S> {
     pub fn new() -> Self {
         Self {
             prev_draw: Cell::new(Instant::now()),
@@ -24,7 +24,7 @@ impl<S, E> FpsView<S, E> {
     }
 }
 
-impl<S, E> View<S, E> for FpsView<S, E> {
+impl<S> View<S> for FpsView<S> {
     type Message = Never;
 
     fn render(
@@ -53,7 +53,7 @@ impl<S, E> View<S, E> for FpsView<S, E> {
     fn on_event(
         &mut self,
         _state: &mut S,
-        _event: E,
+        _event: Event,
     ) -> Option<Self::Message> {
         None
     }

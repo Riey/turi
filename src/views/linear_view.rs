@@ -1,8 +1,6 @@
 use crate::{
     event::{
-        EventLike,
-        KeyEventLike,
-        MouseEventLike,
+        Event,
     },
     orientation::Orientation,
     printer::Printer,
@@ -12,13 +10,13 @@ use crate::{
     view_wrappers::SizeCacher,
 };
 
-pub struct LinearView<S, E, M> {
-    children:    Vec<SizeCacher<Box<dyn View<S, E, Message = M> + 'static>>>,
+pub struct LinearView<S, M> {
+    children:    Vec<SizeCacher<Box<dyn View<S, Message = M> + 'static>>>,
     orientation: Orientation,
     focus:       Option<usize>,
 }
 
-impl<S, E, M> LinearView<S, E, M> {
+impl<S, M> LinearView<S, M> {
     pub fn new() -> Self {
         Self {
             children:    Vec::with_capacity(10),
@@ -47,7 +45,7 @@ impl<S, E, M> LinearView<S, E, M> {
     #[inline]
     pub fn child(
         mut self,
-        v: impl View<S, E, Message = M> + 'static,
+        v: impl View<S, Message = M> + 'static,
     ) -> Self {
         self.add_child(v);
         self
@@ -56,13 +54,13 @@ impl<S, E, M> LinearView<S, E, M> {
     #[inline]
     pub fn add_child(
         &mut self,
-        v: impl View<S, E, Message = M> + 'static,
+        v: impl View<S, Message = M> + 'static,
     ) {
         self.children.push(SizeCacher::new(Box::new(v)));
     }
 }
 
-impl<S: RedrawState, E: EventLike, M> View<S, E> for LinearView<S, E, M> {
+impl<S: RedrawState, M> View<S> for LinearView<S, M> {
     type Message = M;
 
     fn render(
@@ -134,8 +132,10 @@ impl<S: RedrawState, E: EventLike, M> View<S, E> for LinearView<S, E, M> {
     fn on_event(
         &mut self,
         state: &mut S,
-        mut event: E,
+        mut event: Event,
     ) -> Option<Self::Message> {
+        todo!()
+        /*
         if let Some(me) = event.try_mouse_mut() {
             match self.orientation {
                 Orientation::Horizontal => {
@@ -228,5 +228,6 @@ impl<S: RedrawState, E: EventLike, M> View<S, E> for LinearView<S, E, M> {
         } else {
             None
         }
+         */
     }
 }
