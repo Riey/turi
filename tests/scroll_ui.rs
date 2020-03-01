@@ -1,5 +1,7 @@
 use crossterm::event::{
     Event,
+    KeyCode,
+    KeyEvent,
     KeyModifiers,
     MouseButton,
     MouseEvent,
@@ -8,7 +10,10 @@ use turi::{
     executor,
     orientation::Orientation,
     view::View,
-    views::TextView,
+    views::{
+        LinearView,
+        TextView,
+    },
 };
 
 #[test]
@@ -24,6 +29,65 @@ fn horizontal_scroll_mouse_down() {
         (4, 2).into(),
         |lines| {
             assert_eq!(lines, &["2345", "──█─",]);
+        },
+    )
+}
+
+#[test]
+fn horizontal_scroll_mouse_down_linear_view() {
+    executor::test(
+        &mut LinearView::new().child(TextView::new("123456").scrollable(Orientation::Horizontal)),
+        vec![Event::Mouse(MouseEvent::Down(
+            MouseButton::Left,
+            2,
+            1,
+            KeyModifiers::empty(),
+        ))],
+        (4, 2).into(),
+        |lines| {
+            assert_eq!(lines, &["2345", "──█─",]);
+        },
+    )
+}
+
+#[test]
+fn horizontal_scroll_key_right() {
+    executor::test(
+        &mut TextView::new("123456").scrollable(Orientation::Horizontal),
+        vec![
+            Event::Key(KeyEvent {
+                code:      KeyCode::Right,
+                modifiers: KeyModifiers::empty(),
+            }),
+            Event::Key(KeyEvent {
+                code:      KeyCode::Right,
+                modifiers: KeyModifiers::empty(),
+            }),
+        ],
+        (4, 2).into(),
+        |lines| {
+            assert_eq!(lines, &["2345", "──░─",]);
+        },
+    )
+}
+
+#[test]
+fn horizontal_scroll_key_right_linear_view() {
+    executor::test(
+        &mut LinearView::new().child(TextView::new("123456").scrollable(Orientation::Horizontal)),
+        vec![
+            Event::Key(KeyEvent {
+                code:      KeyCode::Right,
+                modifiers: KeyModifiers::empty(),
+            }),
+            Event::Key(KeyEvent {
+                code:      KeyCode::Right,
+                modifiers: KeyModifiers::empty(),
+            }),
+        ],
+        (4, 2).into(),
+        |lines| {
+            assert_eq!(lines, &["2345", "──░─",]);
         },
     )
 }
