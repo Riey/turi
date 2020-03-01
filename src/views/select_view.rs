@@ -1,7 +1,5 @@
 use crate::{
-    event::{
-        Event,
-    },
+    event::Event,
     printer::Printer,
     state::RedrawState,
     style::Style,

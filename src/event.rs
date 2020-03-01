@@ -1,6 +1,8 @@
 use crate::vec2::Vec2;
-use enumset::EnumSetType;
-use enumset::EnumSet;
+use enumset::{
+    EnumSet,
+    EnumSetType,
+};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum MouseButton {

@@ -1,9 +1,9 @@
-use crate::event::KeyEvent;
 use crate::{
     event::{
         Event,
-        KeyEventType,
         KeyCode,
+        KeyEvent,
+        KeyEventType,
     },
     printer::Printer,
     state::RedrawState,
@@ -71,9 +71,7 @@ impl<S: RedrawState> View<S> for EditView<S> {
             Event::Mouse(..) => todo!(),
             Event::Key(KeyEvent(ty, modi)) if modi.is_empty() => {
                 match ty {
-                    KeyEventType::Key(KeyCode::Enter) => {
-                        Some(EditViewMessage::Submit)
-                    }
+                    KeyEventType::Key(KeyCode::Enter) => Some(EditViewMessage::Submit),
                     KeyEventType::Key(KeyCode::Backspace) => {
                         if let Some(ch) = self.text.pop() {
                             self.width -= ch.width().unwrap_or(0);

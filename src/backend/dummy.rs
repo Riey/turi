@@ -4,7 +4,6 @@ use crate::{
     style::AnsiStyle as Style,
     vec2::Vec2,
 };
-use std::time::Duration;
 
 #[derive(Clone, Copy, Debug, Default)]
 pub struct DummyBackend;
@@ -39,10 +38,5 @@ impl Backend for DummyBackend {
     #[inline]
     fn style(&self) -> Style {
         Style::new()
-    }
-
-    #[inline]
-    fn poll_event(&mut self, _wait: Duration) -> Option<Event> {
-        None
     }
 }

@@ -1,5 +1,5 @@
-use crate::event::Event;
 use crate::{
+    event::Event,
     never::Never,
     printer::Printer,
     style::Style,

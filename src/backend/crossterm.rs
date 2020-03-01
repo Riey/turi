@@ -29,13 +29,11 @@ use crossterm::{
 use std::{
     fmt,
     io::Write,
-    time::Duration,
 };
 
 use crate::{
     backend::Backend,
     event::{
-        Event as TEvent,
         KeyCode as TKeyCode,
         KeyEvent as TKeyEvent,
         KeyModifiers as TKeyModifiers,
@@ -134,31 +132,22 @@ impl<W: Write> Backend for CrosstermBackend<W> {
     fn flush(&mut self) {
         self.out.flush().unwrap();
     }
+}
 
-    fn poll_event(
-        &mut self,
-        wait: Duration,
-    ) -> Option<TEvent> {
-        if crossterm::event::poll(wait).unwrap() {
-            match crossterm::event::read().unwrap() {
-                Event::Mouse(mouse) => {
-                    Some(match mouse {
-                        MouseEvent::Down(btn, x, y, _) => {
-                            TEvent::Mouse(TMouseEvent::Down(TMouseButton::Left, (x, y).into()),
-                            )
-                        }
-                        _ => todo!(),
-                    })
-                }
-                Event::Resize(x, y) => {
-                    self.size = (x, y).into();
-                    None
-                }
-                _ => todo!(),
-            }
-        } else {
-            None
+impl From<MouseEvent> for TMouseEvent {
+    #[inline]
+    fn from(e: MouseEvent) -> Self {
+        match e {
+            MouseEvent::Down(btn, x, y, _) => TMouseEvent::Down(TMouseButton::Left, (x, y).into()),
+            _ => todo!(),
         }
+    }
+}
+
+impl From<KeyEvent> for TKeyEvent {
+    #[inline]
+    fn from(e: KeyEvent) -> Self {
+        todo!()
     }
 }
 

@@ -82,11 +82,6 @@ impl<'a> Printer<'a> {
     }
 
     #[inline]
-    pub fn backend(&mut self) -> &mut dyn Backend {
-        self.backend
-    }
-
-    #[inline]
     pub fn style(&self) -> Style {
         self.style
     }

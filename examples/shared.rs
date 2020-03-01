@@ -19,7 +19,7 @@ use turi::{
 
 pub fn run<S: RedrawState>(
     mut state: S,
-    view: impl View<S, Event, Message = bool>,
+    view: impl View<S, Message = bool>,
 ) {
     WriteLogger::init(
         LevelFilter::Trace,

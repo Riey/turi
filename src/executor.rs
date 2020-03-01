@@ -7,26 +7,26 @@ use crate::{
     vec2::Vec2,
     view::View,
 };
-use std::time::Duration;
 
 pub fn simple<S: RedrawState, B: Backend, V: View<S, Message = bool>>(
     state: &mut S,
     backend: &mut B,
     theme: &Theme,
     view: &mut V,
+    mut event_source: impl FnMut(&mut S, &mut B) -> Event,
 ) {
-    state.set_need_redraw(false);
     backend.clear();
-    view.layout(backend.size());
-    view.render(&mut Printer::new(backend, theme));
-    backend.flush();
+    state.set_need_redraw(true);
 
     loop {
-        let e = match backend.poll_event(Duration::from_millis(10)) {
-            Some(e) => e,
-            None => continue,
-        };
-
+        if state.is_need_redraw() {
+            backend.clear();
+            view.layout(backend.size());
+            view.render(&mut Printer::new(backend, theme));
+            backend.flush();
+            state.set_need_redraw(false);
+        }
+        let e = event_source(state, backend);
         match view.on_event(state, e) {
             Some(exit) => {
                 if exit {
@@ -34,14 +34,6 @@ pub fn simple<S: RedrawState, B: Backend, V: View<S, Message = bool>>(
                 }
             }
             None => continue,
-        }
-
-        if state.is_need_redraw() {
-            backend.clear();
-            view.layout(backend.size());
-            view.render(&mut Printer::new(backend, theme));
-            backend.flush();
-            state.set_need_redraw(false);
         }
     }
 }
@@ -76,7 +68,7 @@ pub fn test<E, V: View<bool>>(
     cb: impl FnOnce(&[String]),
 ) {
     let theme = Theme::default();
-    let mut backend = crate::backend::TestBackend::new(size, events.into_iter());
+    let mut backend = crate::backend::TestBackend::new(size);
     let mut printer = Printer::new(&mut backend, &theme);
 
     let mut state = false;
@@ -84,7 +76,7 @@ pub fn test<E, V: View<bool>>(
     view.layout(size);
     view.render(&mut printer);
 
-    while let Some(e) = printer.backend().poll_event(Duration::new(0, 0)) {
+    for e in events {
         view.on_event(&mut state, e);
     }
 

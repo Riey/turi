@@ -1,6 +1,6 @@
 use crate::{
-    event::Event,
     backend::Backend,
+    event::Event,
     style::AnsiStyle as Style,
     vec2::Vec2,
 };
@@ -68,10 +68,5 @@ impl<'a> Backend for SlicedBackend<'a> {
     #[inline]
     fn style(&self) -> Style {
         self.0.style()
-    }
-
-    #[inline]
-    fn poll_event(&mut self, wait: Duration) -> Option<Event> {
-        self.0.poll_event(wait)
     }
 }

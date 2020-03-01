@@ -1,5 +1,11 @@
 use crate::{
-    event::{KeyEventType, Event, KeyEvent, KeyCode, KeyModifiers},
+    event::{
+        Event,
+        KeyCode,
+        KeyEvent,
+        KeyEventType,
+        KeyModifiers,
+    },
     printer::Printer,
     style::Style,
     vec2::Vec2,

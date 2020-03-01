@@ -1,8 +1,9 @@
 use crate::{
+    event::Event,
     never::Never,
     style::Style,
     vec2::Vec2,
-    view::View, event::Event,
+    view::View,
 };
 use std::{
     cell::Cell,

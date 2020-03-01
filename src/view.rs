@@ -4,10 +4,10 @@ use crate::{
         OrElse,
         OrElseFirst,
     },
+    event::Event,
     orientation::Orientation,
     printer::Printer,
     vec2::Vec2,
-    event::Event,
     view_wrappers::{
         ConsumeEvent,
         ScrollView,

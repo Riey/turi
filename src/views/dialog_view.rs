@@ -1,8 +1,6 @@
 use crate::{
     converters::Map,
-    event::{
-        Event,
-    },
+    event::Event,
     printer::Printer,
     state::RedrawState,
     style::Style,

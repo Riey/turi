@@ -1,5 +1,7 @@
-use crate::vec2::Vec2;
-use crate::event::Event;
+use crate::{
+    event::Event,
+    vec2::Vec2,
+};
 use ansi_term::Style;
 use std::time::Duration;
 
@@ -39,7 +41,6 @@ pub trait Backend {
         text: &str,
     );
     fn flush(&mut self);
-    fn poll_event(&mut self, wait: Duration) -> Option<Event>;
 }
 
 impl<'a, B: Backend> Backend for &'a mut B {
@@ -79,7 +80,4 @@ impl<'a, B: Backend> Backend for &'a mut B {
     fn style(&self) -> Style {
         (**self).style()
     }
-
-    #[inline]
-    fn poll_event(&mut self, wait: Duration) -> Option<Event> { (**self).poll_event(wait) } 
 }

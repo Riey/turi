@@ -2,20 +2,20 @@
 
 extern crate test;
 
+use enumset::EnumSet;
 use turi::{
-    executor,
-    orientation::Orientation,
-    vec2::Vec2,
-    view::View,
-    views::TextView,
     event::{
         Event,
         KeyModifiers,
         MouseButton,
         MouseEvent,
-},
+    },
+    executor,
+    orientation::Orientation,
+    vec2::Vec2,
+    view::View,
+    views::TextView,
 };
-use enumset::EnumSet;
 
 #[bench]
 fn crossterm_scroll_bench(b: &mut test::Bencher) {
