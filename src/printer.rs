@@ -77,6 +77,11 @@ impl<'a> Printer<'a> {
     }
 
     #[inline]
+    pub fn clear(&mut self) {
+        self.backend.clear();
+    }
+
+    #[inline]
     pub fn style(&self) -> Style {
         self.style
     }

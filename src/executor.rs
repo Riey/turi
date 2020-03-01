@@ -3,6 +3,7 @@ use crate::{
     printer::Printer,
     state::RedrawState,
     style::Theme,
+    vec2::Vec2,
     view::View,
 };
 
@@ -56,4 +57,33 @@ pub fn bench<B: Backend, E, V: View<bool, E>>(
 
         view.on_event(&mut need_redraw, event);
     }
+}
+
+#[cfg(feature = "test-backend")]
+pub fn test<E, V: View<bool, E>>(
+    view: &mut V,
+    events: impl IntoIterator<Item = E>,
+    size: Vec2,
+    cb: impl FnOnce(&[String]),
+) {
+    let theme = Theme::default();
+    let mut backend = crate::backend::TestBackend::new(size);
+    let mut printer = Printer::new(&mut backend, &theme);
+
+    let mut state = false;
+
+    view.layout(size);
+    view.render(&mut printer);
+
+    for event in events {
+        view.on_event(&mut state, event);
+    }
+
+    if state {
+        printer.clear();
+        view.layout(size);
+        view.render(&mut printer);
+    }
+
+    cb(backend.lines());
 }

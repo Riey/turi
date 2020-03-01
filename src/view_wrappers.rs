@@ -202,12 +202,12 @@ where
 
         match self.orientation {
             Orientation::Horizontal => {
-                let pos = printer.bound().h();
+                let pos = printer.bound().h() - 1;
                 printer.print_horizontal_line(pos);
                 printer.print((self.scroll, pos), self.scroll_block_text());
             }
             Orientation::Vertical => {
-                let pos = printer.bound().w();
+                let pos = printer.bound().w() - 1;
                 printer.print_vertical_line(pos);
                 printer.print((pos, self.scroll), self.scroll_block_text());
             }
