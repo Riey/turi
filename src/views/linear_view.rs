@@ -1,7 +1,6 @@
 use crate::{
     event::{
         EventLike,
-        KeyEventLike,
         MouseEventLike,
     },
     orientation::Orientation,
@@ -15,7 +14,7 @@ use crate::{
 pub struct LinearView<S, E, M> {
     children:    Vec<SizeCacher<Box<dyn View<S, E, Message = M> + 'static>>>,
     orientation: Orientation,
-    focus:       Option<usize>,
+    focus:       usize,
 }
 
 impl<S, E, M> LinearView<S, E, M> {
@@ -23,7 +22,7 @@ impl<S, E, M> LinearView<S, E, M> {
         Self {
             children:    Vec::with_capacity(10),
             orientation: Orientation::Horizontal,
-            focus:       None,
+            focus:       0,
         }
     }
 
@@ -149,7 +148,7 @@ impl<S: RedrawState, E: EventLike, M> View<S, E> for LinearView<S, E, M> {
         if let Some(me) = event.try_mouse_mut() {
             match self.orientation {
                 Orientation::Horizontal => {
-                    for child in self.children.iter_mut() {
+                    for (i, child) in self.children.iter_mut().enumerate() {
                         let contains = !me.filter_map_pos(|pos| {
                             let size = child.prev_size();
                             if size.x >= pos.x {
@@ -159,12 +158,13 @@ impl<S: RedrawState, E: EventLike, M> View<S, E> for LinearView<S, E, M> {
                             }
                         });
                         if contains {
+                            self.focus = i;
                             return child.on_event(state, event);
                         }
                     }
                 }
                 Orientation::Vertical => {
-                    for child in self.children.iter_mut() {
+                    for (i, child) in self.children.iter_mut().enumerate() {
                         let contains = !me.filter_map_pos(|pos| {
                             let size = child.prev_size();
                             if size.y >= pos.y {
@@ -174,6 +174,7 @@ impl<S: RedrawState, E: EventLike, M> View<S, E> for LinearView<S, E, M> {
                             }
                         });
                         if contains {
+                            self.focus = i;
                             return child.on_event(state, event);
                         }
                     }
@@ -181,57 +182,12 @@ impl<S: RedrawState, E: EventLike, M> View<S, E> for LinearView<S, E, M> {
             }
 
             None
-        } else if let Some(ke) = event.try_key() {
-            if !self.children.is_empty() {
-                if self.orientation == Orientation::Horizontal {
-                    if ke.try_left() {
-                        self.focus = match self.focus {
-                            Some(0) => Some(self.children.len() - 1),
-
-                            Some(x) => Some(x - 1),
-
-                            None => Some(0),
-                        };
-                        state.set_need_redraw(true);
-                        return None;
-                    } else if ke.try_right() {
-                        self.focus = match self.focus {
-                            Some(x) if x == self.children.len() - 1 => Some(0),
-
-                            Some(x) => Some(x + 1),
-
-                            None => Some(0),
-                        };
-                        state.set_need_redraw(true);
-                        return None;
-                    }
-                } else if self.orientation == Orientation::Vertical {
-                    if ke.try_up() {
-                        self.focus = match self.focus {
-                            Some(0) => Some(self.children.len() - 1),
-
-                            Some(x) => Some(x - 1),
-
-                            None => Some(0),
-                        };
-                        state.set_need_redraw(true);
-                        return None;
-                    } else if ke.try_down() {
-                        self.focus = match self.focus {
-                            Some(x) if x == self.children.len() - 1 => Some(0),
-
-                            Some(x) => Some(x + 1),
-
-                            None => Some(0),
-                        };
-                        state.set_need_redraw(true);
-                        return None;
-                    }
-                }
-            }
-
-            if let Some(focus) = self.focus {
-                self.children[focus].on_event(state, event)
+        } else if let Some(_) = event.try_key() {
+            if let Some(focus) = self.children.get_mut(self.focus) {
+                focus.on_event(state, event)
+            } else if !self.children.is_empty() {
+                self.focus = self.children.len() - 1;
+                self.children.last_mut()?.on_event(state, event)
             } else {
                 None
             }
