@@ -28,6 +28,16 @@ impl<S, E, M> LinearView<S, E, M> {
     }
 
     #[inline]
+    pub fn vertical() -> Self {
+        Self::new().orientation(Orientation::Vertical)
+    }
+
+    #[inline]
+    pub fn horizontal() -> Self {
+        Self::new().orientation(Orientation::Horizontal)
+    }
+
+    #[inline]
     pub fn orientation(
         mut self,
         orientation: Orientation,

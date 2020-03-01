@@ -13,8 +13,7 @@ mod shared;
 fn main() {
     self::shared::run(
         false,
-        LinearView::new()
-            .orientation(Orientation::Vertical)
+        LinearView::vertical()
             .child(FpsView::new().consume_event(false))
             .child(
                 TextView::new(include_str!("lorem.txt"))

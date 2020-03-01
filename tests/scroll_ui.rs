@@ -36,7 +36,8 @@ fn horizontal_scroll_mouse_down() {
 #[test]
 fn horizontal_scroll_mouse_down_linear_view() {
     executor::test(
-        &mut LinearView::new().child(TextView::new("123456").scrollable(Orientation::Horizontal)),
+        &mut LinearView::horizontal()
+            .child(TextView::new("123456").scrollable(Orientation::Horizontal)),
         vec![Event::Mouse(MouseEvent::Down(
             MouseButton::Left,
             2,
@@ -74,7 +75,8 @@ fn horizontal_scroll_key_right() {
 #[test]
 fn horizontal_scroll_key_right_linear_view() {
     executor::test(
-        &mut LinearView::new().child(TextView::new("123456").scrollable(Orientation::Horizontal)),
+        &mut LinearView::horizontal()
+            .child(TextView::new("123456").scrollable(Orientation::Horizontal)),
         vec![
             Event::Key(KeyEvent {
                 code:      KeyCode::Right,
