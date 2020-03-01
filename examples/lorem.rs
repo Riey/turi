@@ -14,6 +14,7 @@ fn main() {
     self::shared::run(
         false,
         LinearView::vertical()
+            .focus(1)
             .child(FpsView::new().consume_event(false))
             .child(
                 TextView::new(include_str!("lorem.txt"))

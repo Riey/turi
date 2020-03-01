@@ -97,6 +97,7 @@ fn horizontal_scroll_key_right_linear_view() {
 fn horizontal_scroll_key_right_linear_view_two_childs() {
     executor::test(
         &mut LinearView::vertical()
+            .focus(1)
             .child(TextView::new("ABC"))
             .child(TextView::new("123456").scrollable(Orientation::Horizontal)),
         vec![

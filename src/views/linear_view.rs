@@ -37,6 +37,23 @@ impl<S, E, M> LinearView<S, E, M> {
     }
 
     #[inline]
+    pub fn focus(
+        mut self,
+        focus: usize,
+    ) -> Self {
+        self.set_focus(focus);
+        self
+    }
+
+    #[inline]
+    pub fn set_focus(
+        &mut self,
+        focus: usize,
+    ) {
+        self.focus = focus
+    }
+
+    #[inline]
     pub fn orientation(
         mut self,
         orientation: Orientation,
