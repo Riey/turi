@@ -36,7 +36,7 @@ fn horizontal_scroll_mouse_down() {
 #[test]
 fn horizontal_scroll_mouse_down_linear_view() {
     executor::test(
-        &mut LinearView::horizontal()
+        &mut LinearView::vertical()
             .child(TextView::new("123456").scrollable(Orientation::Horizontal)),
         vec![Event::Mouse(MouseEvent::Down(
             MouseButton::Left,
@@ -75,7 +75,7 @@ fn horizontal_scroll_key_right() {
 #[test]
 fn horizontal_scroll_key_right_linear_view() {
     executor::test(
-        &mut LinearView::horizontal()
+        &mut LinearView::vertical()
             .child(TextView::new("123456").scrollable(Orientation::Horizontal)),
         vec![
             Event::Key(KeyEvent {
@@ -90,6 +90,28 @@ fn horizontal_scroll_key_right_linear_view() {
         (4, 2).into(),
         |lines| {
             assert_eq!(lines, &["2345", "──░─",]);
+        },
+    )
+}
+#[test]
+fn horizontal_scroll_key_right_linear_view_two_childs() {
+    executor::test(
+        &mut LinearView::vertical()
+            .child(TextView::new("ABC"))
+            .child(TextView::new("123456").scrollable(Orientation::Horizontal)),
+        vec![
+            Event::Key(KeyEvent {
+                code:      KeyCode::Right,
+                modifiers: KeyModifiers::empty(),
+            }),
+            Event::Key(KeyEvent {
+                code:      KeyCode::Right,
+                modifiers: KeyModifiers::empty(),
+            }),
+        ],
+        (4, 3).into(),
+        |lines| {
+            assert_eq!(lines, &["ABC ", "2345", "──░─",]);
         },
     )
 }
