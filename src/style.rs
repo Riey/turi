@@ -88,12 +88,6 @@ impl<T> Enum<T> for PaletteColor {
 }
 
 #[derive(Clone, Copy, Debug)]
-pub enum BasicColor {
-    Ansi(AnsiColor),
-    Reset,
-}
-
-#[derive(Clone, Copy, Debug)]
 pub enum Color {
     Ansi(Option<AnsiColor>),
     Palette(PaletteColor),
