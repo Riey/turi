@@ -28,22 +28,8 @@ pub fn run<S: RedrawState>(
     )
     .unwrap();
 
-    let out;
-    let inner;
-
-    #[cfg(windows)]
-    {
-        out = std::io::stdout();
-        inner = out.lock();
-    }
-    #[cfg(unix)]
-    {
-        out = ();
-        let _ = out;
-        inner = turi::util::get_tty_file();
-    }
-
-    let out = BufWriter::with_capacity(1024 * 1024 * 10, inner);
+    let out = turi::util::get_raw_stdout_file();
+    let out = BufWriter::with_capacity(1024 * 1024 * 10, out);
 
     let backend = CrosstermBackend::new(out, crossterm::terminal::size().unwrap().into());
     let mut guard = CrosstermBackendGuard::new(backend);
