@@ -10,6 +10,133 @@ use crate::{
     vec2::Vec2,
     view::View,
 };
+use std::cell::Cell;
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum FullSizeStrategy {
+    LeftTop,
+    Centered,
+}
+
+impl FullSizeStrategy {
+    fn calc_x(
+        self,
+        inner_width: u16,
+        printer_width: u16,
+    ) -> u16 {
+        match self {
+            FullSizeStrategy::LeftTop => 0,
+            FullSizeStrategy::Centered => {
+                match printer_width.checked_sub(inner_width) {
+                    Some(diff) => diff / 2,
+                    _ => 0,
+                }
+            }
+        }
+    }
+
+    fn calc_y(
+        self,
+        inner_height: u16,
+        printer_height: u16,
+    ) -> u16 {
+        match self {
+            FullSizeStrategy::LeftTop => 0,
+            FullSizeStrategy::Centered => {
+                match printer_height.checked_sub(inner_height) {
+                    Some(diff) => diff / 2,
+                    _ => 0,
+                }
+            }
+        }
+    }
+
+    pub fn calc_margin(
+        self,
+        inner_size: Vec2,
+        printer_size: Vec2,
+    ) -> Vec2 {
+        Vec2::new(
+            self.calc_x(inner_size.x, printer_size.x),
+            self.calc_y(inner_size.y, printer_size.y),
+        )
+    }
+}
+
+pub struct FullSizeView<T> {
+    inner:       T,
+    prev_margin: Cell<Vec2>,
+    strategy:    FullSizeStrategy,
+}
+
+impl<T> FullSizeView<T> {
+    pub fn new(
+        inner: T,
+        strategy: FullSizeStrategy,
+    ) -> Self {
+        Self {
+            inner,
+            prev_margin: Cell::new(Vec2::new(0, 0)),
+            strategy,
+        }
+    }
+}
+
+impl<S, E: EventLike, T> View<S, E> for FullSizeView<T>
+where
+    T: View<S, E>,
+{
+    type Message = T::Message;
+
+    fn render(
+        &self,
+        printer: &mut Printer,
+    ) {
+        let margin = self
+            .strategy
+            .calc_margin(self.inner.desired_size(), printer.bound().size());
+
+        self.prev_margin.set(margin);
+
+        printer.with_bound(printer.bound().add_start(margin), |printer| {
+            self.inner.render(printer);
+        });
+    }
+
+    fn layout(
+        &mut self,
+        size: Vec2,
+    ) {
+        self.inner.layout(size);
+    }
+
+    fn desired_size(&self) -> Vec2 {
+        Vec2::new(std::u16::MAX, std::u16::MAX)
+    }
+
+    fn on_event(
+        &mut self,
+        state: &mut S,
+        mut event: E,
+    ) -> Option<Self::Message> {
+        if let Some(me) = event.try_mouse_mut() {
+            if me.filter_map_pos(|pos| {
+                let margin = self.prev_margin.get();
+                if pos >= margin {
+                    Some(pos - margin)
+                } else {
+                    None
+                }
+            }) {
+                return self.inner.on_event(state, event);
+            }
+
+            None
+        } else {
+            self.inner.on_event(state, event)
+        }
+    }
+}
 
 pub struct ConsumeEvent<T, M> {
     inner: T,
