@@ -20,6 +20,12 @@ enumset = "0.4.5"
 enumset_derive = "0.4.4"
 ansi_term = "0.12.1"
 
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
+
+[target.'cfg(windows)'.dependencies]
+winapi = "0.3.8"
+
 [dependencies.crossterm]
 version = "0.16"
 optional = true

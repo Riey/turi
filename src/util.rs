@@ -1,4 +1,28 @@
+#[cfg(any(unix, windows, target_os = "wasi"))]
+use std::fs::File;
 use unicode_width::UnicodeWidthChar;
+
+#[cfg(any(unix, target_os = "wasi"))]
+pub fn get_tty_file() -> File {
+    File::create("/dev/tty").unwrap()
+}
+
+#[cfg(any(unix, windows))]
+pub unsafe fn get_raw_stdout_file() -> File {
+    #[cfg(unix)]
+    {
+        use std::os::unix::io::FromRawFd;
+        FromRawFd::from_raw_fd(libc::STDOUT_FILENO)
+    }
+
+    #[cfg(windows)]
+    {
+        use std::os::windows::io::FromRawHandle;
+        FromRawHandle::from_raw_handle(winapi::um::processenv::GetStdHandle(
+            winapi::um::winbase::STD_OUTPUT_HANDLE,
+        ))
+    }
+}
 
 #[inline]
 pub fn slice_str_with_width(
