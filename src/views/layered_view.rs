@@ -16,6 +16,15 @@ impl<S, E, M> LayeredView<S, E, M> {
     }
 
     #[inline]
+    pub fn layer(
+        mut self,
+        layer: impl View<S, E, Message = M> + 'static,
+    ) -> Self {
+        self.add_layer(layer);
+        self
+    }
+
+    #[inline]
     pub fn add_layer(
         &mut self,
         layer: impl View<S, E, Message = M> + 'static,
@@ -36,7 +45,7 @@ impl<S, E, M> View<S, E> for LayeredView<S, E, M> {
         &self,
         printer: &mut Printer,
     ) {
-        for layer in self.layers.iter().rev() {
+        for layer in self.layers.iter() {
             layer.render(printer);
         }
     }
