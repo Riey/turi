@@ -316,6 +316,20 @@ impl MouseEventLike for MouseEvent {
             _ => None,
         }
     }
+
+    fn try_scroll_up(&self) -> Option<Vec2> {
+        match self {
+            MouseEvent::ScrollUp(x, y, ..) => Some((*x, *y).into()),
+            _ => None,
+        }
+    }
+
+    fn try_scroll_down(&self) -> Option<Vec2> {
+        match self {
+            MouseEvent::ScrollDown(x, y, ..) => Some((*x, *y).into()),
+            _ => None,
+        }
+    }
 }
 
 impl EventLike for Event {

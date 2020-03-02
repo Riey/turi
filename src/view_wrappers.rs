@@ -244,6 +244,40 @@ where
                 if self.event_drag(pos, state) {
                     return None;
                 }
+            } else if let Some(pos) = me.try_scroll_up() {
+                let inner_size = self.inner.prev_size();
+                match self.orientation {
+                    Orientation::Vertical if self.scroll < inner_size.x => {
+                        if self.up() {
+                            state.set_need_redraw(true);
+                        }
+                        return None;
+                    }
+                    Orientation::Horizontal if pos.y == inner_size.y => {
+                        if self.up() {
+                            state.set_need_redraw(true);
+                        }
+                        return None;
+                    }
+                    _ => {}
+                }
+            } else if let Some(pos) = me.try_scroll_down() {
+                let inner_size = self.inner.prev_size();
+                match self.orientation {
+                    Orientation::Vertical if self.scroll < inner_size.x => {
+                        if self.down() {
+                            state.set_need_redraw(true);
+                        }
+                        return None;
+                    }
+                    Orientation::Horizontal if pos.y == inner_size.y => {
+                        if self.down() {
+                            state.set_need_redraw(true);
+                        }
+                        return None;
+                    }
+                    _ => {}
+                }
             }
         } else if let Some(ke) = event.try_key() {
             if ke.try_up() && self.orientation == Orientation::Vertical

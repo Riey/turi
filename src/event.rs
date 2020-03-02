@@ -4,6 +4,8 @@ pub trait MouseEventLike: Sized {
     fn try_left_down(&self) -> Option<Vec2>;
     fn try_left_up(&self) -> Option<Vec2>;
     fn try_drag(&self) -> Option<Vec2>;
+    fn try_scroll_up(&self) -> Option<Vec2>;
+    fn try_scroll_down(&self) -> Option<Vec2>;
     fn pos(&self) -> Vec2;
     fn map_pos(
         &mut self,
