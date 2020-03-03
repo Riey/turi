@@ -4,10 +4,12 @@ use crate::{
         KeyEventLike,
     },
     printer::Printer,
-    state::RedrawState,
     style::Style,
     vec2::Vec2,
-    view::View,
+    view::{
+        EventResult,
+        View,
+    },
 };
 use std::marker::PhantomData;
 use unicode_width::UnicodeWidthChar;
@@ -38,9 +40,7 @@ pub enum EditViewMessage {
     Submit,
 }
 
-impl<S: RedrawState, E: EventLike> View<S, E> for EditView<S, E> {
-    type Message = EditViewMessage;
-
+impl<S, E: EventLike> View<S, E> for EditView<S, E> {
     fn desired_size(&self) -> Vec2 {
         Vec2::new(self.width as u16, 1)
     }
@@ -64,7 +64,7 @@ impl<S: RedrawState, E: EventLike> View<S, E> for EditView<S, E> {
         &mut self,
         state: &mut S,
         e: E,
-    ) -> Option<Self::Message> {
+    ) -> EventResult {
         let ke = e.try_key()?;
         if ke.try_enter() {
             Some(EditViewMessage::Submit)

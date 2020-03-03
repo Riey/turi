@@ -1,4 +1,14 @@
 #[macro_export]
+macro_rules! try_consume {
+    ($expr:expr) => {{
+        let ret = $expr;
+        if ret.is_consume() {
+            return ret;
+        }
+    }};
+}
+
+#[macro_export]
 macro_rules! impl_view_with_inner {
     ($inner:ident) => {
         #[inline]

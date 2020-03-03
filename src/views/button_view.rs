@@ -7,30 +7,47 @@ use crate::{
     printer::Printer,
     style::Style,
     vec2::Vec2,
-    view::View,
+    view::{
+        EventResult,
+        View,
+        NODRAW,
+    },
 };
 use std::marker::PhantomData;
 use unicode_width::UnicodeWidthStr;
 
-pub struct ButtonView<S, E> {
+pub struct ButtonView<S, E, M, F> {
     text:       String,
     text_width: u16,
-    _marker:    PhantomData<(S, E)>,
+    on_click:   F,
+    _marker:    PhantomData<(S, E, M)>,
 }
 
-impl<S, E> ButtonView<S, E> {
-    pub fn new(
-        mut text: String,
-        decoration: ButtonDecoration,
-    ) -> Self {
-        decoration.decoration(&mut text);
-
+impl<S, E, M, F> ButtonView<S, E, M, F> {
+    pub fn new(text: impl Into<String>) -> ButtonView<S, E, M, fn(&mut S) -> Option<M>> {
+        let text = text.into();
         let text_width = text.width() as u16;
 
-        Self {
+        ButtonView {
             text,
             text_width,
             _marker: PhantomData,
+            on_click: |_| None,
+        }
+    }
+
+    pub fn on_click<NM, NF>(
+        self,
+        f: NF,
+    ) -> ButtonView<S, E, NM, NF>
+    where
+        NF: Fn(&mut S) -> Option<NM>,
+    {
+        ButtonView {
+            text:       self.text,
+            text_width: self.text_width,
+            on_click:   f,
+            _marker:    PhantomData,
         }
     }
 
@@ -45,37 +62,10 @@ impl<S, E> ButtonView<S, E> {
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum ButtonDecoration {
-    NoDecoration,
-    Angle,
-}
-
-impl ButtonDecoration {
-    #[inline]
-    fn decoration(
-        &self,
-        text: &mut String,
-    ) {
-        match self {
-            ButtonDecoration::NoDecoration => {}
-            ButtonDecoration::Angle => {
-                text.insert(0, '<');
-                text.push('>');
-            }
-        }
-    }
-}
-
-impl Default for ButtonDecoration {
-    fn default() -> Self {
-        Self::Angle
-    }
-}
-
-impl<S, E: EventLike> View<S, E> for ButtonView<S, E> {
-    type Message = ();
-
+impl<S, E: EventLike, M, F> View<S, E> for ButtonView<S, E, M, F>
+where
+    F: Fn(&mut S) -> Option<M>,
+{
     #[inline]
     fn desired_size(&self) -> Vec2 {
         Vec2::new(self.text_width, 1)
@@ -101,13 +91,17 @@ impl<S, E: EventLike> View<S, E> for ButtonView<S, E> {
     #[inline]
     fn on_event(
         &mut self,
-        _state: &mut S,
+        state: &mut S,
         e: E,
-    ) -> Option<()> {
-        if e.try_key().map(|ke| ke.try_enter()).unwrap_or(false) {
-            Some(())
-        } else {
-            e.try_mouse()?.try_left_down().map(|_| ())
+    ) -> EventResult {
+        if e.try_key().map(|ke| ke.try_enter()).unwrap_or(false)
+            || e.try_mouse()
+                .and_then(|m| m.try_left_down())
+                .map_or(false, |_| true)
+        {
+            (self.on_click)(state);
         }
+
+        NODRAW
     }
 }

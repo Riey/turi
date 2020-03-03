@@ -14,7 +14,6 @@ use std::mem::swap;
 
 pub struct Printer<'a> {
     bound:   Rect,
-    style:   Style,
     backend: &'a mut dyn Backend,
     theme:   &'a Theme,
 }
@@ -26,7 +25,6 @@ impl<'a> Printer<'a> {
     ) -> Self {
         Self {
             bound: Rect::new((0, 0), backend.size()),
-            style: Style::default(),
             backend,
             theme,
         }
@@ -44,11 +42,22 @@ impl<'a> Printer<'a> {
                 self.bound.start().saturating_sub(pos),
                 self.bound.size() + pos,
             ),
-            style:   self.style,
             backend: &mut backend,
             theme:   self.theme,
         };
         f(&mut printer)
+    }
+
+    pub fn with_theme<T>(
+        &mut self,
+        theme: &Theme,
+        f: impl FnOnce(&mut Printer) -> T,
+    ) -> T {
+        f(&mut Printer {
+            bound: self.bound,
+            theme,
+            backend: self.backend,
+        })
     }
 
     pub fn with_bound<T>(
@@ -64,14 +73,12 @@ impl<'a> Printer<'a> {
 
     pub fn with_style<T>(
         &mut self,
-        mut style: Style,
+        style: Style,
         f: impl FnOnce(&mut Self) -> T,
     ) -> T {
         let old_style = self.backend.style();
         self.backend.set_style(self.theme.resolve_style(&style));
-        swap(&mut style, &mut self.style);
         let ret = f(self);
-        swap(&mut style, &mut self.style);
         self.backend.set_style(old_style);
         ret
     }
@@ -79,11 +86,6 @@ impl<'a> Printer<'a> {
     #[inline]
     pub fn clear(&mut self) {
         self.backend.clear();
-    }
-
-    #[inline]
-    pub fn style(&self) -> Style {
-        self.style
     }
 
     #[inline]

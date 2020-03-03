@@ -6,43 +6,15 @@ use crate::{
     },
     orientation::Orientation,
     printer::Printer,
-    state::RedrawState,
+    try_consume,
     vec2::Vec2,
-    view::View,
+    view::{
+        EventResult,
+        View,
+        IGNORE,
+        REDRAW,
+    },
 };
-
-pub struct ConsumeEvent<T, M> {
-    inner: T,
-    msg:   M,
-}
-
-impl<T, M> ConsumeEvent<T, M> {
-    pub fn new(
-        inner: T,
-        msg: M,
-    ) -> Self {
-        Self { inner, msg }
-    }
-}
-
-impl<S, E, T, M> View<S, E> for ConsumeEvent<T, M>
-where
-    M: Clone,
-    T: View<S, E>,
-{
-    type Message = M;
-
-    crate::impl_view_with_inner!(inner);
-
-    #[inline]
-    fn on_event(
-        &mut self,
-        _state: &mut S,
-        _event: E,
-    ) -> Option<Self::Message> {
-        Some(self.msg.clone())
-    }
-}
 
 pub struct ScrollView<T> {
     inner:       SizeCacher<T>,
@@ -67,7 +39,11 @@ impl<T> ScrollView<T> {
     #[inline]
     fn down(&mut self) -> bool {
         self.scroll = self.scroll.saturating_sub(1);
-        self.scroll != 0
+        if self.scroll != 0 {
+            true
+        } else {
+            false
+        }
     }
 
     #[inline]
@@ -107,27 +83,24 @@ impl<T> ScrollView<T> {
     fn event_mouse_down(
         &mut self,
         pos: Vec2,
-        state: &mut impl RedrawState,
-    ) -> bool {
+    ) -> EventResult {
         match self.orientation {
             Orientation::Vertical => {
                 if pos.x == self.inner.prev_size().x {
                     self.clicked = true;
                     self.scroll = pos.y;
-                    state.set_need_redraw(true);
-                    true
+                    REDRAW
                 } else {
-                    false
+                    IGNORE
                 }
             }
             Orientation::Horizontal => {
                 if pos.y == self.inner.prev_size().y {
                     self.clicked = true;
                     self.scroll = pos.x;
-                    state.set_need_redraw(true);
-                    true
+                    REDRAW
                 } else {
-                    false
+                    IGNORE
                 }
             }
         }
@@ -137,27 +110,23 @@ impl<T> ScrollView<T> {
     fn event_drag(
         &mut self,
         pos: Vec2,
-        state: &mut impl RedrawState,
-    ) -> bool {
+    ) -> EventResult {
         if self.clicked {
             self.scroll = match self.orientation {
                 Orientation::Vertical => pos.y,
                 Orientation::Horizontal => pos.x,
             };
-            state.set_need_redraw(true);
-            true
+            REDRAW
         } else {
-            false
+            IGNORE
         }
     }
 }
 
-impl<S: RedrawState, E: EventLike, T> View<S, E> for ScrollView<T>
+impl<S, E: EventLike, T> View<S, E> for ScrollView<T>
 where
     T: View<S, E>,
 {
-    type Message = T::Message;
-
     fn render(
         &self,
         printer: &mut Printer,
@@ -230,34 +199,24 @@ where
         &mut self,
         state: &mut S,
         event: E,
-    ) -> Option<Self::Message> {
+    ) -> EventResult {
         // TODO: check focus
 
         if let Some(me) = event.try_mouse() {
             if me.try_left_up().is_some() {
                 self.clicked = false;
             } else if let Some(pos) = me.try_left_down() {
-                if self.event_mouse_down(pos, state) {
-                    return None;
-                }
+                try_consume!(self.event_mouse_down(pos));
             } else if let Some(pos) = me.try_drag() {
-                if self.event_drag(pos, state) {
-                    return None;
-                }
+                try_consume!(self.event_drag(pos));
             } else if let Some(pos) = me.try_scroll_up() {
                 let inner_size = self.inner.prev_size();
                 match self.orientation {
                     Orientation::Vertical if self.scroll < inner_size.x => {
-                        if self.up() {
-                            state.set_need_redraw(true);
-                        }
-                        return None;
+                        return EventResult::Consume(self.up());
                     }
                     Orientation::Horizontal if pos.y == inner_size.y => {
-                        if self.up() {
-                            state.set_need_redraw(true);
-                        }
-                        return None;
+                        return EventResult::Consume(self.up());
                     }
                     _ => {}
                 }
@@ -265,16 +224,10 @@ where
                 let inner_size = self.inner.prev_size();
                 match self.orientation {
                     Orientation::Vertical if self.scroll < inner_size.x => {
-                        if self.down() {
-                            state.set_need_redraw(true);
-                        }
-                        return None;
+                        return EventResult::Consume(self.down());
                     }
                     Orientation::Horizontal if pos.y == inner_size.y => {
-                        if self.down() {
-                            state.set_need_redraw(true);
-                        }
-                        return None;
+                        return EventResult::Consume(self.down());
                     }
                     _ => {}
                 }
@@ -283,17 +236,11 @@ where
             if ke.try_up() && self.orientation == Orientation::Vertical
                 || ke.try_left() && self.orientation == Orientation::Horizontal
             {
-                if self.down() {
-                    state.set_need_redraw(true);
-                }
-                return None;
+                return EventResult::Consume(self.down());
             } else if ke.try_down() && self.orientation == Orientation::Vertical
                 || ke.try_right() && self.orientation == Orientation::Horizontal
             {
-                if self.up() {
-                    state.set_need_redraw(true);
-                }
-                return None;
+                return EventResult::Consume(self.up());
             }
         }
         self.inner.on_event(state, event)
@@ -324,8 +271,6 @@ impl<S, E, T> View<S, E> for SizeCacher<T>
 where
     T: View<S, E>,
 {
-    type Message = T::Message;
-
     #[inline]
     fn render(
         &self,
@@ -353,7 +298,7 @@ where
         &mut self,
         state: &mut S,
         event: E,
-    ) -> Option<Self::Message> {
+    ) -> EventResult {
         self.inner.on_event(state, event)
     }
 }

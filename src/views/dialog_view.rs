@@ -1,20 +1,15 @@
 use crate::{
-    converters::Map,
     event::{
         EventLike,
         KeyEventLike,
         MouseEventLike,
     },
     printer::Printer,
-    state::RedrawState,
     style::Style,
     vec2::Vec2,
     view::View,
     view_wrappers::SizeCacher,
-    views::{
-        ButtonDecoration,
-        ButtonView,
-    },
+    views::ButtonView,
 };
 
 #[derive(Clone, Copy, Eq, PartialEq, Debug)]
@@ -23,8 +18,7 @@ enum DialogFocus {
     Button(usize),
 }
 
-type DialogButton<S, E, M> =
-    Map<ButtonView<S, E>, M, Box<dyn FnMut(&mut ButtonView<S, E>, &mut S, ()) -> M>>;
+type DialogButton<S, E, M> = ButtonView<S, E, M, Box<dyn Fn(&mut S) -> Option<M>>>;
 
 pub struct DialogView<S, E, M, C> {
     title:   String,
@@ -69,7 +63,7 @@ where
     pub fn button(
         mut self,
         label: impl Into<String>,
-        f: impl FnMut(&mut S) -> M + 'static,
+        f: impl Fn(&mut S) -> Option<M> + 'static,
     ) -> Self {
         self.add_button(label, f);
         self
@@ -78,12 +72,10 @@ where
     pub fn add_button(
         &mut self,
         label: impl Into<String>,
-        mut f: impl FnMut(&mut S) -> M + 'static,
+        mut f: impl Fn(&mut S) -> Option<M> + 'static,
     ) {
-        self.buttons.push(
-            ButtonView::new(label.into(), ButtonDecoration::Angle)
-                .map(Box::new(move |_, state, _| f(state))),
-        );
+        self.buttons
+            .push(ButtonView::new(label.into()).on_click(Box::new(f)));
     }
 
     #[inline]
@@ -99,13 +91,10 @@ where
 
 impl<S, E, M, C> View<S, E> for DialogView<S, E, M, C>
 where
-    S: RedrawState + 'static,
     C: View<S, E, Message = M>,
     E: EventLike + 'static,
     M: 'static,
 {
-    type Message = M;
-
     fn render(
         &self,
         printer: &mut Printer,

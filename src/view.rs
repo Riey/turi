@@ -1,23 +1,42 @@
 use crate::{
-    converters::{
-        Map,
-        MapE,
-        MapOptE,
-        OrElse,
-        OrElseFirst,
-    },
     orientation::Orientation,
     printer::Printer,
     vec2::Vec2,
-    view_wrappers::{
-        ConsumeEvent,
-        ScrollView,
-    },
+    view_wrappers::ScrollView,
 };
+pub const REDRAW: EventResult = EventResult::Consume(true);
+pub const NODRAW: EventResult = EventResult::Consume(false);
+pub const IGNORE: EventResult = EventResult::Ignored;
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum EventResult {
+    Consume(bool),
+    Ignored,
+}
+
+impl EventResult {
+    #[inline]
+    pub fn is_consume(self) -> bool {
+        !self.is_ignored()
+    }
+
+    #[inline]
+    pub fn is_ignored(self) -> bool {
+        self == IGNORE
+    }
+
+    #[inline]
+    pub fn is_redraw(self) -> bool {
+        self == REDRAW
+    }
+
+    #[inline]
+    pub fn is_nodraw(self) -> bool {
+        self == NODRAW
+    }
+}
 
 pub trait View<S, E> {
-    type Message;
-
     fn render(
         &self,
         printer: &mut Printer,
@@ -32,7 +51,7 @@ pub trait View<S, E> {
         &mut self,
         state: &mut S,
         event: E,
-    ) -> Option<Self::Message>;
+    ) -> EventResult;
 
     #[inline]
     fn scrollable(
@@ -44,83 +63,9 @@ pub trait View<S, E> {
     {
         ScrollView::new(self, orientation)
     }
-
-    #[inline]
-    fn consume_event<M>(
-        self,
-        msg: M,
-    ) -> ConsumeEvent<Self, M>
-    where
-        Self: Sized,
-        M: Clone,
-    {
-        ConsumeEvent::new(self, msg)
-    }
-
-    #[inline]
-    fn map<U, F>(
-        self,
-        f: F,
-    ) -> Map<Self, U, F>
-    where
-        Self: Sized,
-        F: FnMut(&mut Self, &mut S, Self::Message) -> U,
-    {
-        Map::new(self, f)
-    }
-
-    #[inline]
-    fn map_e<NE, F>(
-        self,
-        f: F,
-    ) -> MapE<Self, NE, F>
-    where
-        Self: Sized,
-        F: FnMut(&mut Self, &mut S, NE) -> E,
-    {
-        MapE::new(self, f)
-    }
-
-    #[inline]
-    fn map_opt_e<NE, F>(
-        self,
-        f: F,
-    ) -> MapOptE<Self, NE, F>
-    where
-        Self: Sized,
-        F: FnMut(&mut Self, &mut S, NE) -> Option<E>,
-    {
-        MapOptE::new(self, f)
-    }
-
-    #[inline]
-    fn or_else<F>(
-        self,
-        f: F,
-    ) -> OrElse<Self, F>
-    where
-        Self: Sized,
-        F: FnMut(&mut Self, &mut S, E) -> Option<Self::Message>,
-    {
-        OrElse::new(self, f)
-    }
-
-    #[inline]
-    fn or_else_first<F>(
-        self,
-        f: F,
-    ) -> OrElseFirst<Self, F>
-    where
-        Self: Sized,
-        F: FnMut(&mut Self, &mut S, E) -> Option<Self::Message>,
-    {
-        OrElseFirst::new(self, f)
-    }
 }
 
-impl<S, E, M> View<S, E> for Box<dyn View<S, E, Message = M>> {
-    type Message = M;
-
+impl<S, E> View<S, E> for Box<dyn View<S, E>> {
     #[inline]
     fn desired_size(&self) -> Vec2 {
         (**self).desired_size()
@@ -147,7 +92,7 @@ impl<S, E, M> View<S, E> for Box<dyn View<S, E, Message = M>> {
         &mut self,
         state: &mut S,
         event: E,
-    ) -> Option<M> {
+    ) -> EventResult {
         (**self).on_event(state, event)
     }
 }

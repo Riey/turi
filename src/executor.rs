@@ -1,38 +1,44 @@
 use crate::{
     backend::Backend,
     printer::Printer,
-    state::RedrawState,
     style::Theme,
     vec2::Vec2,
-    view::View,
+    view::{
+        EventResult,
+        View,
+    },
 };
 
-pub fn simple<S: RedrawState, E, B: Backend, V: View<S, E, Message = bool>>(
+pub fn simple<S, E, B: Backend, V: View<S, E>>(
     state: &mut S,
     backend: &mut B,
     theme: &Theme,
     view: &mut V,
+    is_exit: impl Fn(&S) -> bool,
     mut event_source: impl FnMut(&mut S, &mut B) -> E,
 ) {
     backend.clear();
-    state.set_need_redraw(true);
+
+    let mut need_redraw = true;
 
     loop {
-        if state.is_need_redraw() {
+        if need_redraw {
             backend.clear();
             view.layout(backend.size());
             view.render(&mut Printer::new(backend, theme));
             backend.flush();
-            state.set_need_redraw(false);
+            need_redraw = false
         }
         let e = event_source(state, backend);
         match view.on_event(state, e) {
-            Some(exit) => {
-                if exit {
-                    break;
-                }
+            EventResult::Consume(redraw) => {
+                need_redraw = redraw;
             }
-            None => continue,
+            EventResult::Ignored => continue,
+        }
+
+        if is_exit(state) {
+            break;
         }
     }
 }
