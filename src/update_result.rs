@@ -37,10 +37,10 @@ impl BitOr for UpdateResult {
         self,
         rhs: Self,
     ) -> Self {
-        if self.is_redraw() || rhs.is_redraw() {
-            Redraw
-        } else if self.is_exit() || rhs.is_exit() {
+        if self.is_exit() || rhs.is_exit() {
             Exit
+        } else if self.is_redraw() || rhs.is_redraw() {
+            Redraw
         } else if rhs.is_ignore() {
             self
         } else {
