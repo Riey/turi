@@ -25,6 +25,14 @@ pub enum View<'a, M> {
 }
 
 impl<'a, M> View<'a, M> {
+    pub fn name(self) -> &'static str {
+        match self {
+            View::Div(..) => "div",
+            View::Text(..) => "text",
+            View::Button(..) => "button",
+        }
+    }
+
     pub fn render(
         self,
         printer: &mut Printer,

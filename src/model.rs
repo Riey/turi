@@ -1,5 +1,5 @@
 use crate::view::View;
-use crate::event_result::UpdateResult;
+use crate::update_result::UpdateResult;
 use bumpalo::Bump;
 
 pub trait Model {

@@ -1,7 +1,7 @@
 use turi::model::Model;
 use turi::view::View;
 use turi::builder::{div, text};
-use turi::event_result::{
+use turi::update_result::{
     UpdateResult,
     Ignore,
 };

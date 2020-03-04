@@ -1,7 +1,7 @@
 use crate::{
     backend::Backend,
     event::EventLike,
-    event_result::UpdateResult,
+    update_result::UpdateResult,
     model::Model,
     printer::Printer,
     style::Theme,
