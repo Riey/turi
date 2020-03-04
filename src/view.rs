@@ -49,12 +49,12 @@ impl<'a, E, M> View<'a, E, M> {
         Self { tag, attr, inner }
     }
 
-    pub fn tag(&self) -> Tag {
+    pub fn tag(self) -> Tag {
         self.tag
     }
 
     pub fn render(
-        &self,
+        self,
         printer: &mut Printer,
     ) {
         match &self.inner {
@@ -74,7 +74,7 @@ impl<'a, E, M> View<'a, E, M> {
         }
     }
 
-    pub fn desired_size(&self) -> Vec2 {
+    pub fn desired_size(self) -> Vec2 {
         match self.inner {
             ViewInner::Text(_, width) => Vec2::new(width, 1),
             ViewInner::Children(children) => {
