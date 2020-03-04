@@ -1,9 +1,9 @@
 use std::ops::BitOr;
 
 pub use self::UpdateResult::{
-    Redraw,
-    Ignore,
     Exit,
+    Ignore,
+    Redraw,
 };
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

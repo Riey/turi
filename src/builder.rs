@@ -1,24 +1,99 @@
-use crate::view::View;
+use crate::{
+    attribute::Attribute,
+    event_filter::EventFilter,
+    view::{
+        Tag,
+        View,
+        ViewInner,
+    },
+};
 use bumpalo::{
     collections::Vec,
     Bump,
 };
 
-pub struct DivBuilder<'a, M> {
-    children: Vec<'a, View<'a, M>>,
+pub struct EventBuilder<'a, E, M> {
+    events: Vec<'a, EventFilter<'a, E, M>>,
 }
 
-impl<'a, M> DivBuilder<'a, M> {
+impl<'a, E, M> EventBuilder<'a, E, M> {
     pub fn new(b: &'a Bump) -> Self {
         Self {
+            events: Vec::new_in(b),
+        }
+    }
+
+    pub fn event(
+        mut self,
+        event: EventFilter<'a, E, M>,
+    ) -> Self {
+        self.events.push(event);
+        self
+    }
+
+    pub fn build(self) -> &'a [EventFilter<'a, E, M>] {
+        self.events.into_bump_slice()
+    }
+}
+
+pub struct AttributeBuilder<'a, E, M> {
+    class:  Vec<'a, &'a str>,
+    events: &'a [EventFilter<'a, E, M>],
+}
+
+impl<'a, E, M> AttributeBuilder<'a, E, M> {
+    pub fn new(b: &'a Bump) -> Self {
+        Self {
+            class:  Vec::new_in(b),
+            events: &[],
+        }
+    }
+
+    pub fn class(
+        mut self,
+        class: &'a str,
+    ) -> Self {
+        self.class.push(class);
+        self
+    }
+
+    pub fn events(
+        mut self,
+        events: &'a [EventFilter<'a, E, M>],
+    ) -> Self {
+        self.events = events;
+        self
+    }
+
+    pub fn build(self) -> Attribute<'a, E, M> {
+        Attribute::new(self.class.into_bump_slice(), self.events)
+    }
+}
+
+pub struct ViewBuilder<'a, E, M> {
+    tag:        Tag,
+    attr:       Attribute<'a, E, M>,
+    children:   Vec<'a, View<'a, E, M>>,
+    inner_text: &'a str,
+}
+
+impl<'a, E, M> ViewBuilder<'a, E, M> {
+    pub fn new(
+        b: &'a Bump,
+        tag: Tag,
+    ) -> Self {
+        Self {
+            tag,
+            attr: Default::default(),
             children: Vec::new_in(b),
+            inner_text: "",
         }
     }
 
     #[inline]
     pub fn child(
         mut self,
-        child: View<'a, M>,
+        child: View<'a, E, M>,
     ) -> Self {
         self.children.push(child);
         self
@@ -27,23 +102,48 @@ impl<'a, M> DivBuilder<'a, M> {
     #[inline]
     pub fn children(
         mut self,
-        children: impl AsRef<[View<'a, M>]>,
+        children: impl AsRef<[View<'a, E, M>]>,
     ) -> Self {
         self.children.extend_from_slice(children.as_ref());
         self
     }
 
     #[inline]
-    pub fn finish(self) -> View<'a, M> {
-        View::Div(self.children.into_bump_slice())
+    pub fn inner_text(
+        mut self,
+        inner_text: &'a str,
+    ) -> Self {
+        self.inner_text = inner_text;
+        self
+    }
+
+    #[inline]
+    pub fn attr(
+        mut self,
+        attr: Attribute<'a, E, M>,
+    ) -> Self {
+        self.attr = attr;
+        self
+    }
+
+    #[inline]
+    pub fn build(self) -> View<'a, E, M> {
+        if self.children.is_empty() {
+            View::new(self.tag, self.attr, ViewInner::Text(self.inner_text))
+        } else {
+            View::new(
+                self.tag,
+                self.attr,
+                ViewInner::Children(self.children.into_bump_slice()),
+            )
+        }
     }
 }
 
-pub fn div<M>(b: &Bump) -> DivBuilder<M> {
-    DivBuilder::new(b)
+pub fn div<E, M>(b: &Bump) -> ViewBuilder<E, M> {
+    ViewBuilder::new(b, Tag::Div)
 }
 
-pub fn text<'a, M>(text: &'a str) -> View<'a, M> {
-    View::Text(text)
+pub fn text<'a, E, M>(text: &'a str) -> View<'a, E, M> {
+    View::new(Tag::Div, Default::default(), ViewInner::Text(text))
 }
-

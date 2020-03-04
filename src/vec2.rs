@@ -59,21 +59,30 @@ impl Vec2 {
         }
     }
 
-    pub fn checked_sub(self, other: Self) -> Option<Self> {
+    pub fn checked_sub(
+        self,
+        other: Self,
+    ) -> Option<Self> {
         Some(Self {
             x: self.x.checked_sub(other.x)?,
             y: self.y.checked_sub(other.y)?,
         })
     }
 
-    pub fn checked_sub_x(self, x: u16) -> Option<Self> {
+    pub fn checked_sub_x(
+        self,
+        x: u16,
+    ) -> Option<Self> {
         Some(Self {
             x: self.x.checked_sub(x)?,
             y: self.y,
         })
     }
 
-    pub fn checked_sub_y(self, y: u16) -> Option<Self> {
+    pub fn checked_sub_y(
+        self,
+        y: u16,
+    ) -> Option<Self> {
         Some(Self {
             x: self.x,
             y: self.y.checked_sub(y)?,

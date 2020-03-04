@@ -1,10 +1,10 @@
 use crate::{
     backend::Backend,
     event::EventLike,
-    update_result::UpdateResult,
     model::Model,
     printer::Printer,
     style::Theme,
+    update_result::UpdateResult,
 };
 
 use bumpalo::Bump;
@@ -12,7 +12,7 @@ use bumpalo::Bump;
 #[cfg(feature = "test-backend")]
 use crate::vec2::Vec2;
 
-pub fn simple<E: EventLike, B: Backend, M: Model>(
+pub fn simple<E: EventLike, B: Backend, M: Model<E>>(
     backend: &mut B,
     theme: &Theme,
     model: &mut M,
