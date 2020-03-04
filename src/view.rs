@@ -68,11 +68,32 @@ impl<'a, E, M> View<'a, E, M> {
     pub fn desired_size(self) -> Vec2 {
         Vec2::new(1, 1)
     }
-
+}
+impl<'a, E, M> View<'a, E, M>
+where
+    E: EventLike + Copy,
+    M: Copy,
+{
     pub fn on_event(
         self,
         e: E,
     ) -> Option<M> {
-        None
+        for event in self.attr.events {
+            if let msg @ Some(_) = event.check(&e) {
+                return msg;
+            }
+        }
+
+        match self.inner {
+            ViewInner::Text(_) => None,
+            ViewInner::Children(children) => {
+                for child in children {
+                    if let msg @ Some(_) = child.on_event(e) {
+                        return msg;
+                    }
+                }
+                None
+            }
+        }
     }
 }

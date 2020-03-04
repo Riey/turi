@@ -12,12 +12,12 @@ use bumpalo::Bump;
 #[cfg(feature = "test-backend")]
 use crate::vec2::Vec2;
 
-pub fn simple<E: EventLike, B: Backend, M: Model<E>>(
+pub fn simple<E: EventLike + Copy, B: Backend, M: Model<E>>(
     backend: &mut B,
     theme: &Theme,
     model: &mut M,
     mut event_source: impl FnMut(&mut B, &mut bool) -> E,
-) {
+) where M::Msg: Copy {
     let mut bump = Bump::with_capacity(1024 * 1024);
     backend.clear();
 
