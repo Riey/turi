@@ -13,7 +13,6 @@ mod linear_view;
 mod paragraph_view;
 #[cfg(windows)]
 mod select_view;
-#[cfg(windows)]
 mod text_view;
 
 #[cfg(windows)]
