@@ -16,7 +16,7 @@ pub fn simple<E: EventLike, B: Backend, M: Model<E>>(
     backend: &mut B,
     theme: &Theme,
     model: &mut M,
-    mut event_source: impl FnMut(&mut B) -> E,
+    mut event_source: impl FnMut(&mut B, &mut bool) -> E,
 ) {
     let mut bump = Bump::with_capacity(1024 * 1024);
     backend.clear();
@@ -31,7 +31,7 @@ pub fn simple<E: EventLike, B: Backend, M: Model<E>>(
             backend.flush();
             need_redraw = false
         }
-        let e = event_source(backend);
+        let e = event_source(backend, &mut need_redraw);
         match view.on_event(e) {
             Some(msg) => {
                 match model.update(msg) {

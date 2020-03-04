@@ -38,14 +38,14 @@ impl<'a, E, M> EventBuilder<'a, E, M> {
 
 pub struct AttributeBuilder<'a, E, M> {
     class:  Vec<'a, &'a str>,
-    events: &'a [EventFilter<'a, E, M>],
+    events: Vec<'a, EventFilter<'a, E, M>>,
 }
 
 impl<'a, E, M> AttributeBuilder<'a, E, M> {
     pub fn new(b: &'a Bump) -> Self {
         Self {
             class:  Vec::new_in(b),
-            events: &[],
+            events: Vec::new_in(b),
         }
     }
 
@@ -57,16 +57,16 @@ impl<'a, E, M> AttributeBuilder<'a, E, M> {
         self
     }
 
-    pub fn events(
+    pub fn event(
         mut self,
-        events: &'a [EventFilter<'a, E, M>],
+        event: EventFilter<'a, E, M>,
     ) -> Self {
-        self.events = events;
+        self.events.push(event);
         self
     }
 
     pub fn build(self) -> Attribute<'a, E, M> {
-        Attribute::new(self.class.into_bump_slice(), self.events)
+        Attribute::new(self.class.into_bump_slice(), self.events.into_bump_slice())
     }
 }
 
@@ -138,6 +138,10 @@ impl<'a, E, M> ViewBuilder<'a, E, M> {
             )
         }
     }
+}
+
+pub fn attr<E, M>(b: &Bump) -> AttributeBuilder<E, M> {
+    AttributeBuilder::new(b)
 }
 
 pub fn div<E, M>(b: &Bump) -> ViewBuilder<E, M> {
