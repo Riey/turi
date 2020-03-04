@@ -1,12 +1,12 @@
 use crate::{
+    event_result::{
+        EventResult,
+        IGNORE,
+    },
     printer::Printer,
     style::Style,
     vec2::Vec2,
-    view::{
-        EventResult,
-        View,
-        IGNORE,
-    },
+    view::View,
 };
 use unicode_width::UnicodeWidthStr;
 

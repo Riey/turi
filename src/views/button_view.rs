@@ -4,14 +4,14 @@ use crate::{
         KeyEventLike,
         MouseEventLike,
     },
+    event_result::{
+        EventResult,
+        NODRAW,
+    },
     printer::Printer,
     style::Style,
     vec2::Vec2,
-    view::{
-        EventResult,
-        View,
-        NODRAW,
-    },
+    view::View,
 };
 use std::marker::PhantomData;
 use unicode_width::UnicodeWidthStr;

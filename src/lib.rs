@@ -4,6 +4,7 @@ pub mod backend;
 #[cfg(windows)]
 pub mod converters;
 pub mod event;
+pub mod event_result;
 pub mod executor;
 pub mod orientation;
 pub mod printer;

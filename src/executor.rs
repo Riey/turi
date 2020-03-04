@@ -1,12 +1,10 @@
 use crate::{
     backend::Backend,
+    event_result::EventResult,
     printer::Printer,
     style::Theme,
     vec2::Vec2,
-    view::{
-        EventResult,
-        View,
-    },
+    view::View,
 };
 
 pub fn simple<S, E, B: Backend, V: View<S, E>>(

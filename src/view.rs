@@ -1,40 +1,10 @@
 use crate::{
+    event_result::EventResult,
     orientation::Orientation,
     printer::Printer,
     vec2::Vec2,
     view_wrappers::ScrollView,
 };
-pub const REDRAW: EventResult = EventResult::Consume(true);
-pub const NODRAW: EventResult = EventResult::Consume(false);
-pub const IGNORE: EventResult = EventResult::Ignored;
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum EventResult {
-    Consume(bool),
-    Ignored,
-}
-
-impl EventResult {
-    #[inline]
-    pub fn is_consume(self) -> bool {
-        !self.is_ignored()
-    }
-
-    #[inline]
-    pub fn is_ignored(self) -> bool {
-        self == IGNORE
-    }
-
-    #[inline]
-    pub fn is_redraw(self) -> bool {
-        self == REDRAW
-    }
-
-    #[inline]
-    pub fn is_nodraw(self) -> bool {
-        self == NODRAW
-    }
-}
 
 pub trait View<S, E> {
     fn render(

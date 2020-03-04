@@ -4,16 +4,16 @@ use crate::{
         KeyEventLike,
         MouseEventLike,
     },
+    event_result::{
+        EventResult,
+        IGNORE,
+        REDRAW,
+    },
     orientation::Orientation,
     printer::Printer,
     try_consume,
     vec2::Vec2,
-    view::{
-        EventResult,
-        View,
-        IGNORE,
-        REDRAW,
-    },
+    view::View,
 };
 
 pub struct ScrollView<T> {
