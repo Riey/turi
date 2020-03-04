@@ -1,7 +1,7 @@
 pub mod builder;
 pub mod backend;
 pub mod event;
-pub mod event_result;
+pub mod update_result;
 pub mod executor;
 pub mod model;
 pub mod orientation;
