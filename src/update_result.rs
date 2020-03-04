@@ -51,6 +51,8 @@ impl BitOr for UpdateResult {
 
 #[test]
 fn or_test() {
+    assert_eq!(Exit | Redraw, Exit);
+    assert_eq!(Ignore | Exit, Exit);
     assert_eq!(Redraw | Redraw, Redraw);
     assert_eq!(Redraw | Ignore, Redraw);
     assert_eq!(Ignore | Redraw, Redraw);
