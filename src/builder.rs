@@ -11,6 +11,7 @@ use bumpalo::{
     collections::Vec,
     Bump,
 };
+use unicode_width::UnicodeWidthStr;
 
 pub struct EventBuilder<'a, E, M> {
     events: Vec<'a, EventFilter<'a, E, M>>,
@@ -129,7 +130,11 @@ impl<'a, E, M> ViewBuilder<'a, E, M> {
     #[inline]
     pub fn build(self) -> View<'a, E, M> {
         if self.children.is_empty() {
-            View::new(self.tag, self.attr, ViewInner::Text(self.inner_text))
+            View::new(
+                self.tag,
+                self.attr,
+                ViewInner::Text(self.inner_text, self.inner_text.width() as u16),
+            )
         } else {
             View::new(
                 self.tag,
@@ -149,5 +154,9 @@ pub fn div<E, M>(b: &Bump) -> ViewBuilder<E, M> {
 }
 
 pub fn text<'a, E, M>(text: &'a str) -> View<'a, E, M> {
-    View::new(Tag::Div, Default::default(), ViewInner::Text(text))
+    View::new(
+        Tag::Div,
+        Default::default(),
+        ViewInner::Text(text, text.width() as u16),
+    )
 }

@@ -17,7 +17,9 @@ pub fn simple<E: EventLike + Copy, B: Backend, M: Model<E>>(
     theme: &Theme,
     model: &mut M,
     mut event_source: impl FnMut(&mut B, &mut bool) -> E,
-) where M::Msg: Copy {
+) where
+    M::Msg: Copy,
+{
     let mut bump = Bump::with_capacity(1024 * 1024);
     backend.clear();
 

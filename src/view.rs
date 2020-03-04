@@ -1,14 +1,9 @@
 use crate::{
     attribute::Attribute,
-    event::{
-        EventLike,
-        KeyEventLike,
-        MouseEventLike,
-    },
+    event::EventLike,
     printer::Printer,
     vec2::Vec2,
 };
-use unicode_width::UnicodeWidthStr;
 
 impl<'a, E, M> Clone for View<'a, E, M> {
     #[inline]
@@ -35,7 +30,7 @@ pub enum Tag {
 }
 
 pub enum ViewInner<'a, E, M> {
-    Text(&'a str),
+    Text(&'a str, u16),
     Children(&'a [View<'a, E, M>]),
 }
 
@@ -54,19 +49,46 @@ impl<'a, E, M> View<'a, E, M> {
         Self { tag, attr, inner }
     }
 
-    pub fn tag(self) -> Tag {
+    pub fn tag(&self) -> Tag {
         self.tag
     }
 
     pub fn render(
-        self,
+        &self,
         printer: &mut Printer,
     ) {
-        todo!()
+        match &self.inner {
+            ViewInner::Text(text, _) => {
+                printer.print((0, 0), text);
+            }
+            ViewInner::Children(children) => {
+                let mut bound = printer.bound();
+
+                for child in children.iter() {
+                    printer.with_bound(bound, |printer| {
+                        child.render(printer);
+                    });
+                    bound = bound.add_start((0, child.desired_size().y));
+                }
+            }
+        }
     }
 
-    pub fn desired_size(self) -> Vec2 {
-        Vec2::new(1, 1)
+    pub fn desired_size(&self) -> Vec2 {
+        match self.inner {
+            ViewInner::Text(_, width) => Vec2::new(width, 1),
+            ViewInner::Children(children) => {
+                let mut ret = Vec2::new(0, 0);
+
+                for child in children {
+                    let size = child.desired_size();
+                    ret.x = ret.x.max(size.x);
+                    ret.y += size.y;
+                }
+
+                ret
+            }
+        }
     }
 }
 impl<'a, E, M> View<'a, E, M>
@@ -85,7 +107,7 @@ where
         }
 
         match self.inner {
-            ViewInner::Text(_) => None,
+            ViewInner::Text(..) => None,
             ViewInner::Children(children) => {
                 for child in children {
                     if let msg @ Some(_) = child.on_event(e) {
