@@ -79,7 +79,7 @@ where
         f: impl Fn(&mut S) + 'static,
     ) {
         self.buttons
-            .push(DialogButton::with_on_click(label.into(), Box::new(f)));
+            .push(ButtonView::with_callback(label.into(), Box::new(f)));
     }
 
     #[inline]

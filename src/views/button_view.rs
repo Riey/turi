@@ -24,7 +24,7 @@ pub struct ButtonView<S, E, F> {
 }
 
 impl<S, E, F> ButtonView<S, E, F> {
-    pub fn with_on_click(
+    pub fn with_callback(
         text: impl Into<String>,
         on_click: F,
     ) -> Self {

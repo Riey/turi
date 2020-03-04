@@ -8,7 +8,7 @@ edition = "2018"
 debug = true
 
 [features]
-default = ["crossterm-backend"]
+default = ["crossterm-backend", "test-backend"]
 crossterm-backend = ["crossterm"]
 test-backend = []
 bench = []

@@ -12,14 +12,13 @@ use turi::{
         CrosstermBackendGuard,
     },
     executor,
-    state::RedrawState,
     style::Theme,
     view::View,
 };
 
-pub fn run<S: RedrawState>(
+pub fn run<S>(
     mut state: S,
-    view: impl View<S, Event, Message = bool>,
+    view: impl View<S, Event>,
 ) {
     WriteLogger::init(
         LevelFilter::Trace,

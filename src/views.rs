@@ -1,6 +1,5 @@
 mod button_view;
 mod dialog_view;
-#[cfg(windows)]
 mod edit_view;
 #[cfg(windows)]
 mod fps_view;
