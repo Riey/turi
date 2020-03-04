@@ -1,44 +1,50 @@
 use crate::{
     backend::Backend,
-    event_result::EventResult,
+    event::EventLike,
+    event_result::UpdateResult,
+    model::Model,
     printer::Printer,
     style::Theme,
-    view::View,
 };
+
+use bumpalo::Bump;
 
 #[cfg(feature = "test-backend")]
 use crate::vec2::Vec2;
 
-pub fn simple<S, E, B: Backend, V: View<S, E>>(
-    state: &mut S,
+pub fn simple<E: EventLike, B: Backend, M: Model>(
     backend: &mut B,
     theme: &Theme,
-    view: &mut V,
-    is_exit: impl Fn(&S) -> bool,
-    mut event_source: impl FnMut(&mut S, &mut B) -> E,
+    model: &mut M,
+    mut event_source: impl FnMut(&mut B) -> E,
 ) {
+    let mut bump = Bump::with_capacity(1024 * 1024);
     backend.clear();
 
+    let mut view = model.view(&bump);
     let mut need_redraw = true;
 
     loop {
         if need_redraw {
             backend.clear();
-            view.layout(backend.size());
             view.render(&mut Printer::new(backend, theme));
             backend.flush();
             need_redraw = false
         }
-        let e = event_source(state, backend);
-        match view.on_event(state, e) {
-            EventResult::Consume(redraw) => {
-                need_redraw = redraw;
+        let e = event_source(backend);
+        match view.on_event(e) {
+            Some(msg) => {
+                match model.update(msg) {
+                    UpdateResult::Redraw => {
+                        need_redraw = true;
+                        bump.reset();
+                        view = model.view(&bump);
+                    }
+                    UpdateResult::Ignore => continue,
+                    UpdateResult::Exit => return,
+                }
             }
-            EventResult::Ignored => continue,
-        }
-
-        if is_exit(state) {
-            break;
+            None => continue,
         }
     }
 }

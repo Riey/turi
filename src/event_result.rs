@@ -1,38 +1,36 @@
 use std::ops::BitOr;
 
-pub const REDRAW: EventResult = EventResult::Consume(true);
-pub const NODRAW: EventResult = EventResult::Consume(false);
-pub const IGNORE: EventResult = EventResult::Ignored;
+pub use self::UpdateResult::{
+    Redraw,
+    Ignore,
+    Exit,
+};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum EventResult {
-    Consume(bool),
-    Ignored,
+pub enum UpdateResult {
+    Redraw,
+    Ignore,
+    Exit,
 }
 
-impl EventResult {
+impl UpdateResult {
     #[inline]
-    pub fn is_consume(self) -> bool {
-        !self.is_ignored()
+    pub fn is_exit(self) -> bool {
+        self == Exit
     }
 
     #[inline]
-    pub fn is_ignored(self) -> bool {
-        self == IGNORE
+    pub fn is_ignore(self) -> bool {
+        self == Ignore
     }
 
     #[inline]
     pub fn is_redraw(self) -> bool {
-        self == REDRAW
-    }
-
-    #[inline]
-    pub fn is_nodraw(self) -> bool {
-        self == NODRAW
+        self == Redraw
     }
 }
 
-impl BitOr for EventResult {
+impl BitOr for UpdateResult {
     type Output = Self;
 
     fn bitor(
@@ -40,24 +38,21 @@ impl BitOr for EventResult {
         rhs: Self,
     ) -> Self {
         if self.is_redraw() || rhs.is_redraw() {
-            REDRAW
-        } else if rhs.is_ignored() {
+            Redraw
+        } else if self.is_exit() || rhs.is_exit() {
+            Exit
+        } else if rhs.is_ignore() {
             self
         } else {
-            rhs
+            Ignore
         }
     }
 }
 
 #[test]
 fn or_test() {
-    assert_eq!(REDRAW | REDRAW, REDRAW);
-    assert_eq!(REDRAW | NODRAW, REDRAW);
-    assert_eq!(REDRAW | IGNORE, REDRAW);
-    assert_eq!(NODRAW | REDRAW, REDRAW);
-    assert_eq!(NODRAW | NODRAW, NODRAW);
-    assert_eq!(NODRAW | IGNORE, NODRAW);
-    assert_eq!(IGNORE | REDRAW, REDRAW);
-    assert_eq!(IGNORE | NODRAW, NODRAW);
-    assert_eq!(IGNORE | IGNORE, IGNORE);
+    assert_eq!(Redraw | Redraw, Redraw);
+    assert_eq!(Redraw | Ignore, Redraw);
+    assert_eq!(Ignore | Redraw, Redraw);
+    assert_eq!(Ignore | Ignore, Ignore);
 }

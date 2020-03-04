@@ -8,7 +8,7 @@ edition = "2018"
 debug = true
 
 [features]
-default = ["crossterm-backend", "test-backend"]
+default = ["crossterm-backend"]
 crossterm-backend = ["crossterm"]
 test-backend = []
 bench = []
@@ -19,6 +19,7 @@ enum-map = "0.6.2"
 enumset = "0.4.5"
 enumset_derive = "0.4.4"
 ansi_term = "0.12.1"
+bumpalo = { version = "3.2.0", features = ["collections"] }
 
 [target.'cfg(unix)'.dependencies]
 libc = "0.2"
