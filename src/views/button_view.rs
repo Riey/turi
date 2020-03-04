@@ -16,15 +16,15 @@ use crate::{
 use std::marker::PhantomData;
 use unicode_width::UnicodeWidthStr;
 
-pub struct ButtonView<S, E, M, F> {
+pub struct ButtonView<S, E, F> {
     text:       String,
     text_width: u16,
     on_click:   F,
-    _marker:    PhantomData<(S, E, M)>,
+    _marker:    PhantomData<(S, E)>,
 }
 
-impl<S, E, M, F> ButtonView<S, E, M, F> {
-    pub fn new(text: impl Into<String>) -> ButtonView<S, E, M, fn(&mut S) -> Option<M>> {
+impl<S, E, F> ButtonView<S, E, F> {
+    pub fn new(text: impl Into<String>) -> ButtonView<S, E, fn(&mut S)> {
         let text = text.into();
         let text_width = text.width() as u16;
 
@@ -32,16 +32,16 @@ impl<S, E, M, F> ButtonView<S, E, M, F> {
             text,
             text_width,
             _marker: PhantomData,
-            on_click: |_| None,
+            on_click: |_| (),
         }
     }
 
-    pub fn on_click<NM, NF>(
+    pub fn on_click<NF>(
         self,
         f: NF,
-    ) -> ButtonView<S, E, NM, NF>
+    ) -> ButtonView<S, E, NF>
     where
-        NF: Fn(&mut S) -> Option<NM>,
+        NF: Fn(&mut S),
     {
         ButtonView {
             text:       self.text,
@@ -62,9 +62,9 @@ impl<S, E, M, F> ButtonView<S, E, M, F> {
     }
 }
 
-impl<S, E: EventLike, M, F> View<S, E> for ButtonView<S, E, M, F>
+impl<S, E: EventLike, F> View<S, E> for ButtonView<S, E, F>
 where
-    F: Fn(&mut S) -> Option<M>,
+    F: Fn(&mut S),
 {
     #[inline]
     fn desired_size(&self) -> Vec2 {
