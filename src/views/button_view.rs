@@ -24,16 +24,22 @@ pub struct ButtonView<S, E, F> {
 }
 
 impl<S, E, F> ButtonView<S, E, F> {
-    pub fn new(text: impl Into<String>) -> ButtonView<S, E, fn(&mut S)> {
+    pub fn with_on_click(
+        text: impl Into<String>,
+        on_click: F,
+    ) -> Self {
         let text = text.into();
         let text_width = text.width() as u16;
-
-        ButtonView {
+        Self {
             text,
             text_width,
+            on_click,
             _marker: PhantomData,
-            on_click: |_| (),
         }
+    }
+
+    pub fn new(text: impl Into<String>) -> ButtonView<S, E, fn(&mut S)> {
+        ButtonView::with_on_click(text, |_| ())
     }
 
     pub fn on_click<NF>(

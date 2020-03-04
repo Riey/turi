@@ -4,6 +4,12 @@ use crate::{
         KeyEventLike,
         MouseEventLike,
     },
+    event_result::{
+        EventResult,
+        IGNORE,
+        NODRAW,
+        REDRAW,
+    },
     printer::Printer,
     style::Style,
     vec2::Vec2,
@@ -18,20 +24,18 @@ enum DialogFocus {
     Button(usize),
 }
 
-type DialogButton<S, E, M> = ButtonView<S, E, M, Box<dyn Fn(&mut S) -> Option<M>>>;
+type DialogButton<S, E> = ButtonView<S, E, Box<dyn Fn(&mut S)>>;
 
-pub struct DialogView<S, E, M, C> {
+pub struct DialogView<S, E, C> {
     title:   String,
     content: SizeCacher<C>,
-    buttons: Vec<DialogButton<S, E, M>>,
+    buttons: Vec<DialogButton<S, E>>,
     focus:   DialogFocus,
 }
 
-impl<S, E, M, C> DialogView<S, E, M, C>
+impl<S, E, C> DialogView<S, E, C>
 where
-    S: 'static,
     E: EventLike + 'static,
-    M: 'static,
 {
     pub fn new(content: C) -> Self {
         Self {
@@ -63,7 +67,7 @@ where
     pub fn button(
         mut self,
         label: impl Into<String>,
-        f: impl Fn(&mut S) -> Option<M> + 'static,
+        f: impl Fn(&mut S) + 'static,
     ) -> Self {
         self.add_button(label, f);
         self
@@ -72,10 +76,10 @@ where
     pub fn add_button(
         &mut self,
         label: impl Into<String>,
-        mut f: impl Fn(&mut S) -> Option<M> + 'static,
+        f: impl Fn(&mut S) + 'static,
     ) {
         self.buttons
-            .push(ButtonView::new(label.into()).on_click(Box::new(f)));
+            .push(DialogButton::with_on_click(label.into(), Box::new(f)));
     }
 
     #[inline]
@@ -89,11 +93,10 @@ where
     }
 }
 
-impl<S, E, M, C> View<S, E> for DialogView<S, E, M, C>
+impl<S, E, C> View<S, E> for DialogView<S, E, C>
 where
-    C: View<S, E, Message = M>,
+    C: View<S, E>,
     E: EventLike + 'static,
-    M: 'static,
 {
     fn render(
         &self,
@@ -155,7 +158,7 @@ where
         &mut self,
         state: &mut S,
         mut event: E,
-    ) -> Option<Self::Message> {
+    ) -> EventResult {
         if let Some(me) = event.try_mouse_mut() {
             let size = self.content.prev_size();
 
@@ -171,15 +174,21 @@ where
                 let mut x = me.pos().x;
                 for (i, btn) in self.buttons.iter_mut().enumerate() {
                     if btn.width() > x {
-                        state.set_need_redraw(self.focus == DialogFocus::Button(i));
-                        self.focus = DialogFocus::Button(i);
-                        return btn.on_event(state, event);
+                        self.buttons[i].on_event(state, event);
+                        let redraw = self.focus == DialogFocus::Button(i);
+
+                        return if redraw {
+                            self.focus = DialogFocus::Button(i);
+                            REDRAW
+                        } else {
+                            NODRAW
+                        };
                     } else {
                         x -= btn.width();
                     }
                 }
 
-                return None;
+                return IGNORE;
             }
 
             let is_content = me.filter_map_pos(|pos| {
@@ -192,41 +201,42 @@ where
             });
 
             if is_content {
-                state.set_need_redraw(self.focus == DialogFocus::Content);
                 self.focus = DialogFocus::Content;
                 self.content.on_event(state, event)
+                    | EventResult::Consume(self.focus == DialogFocus::Content)
             } else {
-                None
+                IGNORE
             }
         } else if let Some(ke) = event.try_key() {
             if ke.try_tab() {
                 self.tab();
-                state.set_need_redraw(true);
-                None
+                REDRAW
             } else if self.focus == DialogFocus::Content {
                 self.content.on_event(state, event)
             } else if let DialogFocus::Button(x) = &mut self.focus {
                 if ke.try_left() {
                     if let Some(new_x) = x.checked_sub(1) {
                         *x = new_x;
-                        state.set_need_redraw(true);
+                        REDRAW
+                    } else {
+                        IGNORE
                     }
-                    None
                 } else if ke.try_right() {
                     let new_x = *x + 1;
                     if new_x < self.buttons.len() {
                         *x = new_x;
-                        state.set_need_redraw(true);
+                        REDRAW
+                    } else {
+                        IGNORE
                     }
-                    None
                 } else {
                     self.buttons[*x].on_event(state, event)
                 }
             } else {
-                None
+                IGNORE
             }
         } else {
-            None
+            IGNORE
         }
     }
 }

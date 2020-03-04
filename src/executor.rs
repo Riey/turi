@@ -3,9 +3,11 @@ use crate::{
     event_result::EventResult,
     printer::Printer,
     style::Theme,
-    vec2::Vec2,
     view::View,
 };
+
+#[cfg(feature = "test-backend")]
+use crate::vec2::Vec2;
 
 pub fn simple<S, E, B: Backend, V: View<S, E>>(
     state: &mut S,

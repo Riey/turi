@@ -6,6 +6,7 @@ mod crossterm;
 
 mod dummy;
 
+#[cfg(feature = "test-backend")]
 mod test;
 
 mod sliced;
