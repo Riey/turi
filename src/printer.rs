@@ -4,11 +4,7 @@ use crate::{
         SlicedBackend,
     },
     rect::Rect,
-    style::{
-        ElementView,
-        Style,
-        StyleSheet,
-    },
+    style::Style,
     vec2::Vec2,
 };
 use std::mem::swap;
@@ -16,18 +12,13 @@ use std::mem::swap;
 pub struct Printer<'a> {
     bound:   Rect,
     backend: &'a mut dyn Backend,
-    css:     &'a StyleSheet<'a>,
 }
 
 impl<'a> Printer<'a> {
-    pub fn new(
-        backend: &'a mut dyn Backend,
-        css: &'a StyleSheet<'a>,
-    ) -> Self {
+    pub fn new(backend: &'a mut dyn Backend) -> Self {
         Self {
             bound: Rect::new((0, 0), backend.size()),
             backend,
-            css,
         }
     }
 
@@ -44,7 +35,6 @@ impl<'a> Printer<'a> {
                 self.bound.size() + pos,
             ),
             backend: &mut backend,
-            css:     self.css,
         };
         f(&mut printer)
     }
@@ -73,20 +63,6 @@ impl<'a> Printer<'a> {
     }
 
     #[inline]
-    pub fn with_view_style<E, M, T>(
-        &mut self,
-        view: &ElementView<E, M>,
-        f: impl FnOnce(&mut Self) -> T,
-    ) -> T {
-        let old_style = self.backend.style();
-        let style = self.css.calc_style(old_style, view);
-        self.backend.set_style(style);
-        let ret = f(self);
-        self.backend.set_style(old_style);
-        ret
-    }
-
-    #[inline]
     pub fn clear(&mut self) {
         self.backend.clear();
     }
@@ -94,6 +70,10 @@ impl<'a> Printer<'a> {
     #[inline]
     pub fn bound(&self) -> Rect {
         self.bound
+    }
+
+    pub fn style(&self) -> Style {
+        self.backend.style()
     }
 
     pub fn print(

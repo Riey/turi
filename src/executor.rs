@@ -29,7 +29,7 @@ pub fn simple<E: EventLike + Copy + 'static, B: Backend, M: Model<E> + 'static>(
     loop {
         if need_redraw {
             backend.clear();
-            view.render(&mut Printer::new(backend, css));
+            view.render(css, &mut Printer::new(backend));
             backend.flush();
             need_redraw = false
         }

@@ -1,3 +1,5 @@
+use crate::style::CssProperty;
+use crate::style::StyleSheet;
 use crate::{
     event::EventLike,
     event_filter::EventFilter,
@@ -113,22 +115,26 @@ impl<'a, E, M> View<'a, E, M> {
 
     pub fn render(
         self,
+        css: &StyleSheet,
         printer: &mut Printer,
     ) where
         E: 'static,
         M: 'static,
     {
-        Self::render_impl(&ElementView::with_view(self), printer)
+        Self::render_impl(&ElementView::with_view(self), Default::default(), css, printer);
     }
 
     fn render_impl<'e>(
         view: &'e ElementView<'e, E, M>,
+        parent_prop: CssProperty,
+        css: &StyleSheet,
         printer: &mut Printer,
     ) where
         E: 'static,
         M: 'static,
     {
-        printer.with_view_style(view, |printer| {
+        let prop = css.calc_prop(parent_prop, view);
+        printer.with_style(prop.to_style(printer.style()), |printer| {
             match view.view().body {
                 ViewBody::Text(text, _) => {
                     printer.print((0, 0), text);
@@ -138,7 +144,7 @@ impl<'a, E, M> View<'a, E, M> {
 
                     for (pos, child) in children.iter().enumerate() {
                         printer.with_bound(bound, |printer| {
-                            Self::render_impl(&view.make_child(pos).unwrap(), printer);
+                            Self::render_impl(&view.make_child(pos).unwrap(), prop, css, printer);
                         });
                         bound = bound.add_start((0, child.desired_size().y));
                     }

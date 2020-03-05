@@ -3,10 +3,15 @@ use crate::view::{
     ViewState,
 };
 pub use ansi_term::{
-    Color,
+    Color as AnsiColor,
     Style,
 };
+pub type Color = Option<AnsiColor>;
 use css_color_parser::Color as CssColor;
+use enumset::{
+    EnumSet,
+    EnumSetType,
+};
 
 use simplecss::{
     AttributeOperator as AttrOp,
@@ -106,41 +111,119 @@ impl<'a, E, M> Element for ElementView<'a, E, M> {
 
 pub use simplecss::Selector;
 
-#[derive(Clone, Copy)]
-struct CssStyle {
-    style:                 Style,
-    foreground_is_inherit: bool,
-    background_is_inherit: bool,
+#[derive(EnumSetType)]
+pub enum CssFontStyle {
+    Bold,
+    Dimmed,
+    Italic,
+    Underline,
+    Blink,
+    Reverse,
+    Hidden,
+    StrikeThrough,
 }
 
-impl CssStyle {
+#[derive(Clone, Copy)]
+pub struct CssBorder {
+    width: Option<CssSize>,
+    // TODO: style
+    color: Option<Color>,
+}
+
+#[derive(Clone, Copy, Default)]
+pub struct CssProperty {
+    foreground: Option<Color>,
+    background: Option<Color>,
+    font_style: Option<EnumSet<CssFontStyle>>,
+    width:      Option<CssSize>,
+    height:     Option<CssSize>,
+    padding:    Option<CssSize>,
+    border:     Option<CssBorder>,
+}
+
+impl CssProperty {
+    pub fn combine(
+        self,
+        rhs: Self,
+    ) -> Self {
+        macro_rules! combine {
+            ($field:ident) => {
+                rhs.$field.or(self.$field)
+            };
+        }
+        Self {
+            foreground: combine!(foreground),
+            background: combine!(background),
+            width:      combine!(width),
+            height:     combine!(height),
+            padding:    combine!(padding),
+            border:     combine!(border),
+            font_style: self
+                .font_style
+                .and_then(|f| rhs.font_style.map(|rf| f.intersection(rf))),
+        }
+    }
+
     pub fn to_style(
         self,
         parent: Style,
     ) -> Style {
-        let mut ret = self.style;
-        if self.foreground_is_inherit {
-            ret.foreground = parent.foreground;
+        let mut ret = parent;
+
+        if let Some(fg) = self.foreground {
+            ret.foreground = fg;
         }
 
-        if self.background_is_inherit {
-            ret.background = parent.background;
+        if let Some(bg) = self.background {
+            ret.background = bg;
+        }
+
+        if let Some(font_style) = self.font_style {
+            use CssFontStyle::*;
+
+            macro_rules! set_if {
+                ($(($flag:expr, $field:ident))+) => {
+                    $(
+                        if font_style.contains($flag) {
+                            ret.$field = true;
+                        }
+                    )+
+                };
+            }
+
+            set_if!((Bold, is_bold)(Dimmed, is_dimmed)(Italic, is_italic)(
+                Underline,
+                is_underline
+            )(Blink, is_blink)(Reverse, is_reverse)(
+                Hidden, is_hidden
+            )(StrikeThrough, is_strikethrough));
         }
 
         ret
     }
 }
 
+#[derive(Clone, Copy)]
+pub enum CssSize {
+    Fixed(u16),
+    Percent(u16),
+}
+
+#[derive(Clone, Copy)]
+pub struct Layout {
+    width: Option<CssSize>,
+}
+
 pub struct Rule<'a> {
     selector: Selector<'a>,
-    style:    CssStyle,
+    property: CssProperty,
 }
 
 impl<'a> Rule<'a> {
     pub fn new(rule: SRule<'a>) -> Self {
         Self {
             selector: rule.selector,
-            style:    convert_declar(rule.declarations),
+            property: convert_declar(rule.declarations),
         }
     }
 }
@@ -163,47 +246,34 @@ impl<'a> StyleSheet<'a> {
         Self { rules }
     }
 
-    pub fn calc_style<E, M>(
+    pub fn calc_prop<E, M>(
         &self,
-        parent_style: Style,
+        parent_prop: CssProperty,
         view: &ElementView<'a, E, M>,
-    ) -> Style {
-        let mut ret = parent_style;
+    ) -> CssProperty {
+        let mut prop = parent_prop;
 
         for rule in self.rules.iter() {
             if rule.selector.matches(view) {
-                let style = rule.style.to_style(parent_style);
-
-                ret.foreground = style.foreground;
-                ret.background = style.background;
-                ret.is_italic |= style.is_italic;
-                ret.is_bold |= style.is_bold;
-                ret.is_dimmed |= style.is_dimmed;
-                ret.is_strikethrough |= style.is_strikethrough;
-                ret.is_hidden |= style.is_hidden;
-                ret.is_reverse |= style.is_reverse;
-                ret.is_blink |= style.is_blink;
-                ret.is_underline |= style.is_underline;
+                prop = prop.combine(rule.property);
             }
         }
 
-        log::info!("style: {:?}", ret);
-
-        ret
+        prop
     }
 }
 
-fn convert_color(css_color: &str) -> Option<Color> {
+fn convert_color(css_color: &str) -> Option<AnsiColor> {
     match css_color {
         "transparent" => return None,
-        "red" => return Some(Color::Red),
-        "green" => return Some(Color::Green),
-        "blue" => return Some(Color::Blue),
-        "black" => return Some(Color::Black),
-        "white" => return Some(Color::White),
-        "purple" => return Some(Color::Purple),
-        "yellow" => return Some(Color::Yellow),
-        "cyan" => return Some(Color::Cyan),
+        "red" => return Some(AnsiColor::Red),
+        "green" => return Some(AnsiColor::Green),
+        "blue" => return Some(AnsiColor::Blue),
+        "black" => return Some(AnsiColor::Black),
+        "white" => return Some(AnsiColor::White),
+        "purple" => return Some(AnsiColor::Purple),
+        "yellow" => return Some(AnsiColor::Yellow),
+        "cyan" => return Some(AnsiColor::Cyan),
         _ => {}
     }
 
@@ -215,49 +285,80 @@ fn convert_color(css_color: &str) -> Option<Color> {
         }
     };
 
-    Some(Color::RGB(color.r, color.g, color.b))
+    Some(AnsiColor::RGB(color.r, color.g, color.b))
 }
 
-fn convert_declar<'a>(declarations: Vec<Declaration<'a>>) -> CssStyle {
-    let mut ret = Style::new();
-    let mut foreground_is_inherit = true;
-    let mut background_is_inherit = true;
+fn convert_declar<'a>(declarations: Vec<Declaration<'a>>) -> CssProperty {
+    let mut property = CssProperty::default();
 
     for Declaration { name, value, .. } in declarations {
         match name {
             "color" => {
                 if value != "inherit" {
-                    ret.foreground = convert_color(value);
-                    foreground_is_inherit = false;
+                    property.foreground = Some(convert_color(value));
                 }
             }
             "background" => {
                 if value != "inherit" {
-                    ret.background = convert_color(value);
-                    background_is_inherit = false;
+                    property.background = Some(convert_color(value));
                 }
             }
             "font" => {
-                ret.is_italic = value.contains("italic");
-                ret.is_bold = value.contains("bold");
-                ret.is_hidden = value.contains("hidden");
-                ret.is_reverse = value.contains("reverse");
-                ret.is_dimmed = value.contains("dimmed");
+                if value.contains("italic") {
+                    property
+                        .font_style
+                        .get_or_insert(EnumSet::new())
+                        .insert(CssFontStyle::Italic);
+                }
+                if value.contains("bold") {
+                    property
+                        .font_style
+                        .get_or_insert(EnumSet::new())
+                        .insert(CssFontStyle::Bold);
+                }
+                if value.contains("hidden") {
+                    property
+                        .font_style
+                        .get_or_insert(EnumSet::new())
+                        .insert(CssFontStyle::Hidden);
+                }
+                if value.contains("reverse") {
+                    property
+                        .font_style
+                        .get_or_insert(EnumSet::new())
+                        .insert(CssFontStyle::Reverse);
+                }
+                if value.contains("dimmed") {
+                    property
+                        .font_style
+                        .get_or_insert(EnumSet::new())
+                        .insert(CssFontStyle::Dimmed);
+                }
             }
             "text-decoration-line" => {
-                ret.is_blink = value.contains("blink");
-                ret.is_underline = value.contains("underline");
-                ret.is_strikethrough = value.contains("line-through");
+                if value.contains("blink") {
+                    property
+                        .font_style
+                        .get_or_insert(EnumSet::new())
+                        .insert(CssFontStyle::Blink);
+                }
+                if value.contains("underline") {
+                    property
+                        .font_style
+                        .get_or_insert(EnumSet::new())
+                        .insert(CssFontStyle::Underline);
+                }
+                if value.contains("line-through") {
+                    property
+                        .font_style
+                        .get_or_insert(EnumSet::new())
+                        .insert(CssFontStyle::StrikeThrough);
+                }
             }
             _ => {}
         }
     }
-
-    CssStyle {
-        style: ret,
-        foreground_is_inherit,
-        background_is_inherit,
-    }
+    property
 }
 
 impl<'a, E, M> Clone for ElementView<'a, E, M> {
