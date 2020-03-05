@@ -44,7 +44,10 @@ impl Model<Event> for Simple {
     ) -> View<'a, Event, Self::Msg> {
         div(b)
             .event(EventFilter::ctrl_char(b, 'c', true))
-            .children([text("Hello"), text("World!")])
+            .children([
+                div(b).inner_text("Hello").class("hello").build(),
+                text("World!"),
+            ])
             .build()
     }
 }
@@ -63,7 +66,12 @@ fn main() {
     let backend = CrosstermBackend::new(out, crossterm::terminal::size().unwrap().into());
     let mut guard = CrosstermBackendGuard::new(backend);
 
-    let css = StyleSheet::parse("div { color: green; }");
+    let css = StyleSheet::parse(
+        "
+div.hello { color: red; font: bold; }
+div { color: green; }
+",
+    );
 
     turi::executor::simple(guard.inner(), &css, &mut Simple, |backend, need_redraw| {
         loop {

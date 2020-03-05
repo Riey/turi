@@ -114,17 +114,22 @@ impl<'a, E, M> View<'a, E, M> {
     pub fn render(
         self,
         printer: &mut Printer,
-    ) {
-        self.render_impl(&ElementView::with_view(self), printer)
+    ) where
+        E: 'static,
+        M: 'static,
+    {
+        Self::render_impl(&ElementView::with_view(self), printer)
     }
 
     fn render_impl<'e>(
-        self,
-        parent: &'e ElementView<'e, E, M>,
+        view: &'e ElementView<'e, E, M>,
         printer: &mut Printer,
-    ) {
-        printer.with_view_style(&parent, |printer| {
-            match self.body {
+    ) where
+        E: 'static,
+        M: 'static,
+    {
+        printer.with_view_style(view, |printer| {
+            match view.view().body {
                 ViewBody::Text(text, _) => {
                     printer.print((0, 0), text);
                 }
@@ -133,7 +138,7 @@ impl<'a, E, M> View<'a, E, M> {
 
                     for (pos, child) in children.iter().enumerate() {
                         printer.with_bound(bound, |printer| {
-                            child.render_impl(&parent.make_child(pos).unwrap(), printer);
+                            Self::render_impl(&view.make_child(pos).unwrap(), printer);
                         });
                         bound = bound.add_start((0, child.desired_size().y));
                     }

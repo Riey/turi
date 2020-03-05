@@ -42,6 +42,10 @@ impl<'a, E, M> ElementView<'a, E, M> {
             view: self.view.children().get(pos).cloned()?,
         })
     }
+
+    pub fn view(self) -> View<'a, E, M> {
+        self.view
+    }
 }
 
 impl<'a, E, M> Element for ElementView<'a, E, M> {
@@ -219,6 +223,10 @@ fn convert_declar<'a>(declarations: Vec<Declaration<'a>>) -> CssStyle {
                 ret.is_hidden = value.contains("hidden");
                 ret.is_reverse = value.contains("reverse");
                 ret.is_dimmed = value.contains("dimmed");
+            }
+            "text-decoration-line" => {
+                ret.is_underline = value.contains("underline");
+                ret.is_strikethrough = value.contains("line-through");
             }
             _ => {}
         }

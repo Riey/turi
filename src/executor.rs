@@ -12,7 +12,7 @@ use bumpalo::Bump;
 #[cfg(feature = "test-backend")]
 use crate::vec2::Vec2;
 
-pub fn simple<E: EventLike + Copy, B: Backend, M: Model<E>>(
+pub fn simple<E: EventLike + Copy + 'static, B: Backend, M: Model<E> + 'static>(
     backend: &mut B,
     css: &StyleSheet,
     model: &mut M,
