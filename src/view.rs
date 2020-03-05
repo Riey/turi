@@ -2,7 +2,8 @@ use crate::{
     event::EventLike,
     event_filter::EventFilter,
     printer::Printer,
-    vec2::Vec2, style::ElementView,
+    style::ElementView,
+    vec2::Vec2,
 };
 
 use enumset::{
@@ -117,7 +118,11 @@ impl<'a, E, M> View<'a, E, M> {
         self.render_impl(&ElementView::with_view(self), printer)
     }
 
-    fn render_impl<'e>(self, parent: &'e ElementView<'e, E, M>, printer: &mut Printer) {
+    fn render_impl<'e>(
+        self,
+        parent: &'e ElementView<'e, E, M>,
+        printer: &mut Printer,
+    ) {
         printer.with_view_style(&parent, |printer| {
             match self.body {
                 ViewBody::Text(text, _) => {

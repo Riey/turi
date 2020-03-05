@@ -32,7 +32,10 @@ impl<'a, E, M> ElementView<'a, E, M> {
         }
     }
 
-    pub fn make_child(&'a self, pos: usize) -> Option<Self> {
+    pub fn make_child(
+        &'a self,
+        pos: usize,
+    ) -> Option<Self> {
         Some(Self {
             parent: Some(self),
             pos,
@@ -71,7 +74,10 @@ impl<'a, E, M> Element for ElementView<'a, E, M> {
                     AttrOp::Matches(name) => self.view.classes().iter().any(|class| *class == name),
                     AttrOp::Exists => !self.view.classes().is_empty(),
                     AttrOp::StartsWith(name) => {
-                        self.view.classes().iter().any(|class| class.starts_with(name))
+                        self.view
+                            .classes()
+                            .iter()
+                            .any(|class| class.starts_with(name))
                     }
                 }
             }

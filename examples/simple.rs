@@ -65,20 +65,15 @@ fn main() {
 
     let css = StyleSheet::parse("div { color: green; }");
 
-    turi::executor::simple(
-        guard.inner(),
-        &css,
-        &mut Simple,
-        |backend, need_redraw| {
-            loop {
-                match crossterm::event::read().unwrap() {
-                    Event::Resize(x, y) => {
-                        *need_redraw = true;
-                        backend.resize((x, y).into());
-                    }
-                    e => break e,
+    turi::executor::simple(guard.inner(), &css, &mut Simple, |backend, need_redraw| {
+        loop {
+            match crossterm::event::read().unwrap() {
+                Event::Resize(x, y) => {
+                    *need_redraw = true;
+                    backend.resize((x, y).into());
                 }
+                e => break e,
             }
-        },
-    );
+        }
+    });
 }

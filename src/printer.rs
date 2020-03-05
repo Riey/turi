@@ -5,11 +5,11 @@ use crate::{
     },
     rect::Rect,
     style::{
+        ElementView,
         Style,
         StyleSheet,
     },
     vec2::Vec2,
-    style::ElementView,
 };
 use std::mem::swap;
 
