@@ -18,7 +18,7 @@ use simplecss::{
     StyleSheet as SStyleSheet,
 };
 
-struct ElementView<'a, 'p, E, M> {
+pub struct ElementView<'a, 'p, E, M> {
     parent: Option<&'p Self>,
     pos:    usize,
     view:   View<'a, E, M>,
@@ -147,9 +147,15 @@ impl<'a> StyleSheet<'a> {
     pub fn calc_style<E, M>(
         &self,
         parent_style: Style,
-        view: View<E, M>,
+        view: &ElementView<'_, 'a, E, M>,
     ) -> Style {
-        Style::new()
+        for rule in self.rules.iter() {
+            if rule.selector.matches(view) {
+                return rule.style.to_style(parent_style);
+            }
+        }
+
+        parent_style
     }
 }
 

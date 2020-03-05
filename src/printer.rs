@@ -9,7 +9,7 @@ use crate::{
         StyleSheet,
     },
     vec2::Vec2,
-    view::View,
+    style::ElementView,
 };
 use std::mem::swap;
 
@@ -75,7 +75,7 @@ impl<'a> Printer<'a> {
     #[inline]
     pub fn with_view_style<E, M, T>(
         &mut self,
-        view: View<E, M>,
+        view: &ElementView<E, M>,
         f: impl FnOnce(&mut Self) -> T,
     ) -> T {
         let old_style = self.backend.style();
