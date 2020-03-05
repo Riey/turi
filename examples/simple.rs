@@ -8,13 +8,12 @@ use turi::{
         CrosstermBackendGuard,
     },
     builder::{
-        attr,
         div,
         text,
     },
     event_filter::EventFilter,
     model::Model,
-    style::Theme,
+    style::StyleSheet,
     update_result::{
         Exit,
         Ignore,
@@ -44,7 +43,7 @@ impl Model<Event> for Simple {
         b: &'a Bump,
     ) -> View<'a, Event, Self::Msg> {
         div(b)
-            .attr(attr(b).event(EventFilter::ctrl_char(b, 'c', true)).build())
+            .event(EventFilter::ctrl_char(b, 'c', true))
             .children([text("Hello"), text("World!")])
             .build()
     }
@@ -64,13 +63,11 @@ fn main() {
     let backend = CrosstermBackend::new(out, crossterm::terminal::size().unwrap().into());
     let mut guard = CrosstermBackendGuard::new(backend);
 
-    let theme = Theme::default();
-
-    log::trace!("Start executor");
+    let css = StyleSheet::parse("div { color: green; }");
 
     turi::executor::simple(
         guard.inner(),
-        &theme,
+        &css,
         &mut Simple,
         |backend, need_redraw| {
             loop {
