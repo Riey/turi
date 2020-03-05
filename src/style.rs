@@ -3,7 +3,6 @@ pub use ansi_term::{
     Style,
 };
 pub type Color = Option<AnsiColor>;
-use css_color_parser::Color as CssColor;
 use enumset::{
     EnumSet,
     EnumSetType,
@@ -18,6 +17,64 @@ use simplecss::{
 
 pub use simplecss::Selector;
 
+#[derive(Clone, Copy)]
+pub enum CssVal<T: Copy> {
+    Val(T),
+    Inherit,
+}
+
+impl<T: Copy> Default for CssVal<T> {
+    fn default() -> Self {
+        CssVal::Inherit
+    }
+}
+
+impl<T: Copy> CssVal<T> {
+    pub fn combine(
+        self,
+        rhs: Self,
+    ) -> Self {
+        match (self, rhs) {
+            (CssVal::Val(v), _) | (_, CssVal::Val(v)) => CssVal::Val(v),
+            _ => CssVal::Inherit,
+        }
+    }
+
+    pub fn and_then(
+        self,
+        f: impl FnOnce(T) -> Self,
+    ) -> Self {
+        match self {
+            CssVal::Val(val) => f(val),
+            CssVal::Inherit => CssVal::Inherit,
+        }
+    }
+
+    pub fn map<U: Copy>(
+        self,
+        f: impl FnOnce(T) -> U,
+    ) -> CssVal<U> {
+        match self {
+            CssVal::Val(val) => CssVal::Val(f(val)),
+            CssVal::Inherit => CssVal::Inherit,
+        }
+    }
+
+    pub fn get_or_insert(
+        &mut self,
+        v: T,
+    ) -> &mut T {
+        if let CssVal::Inherit = *self {
+            *self = CssVal::Val(v);
+        }
+
+        match self {
+            CssVal::Val(val) => val,
+            CssVal::Inherit => unsafe { std::hint::unreachable_unchecked() },
+        }
+    }
+}
+
 #[derive(EnumSetType)]
 pub enum CssFontStyle {
     Bold,
@@ -30,17 +87,45 @@ pub enum CssFontStyle {
     StrikeThrough,
 }
 
+#[derive(Clone, Copy)]
+pub enum CssSize {
+    Fixed(u16),
+    Percent(u16),
+}
+
+impl CssSize {
+    pub fn calc(
+        self,
+        max: u16,
+    ) -> u16 {
+        let want = match self {
+            CssSize::Fixed(x) => x,
+            CssSize::Percent(p) => max * 100 / p,
+        };
+
+        want.min(max)
+    }
+}
+
+#[derive(Clone, Copy, Default)]
+pub struct CssRect {
+    pub top:  CssVal<CssSize>,
+    pub left: CssVal<CssSize>,
+    pub right: CssVal<CssSize>,
+    pub bottom: CssVal<CssSize>,
+}
+
 #[derive(Clone, Copy, Default)]
 pub struct CssProperty {
-    pub foreground:   Option<Color>,
-    pub background:   Option<Color>,
-    pub font_style:   Option<EnumSet<CssFontStyle>>,
-    pub width:        Option<CssSize>,
-    pub height:       Option<CssSize>,
-    pub padding:      Option<CssSize>,
-    pub margin:       Option<CssSize>,
-    pub border_width: Option<CssSize>,
-    pub border_color: Option<Color>,
+    pub foreground:   CssVal<Color>,
+    pub background:   CssVal<Color>,
+    pub font_style:   CssVal<EnumSet<CssFontStyle>>,
+    pub width:        CssVal<CssSize>,
+    pub height:       CssVal<CssSize>,
+    pub padding:      CssVal<CssRect>,
+    pub margin:       CssVal<CssRect>,
+    pub border_width: CssVal<CssRect>,
+    pub border_color: CssVal<Color>,
 }
 
 impl CssProperty {
@@ -50,7 +135,7 @@ impl CssProperty {
     ) -> Self {
         macro_rules! combine {
             ($field:ident) => {
-                rhs.$field.or(self.$field)
+                rhs.$field.combine(self.$field)
             };
         }
         Self {
@@ -74,19 +159,19 @@ impl CssProperty {
     ) -> Style {
         let mut ret = parent_style;
 
-        if let Some(fg) = self.foreground {
+        if let CssVal::Val(fg) = self.foreground {
             ret.foreground = fg;
         }
 
-        if let Some(bg) = self.background {
+        if let CssVal::Val(bg) = self.background {
             ret.background = bg;
         }
 
-        if let Some(font_style) = self.font_style {
+        if let CssVal::Val(font_style) = self.font_style {
             use CssFontStyle::*;
 
             macro_rules! set_if {
-                ($(($flag:expr, $field:ident))+) => {
+                ($(($flag:expr, $field:ident)$(,)?)+) => {
                     $(
                         if font_style.contains($flag) {
                             ret.$field = true;
@@ -95,35 +180,19 @@ impl CssProperty {
                 };
             }
 
-            set_if!((Bold, is_bold)(Dimmed, is_dimmed)(Italic, is_italic)(
-                Underline,
-                is_underline
-            )(Blink, is_blink)(Reverse, is_reverse)(
-                Hidden, is_hidden
-            )(StrikeThrough, is_strikethrough));
+            set_if!(
+                (Bold, is_bold),
+                (Dimmed, is_dimmed),
+                (Italic, is_italic),
+                (Underline, is_underline),
+                (Blink, is_blink),
+                (Reverse, is_reverse),
+                (Hidden, is_hidden),
+                (StrikeThrough, is_strikethrough),
+            );
         }
 
         ret
-    }
-}
-
-#[derive(Clone, Copy)]
-pub enum CssSize {
-    Fixed(u16),
-    Percent(u16),
-}
-
-impl CssSize {
-    pub fn calc(
-        self,
-        max: u16,
-    ) -> u16 {
-        let want = match self {
-            CssSize::Fixed(x) => x,
-            CssSize::Percent(p) => max * 100 / p,
-        };
-
-        want.min(max)
     }
 }
 
@@ -190,7 +259,7 @@ fn convert_color(css_color: &str) -> Option<AnsiColor> {
         _ => {}
     }
 
-    let color: CssColor = match css_color.parse() {
+    let color: css_color_parser::Color = match css_color.parse() {
         Ok(color) => color,
         Err(err) => {
             log::error!("Color parsing error: {:?}", err);
@@ -208,12 +277,12 @@ fn convert_declar<'a>(declarations: Vec<Declaration<'a>>) -> CssProperty {
         match name {
             "color" => {
                 if value != "inherit" {
-                    property.foreground = Some(convert_color(value));
+                    property.foreground = CssVal::Val(convert_color(value));
                 }
             }
             "background" => {
                 if value != "inherit" {
-                    property.background = Some(convert_color(value));
+                    property.background = CssVal::Val(convert_color(value));
                 }
             }
             "font" => {
