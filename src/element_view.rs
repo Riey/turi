@@ -49,23 +49,23 @@ impl<'a, E, M> ElementView<'a, E, M> {
     prop_getter!(height, CssSize, CssSize::Percent(100));
 
     prop_getter!(padding, CssRect, CssRect {
-        top: CssVal::Val(CssSize::Fixed(0)),
-        left: CssVal::Val(CssSize::Fixed(0)),
-        right: CssVal::Val(CssSize::Fixed(0)),
+        top:    CssVal::Val(CssSize::Fixed(0)),
+        left:   CssVal::Val(CssSize::Fixed(0)),
+        right:  CssVal::Val(CssSize::Fixed(0)),
         bottom: CssVal::Val(CssSize::Fixed(0)),
     });
 
     prop_getter!(margin, CssRect, CssRect {
-        top: CssVal::Val(CssSize::Fixed(0)),
-        left: CssVal::Val(CssSize::Fixed(0)),
-        right: CssVal::Val(CssSize::Fixed(0)),
+        top:    CssVal::Val(CssSize::Fixed(0)),
+        left:   CssVal::Val(CssSize::Fixed(0)),
+        right:  CssVal::Val(CssSize::Fixed(0)),
         bottom: CssVal::Val(CssSize::Fixed(0)),
     });
 
     prop_getter!(border_width, CssRect, CssRect {
-        top: CssVal::Val(CssSize::Fixed(0)),
-        left: CssVal::Val(CssSize::Fixed(0)),
-        right: CssVal::Val(CssSize::Fixed(0)),
+        top:    CssVal::Val(CssSize::Fixed(0)),
+        left:   CssVal::Val(CssSize::Fixed(0)),
+        right:  CssVal::Val(CssSize::Fixed(0)),
         bottom: CssVal::Val(CssSize::Fixed(0)),
     });
 

@@ -109,9 +109,9 @@ impl CssSize {
 
 #[derive(Clone, Copy, Default)]
 pub struct CssRect {
-    pub top:  CssVal<CssSize>,
-    pub left: CssVal<CssSize>,
-    pub right: CssVal<CssSize>,
+    pub top:    CssVal<CssSize>,
+    pub left:   CssVal<CssSize>,
+    pub right:  CssVal<CssSize>,
     pub bottom: CssVal<CssSize>,
 }
 
