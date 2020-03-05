@@ -3,7 +3,7 @@ use crate::{
     event::EventLike,
     model::Model,
     printer::Printer,
-    style::Theme,
+    style::StyleSheet,
     update_result::UpdateResult,
 };
 
@@ -14,7 +14,7 @@ use crate::vec2::Vec2;
 
 pub fn simple<E: EventLike + Copy, B: Backend, M: Model<E>>(
     backend: &mut B,
-    theme: &Theme,
+    css: &StyleSheet,
     model: &mut M,
     mut event_source: impl FnMut(&mut B, &mut bool) -> E,
 ) where
@@ -29,7 +29,7 @@ pub fn simple<E: EventLike + Copy, B: Backend, M: Model<E>>(
     loop {
         if need_redraw {
             backend.clear();
-            view.render(&mut Printer::new(backend, theme));
+            view.render(&mut Printer::new(backend, css));
             backend.flush();
             need_redraw = false
         }

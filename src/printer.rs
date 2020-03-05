@@ -6,27 +6,28 @@ use crate::{
     rect::Rect,
     style::{
         Style,
-        Theme,
+        StyleSheet,
     },
     vec2::Vec2,
+    view::View,
 };
 use std::mem::swap;
 
 pub struct Printer<'a> {
     bound:   Rect,
     backend: &'a mut dyn Backend,
-    theme:   &'a Theme,
+    css:     &'a StyleSheet<'a>,
 }
 
 impl<'a> Printer<'a> {
     pub fn new(
         backend: &'a mut dyn Backend,
-        theme: &'a Theme,
+        css: &'a StyleSheet<'a>,
     ) -> Self {
         Self {
             bound: Rect::new((0, 0), backend.size()),
             backend,
-            theme,
+            css,
         }
     }
 
@@ -43,21 +44,9 @@ impl<'a> Printer<'a> {
                 self.bound.size() + pos,
             ),
             backend: &mut backend,
-            theme:   self.theme,
+            css:     self.css,
         };
         f(&mut printer)
-    }
-
-    pub fn with_theme<T>(
-        &mut self,
-        theme: &Theme,
-        f: impl FnOnce(&mut Printer) -> T,
-    ) -> T {
-        f(&mut Printer {
-            bound: self.bound,
-            theme,
-            backend: self.backend,
-        })
     }
 
     pub fn with_bound<T>(
@@ -77,10 +66,19 @@ impl<'a> Printer<'a> {
         f: impl FnOnce(&mut Self) -> T,
     ) -> T {
         let old_style = self.backend.style();
-        self.backend.set_style(self.theme.resolve_style(&style));
+        self.backend.set_style(style);
         let ret = f(self);
         self.backend.set_style(old_style);
         ret
+    }
+
+    #[inline]
+    pub fn with_view_style<E, M, T>(
+        &mut self,
+        view: View<E, M>,
+        f: impl FnOnce(&mut Self) -> T,
+    ) -> T {
+        self.with_style(self.css.calc_style(view), f)
     }
 
     #[inline]

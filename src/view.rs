@@ -5,6 +5,7 @@ use crate::{
     vec2::Vec2,
 };
 
+
 impl<'a, E, M> Clone for View<'a, E, M> {
     #[inline]
     fn clone(&self) -> Self {
@@ -23,10 +24,21 @@ impl<'a, E, M> Clone for ViewInner<'a, E, M> {
 
 impl<'a, E, M> Copy for ViewInner<'a, E, M> {}
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Tag {
     Div,
     Button,
+}
+
+impl std::str::FromStr for Tag {
+    type Err = ();
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "div" => Ok(Tag::Div),
+            "button" => Ok(Tag::Button),
+            _ => Err(()),
+        }
+    }
 }
 
 pub enum ViewInner<'a, E, M> {

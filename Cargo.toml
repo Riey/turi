@@ -15,11 +15,9 @@ bench = []
 
 [dependencies]
 unicode-width = "0.1.7"
-enum-map = "0.6.2"
-enumset = "0.4.5"
-enumset_derive = "0.4.4"
-ansi_term = "0.12.1"
+ansi_term = { version = "0.12.1" }
 bumpalo = { version = "3.2.0", features = ["collections"] }
+simplecss = "0.2.0"
 
 [target.'cfg(unix)'.dependencies]
 libc = "0.2"
