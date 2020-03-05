@@ -219,12 +219,12 @@ fn convert_declar<'a>(declarations: Vec<Declaration<'a>>) -> CssStyle {
             "font" => {
                 ret.is_italic = value.contains("italic");
                 ret.is_bold = value.contains("bold");
-                ret.is_blink = value.contains("blink");
                 ret.is_hidden = value.contains("hidden");
                 ret.is_reverse = value.contains("reverse");
                 ret.is_dimmed = value.contains("dimmed");
             }
             "text-decoration-line" => {
+                ret.is_blink = value.contains("blink");
                 ret.is_underline = value.contains("underline");
                 ret.is_strikethrough = value.contains("line-through");
             }
