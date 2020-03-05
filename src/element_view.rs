@@ -1,6 +1,5 @@
 use crate::{
-    printer::Printer,
-    style::{
+    css::{
         Color,
         CssProperty,
         CssRect,
@@ -8,6 +7,7 @@ use crate::{
         CssVal,
         StyleSheet,
     },
+    printer::Printer,
     vec2::Vec2,
     view::{
         View,
@@ -208,3 +208,11 @@ impl<'a, E, M> Element for ElementView<'a, E, M> {
         }
     }
 }
+
+impl<'a, E, M> Clone for ElementView<'a, E, M> {
+    #[inline]
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl<'a, E, M> Copy for ElementView<'a, E, M> {}

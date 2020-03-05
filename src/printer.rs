@@ -3,8 +3,8 @@ use crate::{
         Backend,
         SlicedBackend,
     },
+    css::AnsiStyle as Style,
     rect::Rect,
-    style::Style,
     vec2::Vec2,
 };
 use std::mem::swap;

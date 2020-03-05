@@ -1,9 +1,9 @@
 use crate::{
     backend::Backend,
+    css::StyleSheet,
     event::EventLike,
     model::Model,
     printer::Printer,
-    style::StyleSheet,
     update_result::UpdateResult,
 };
 

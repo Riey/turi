@@ -11,9 +11,9 @@ use turi::{
         div,
         text,
     },
+    css::StyleSheet,
     event_filter::EventFilter,
     model::Model,
-    style::StyleSheet,
     update_result::{
         Exit,
         Ignore,
