@@ -41,18 +41,12 @@ pub enum ViewState {
     Hover,
 }
 
-#[derive(Clone, Copy)]
-pub struct ViewHeader<'a> {
-    pub tag:     Tag,
-    pub classes: &'a [&'a str],
-}
-
 pub struct View<'a, E, M> {
-    header: ViewHeader<'a>,
-    parent: Option<ViewHeader<'a>>,
-    state:  EnumSet<ViewState>,
-    events: &'a [EventFilter<'a, E, M>],
-    body:   ViewBody<'a, E, M>,
+    tag:     Tag,
+    classes: &'a [&'a str],
+    state:   EnumSet<ViewState>,
+    events:  &'a [EventFilter<'a, E, M>],
+    body:    ViewBody<'a, E, M>,
 }
 
 impl<'a, E, M> View<'a, E, M> {
@@ -60,18 +54,12 @@ impl<'a, E, M> View<'a, E, M> {
         tag: Tag,
         classes: &'a [&'a str],
         events: &'a [EventFilter<'a, E, M>],
-        children: &'a mut [View<'a, E, M>],
+        children: &'a [View<'a, E, M>],
     ) -> Self {
-        let header = ViewHeader { tag, classes };
-
-        for child in children.iter_mut() {
-            child.parent = Some(header);
-        }
-
         Self {
-            header,
+            tag,
+            classes,
             state: EnumSet::new(),
-            parent: None,
             events,
             body: ViewBody::Children(children),
         }
@@ -84,17 +72,22 @@ impl<'a, E, M> View<'a, E, M> {
         inner_text: &'a str,
     ) -> Self {
         Self {
-            header: ViewHeader { tag, classes },
+            tag,
+            classes,
             state: EnumSet::new(),
-            parent: None,
             events,
             body: ViewBody::Text(inner_text, inner_text.width() as u16),
         }
     }
 
     #[inline]
-    pub fn header(self) -> ViewHeader<'a> {
-        self.header
+    pub fn tag(self) -> Tag {
+        self.tag
+    }
+
+    #[inline]
+    pub fn classes(self) -> &'a [&'a str] {
+        self.classes
     }
 
     #[inline]
@@ -121,7 +114,7 @@ impl<'a, E, M> View<'a, E, M> {
         self,
         printer: &mut Printer,
     ) {
-        match &self.body {
+        match self.body {
             ViewBody::Text(text, _) => {
                 printer.print((0, 0), text);
             }

@@ -58,7 +58,7 @@ impl<'a, 'p, E, M> Element for ElementView<'a, 'p, E, M> {
         &self,
         name: &str,
     ) -> bool {
-        Ok(self.view.header().tag) == name.parse()
+        Ok(self.view.tag()) == name.parse()
     }
 
     fn attribute_matches(
@@ -66,17 +66,16 @@ impl<'a, 'p, E, M> Element for ElementView<'a, 'p, E, M> {
         local_name: &str,
         op: AttrOp,
     ) -> bool {
-        let header = self.view.header();
         match local_name {
             "class" => {
                 match op {
                     AttrOp::Contains(name) => {
-                        header.classes.iter().any(|class| class.contains(name))
+                        self.view.classes().iter().any(|class| class.contains(name))
                     }
-                    AttrOp::Matches(name) => header.classes.iter().any(|class| *class == name),
-                    AttrOp::Exists => !header.classes.is_empty(),
+                    AttrOp::Matches(name) => self.view.classes().iter().any(|class| *class == name),
+                    AttrOp::Exists => !self.view.classes().is_empty(),
                     AttrOp::StartsWith(name) => {
-                        header.classes.iter().any(|class| class.starts_with(name))
+                        self.view.classes().iter().any(|class| class.starts_with(name))
                     }
                 }
             }
