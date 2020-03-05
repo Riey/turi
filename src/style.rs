@@ -152,9 +152,15 @@ pub struct StyleSheet<'a> {
 impl<'a> StyleSheet<'a> {
     pub fn parse(text: &'a str) -> Self {
         let css = SStyleSheet::parse(text);
-        Self {
-            rules: css.rules.into_iter().map(|r| Rule::new(r)).collect(),
-        }
+        let mut rules: Vec<_> = css.rules.into_iter().map(|r| Rule::new(r)).collect();
+        // reorder rules with selector length
+        rules.sort_unstable_by(|l, r| {
+            l.selector
+                .to_string()
+                .len()
+                .cmp(&r.selector.to_string().len())
+        });
+        Self { rules }
     }
 
     pub fn calc_style<E, M>(
@@ -162,13 +168,28 @@ impl<'a> StyleSheet<'a> {
         parent_style: Style,
         view: &ElementView<'a, E, M>,
     ) -> Style {
+        let mut ret = parent_style;
+
         for rule in self.rules.iter() {
             if rule.selector.matches(view) {
-                return rule.style.to_style(parent_style);
+                let style = rule.style.to_style(parent_style);
+
+                ret.foreground = style.foreground;
+                ret.background = style.background;
+                ret.is_italic |= style.is_italic;
+                ret.is_bold |= style.is_bold;
+                ret.is_dimmed |= style.is_dimmed;
+                ret.is_strikethrough |= style.is_strikethrough;
+                ret.is_hidden |= style.is_hidden;
+                ret.is_reverse |= style.is_reverse;
+                ret.is_blink |= style.is_blink;
+                ret.is_underline |= style.is_underline;
             }
         }
 
-        parent_style
+        log::info!("style: {:?}", ret);
+
+        ret
     }
 }
 

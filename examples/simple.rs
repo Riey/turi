@@ -68,8 +68,8 @@ fn main() {
 
     let css = StyleSheet::parse(
         "
-div.hello { color: red; font: bold; }
-div { color: green; }
+div { color: green; text-decoration-line: underline;}
+div.hello { color: red; font: bold;  }
 ",
     );
 
