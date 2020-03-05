@@ -3,7 +3,6 @@ use crate::{
     view::{
         Tag,
         View,
-        ViewBody,
     },
 };
 use bumpalo::{

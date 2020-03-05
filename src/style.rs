@@ -1,5 +1,4 @@
 use crate::view::{
-    Tag,
     View,
     ViewState,
 };
@@ -134,7 +133,7 @@ impl<'a> Rule<'a> {
     pub fn new(rule: SRule<'a>) -> Self {
         Self {
             selector: rule.selector,
-            style:    todo!(),
+            style:    convert_declar(rule.declarations),
         }
     }
 }
@@ -161,7 +160,7 @@ impl<'a> StyleSheet<'a> {
 
 fn convert_color(css_color: &str) -> Option<Color> {
     match css_color {
-        "transparent" | "inherit" => return None,
+        "transparent" => return None,
         "red" => return Some(Color::Red),
         "green" => return Some(Color::Green),
         "blue" => return Some(Color::Blue),
@@ -184,16 +183,24 @@ fn convert_color(css_color: &str) -> Option<Color> {
     Some(Color::RGB(color.r, color.g, color.b))
 }
 
-fn convert_declar<'a>(declarations: Vec<Declaration<'a>>) -> Style {
+fn convert_declar<'a>(declarations: Vec<Declaration<'a>>) -> CssStyle {
     let mut ret = Style::new();
+    let mut foreground_is_inherit = true;
+    let mut background_is_inherit = true;
 
     for Declaration { name, value, .. } in declarations {
         match name {
             "color" => {
-                ret.foreground = convert_color(value);
+                if value != "inherit" {
+                    ret.foreground = convert_color(value);
+                    foreground_is_inherit = false;
+                }
             }
             "background" => {
-                ret.background = convert_color(value);
+                if value != "inherit" {
+                    ret.background = convert_color(value);
+                    background_is_inherit = false;
+                }
             }
             "font" => {
                 ret.is_italic = value.contains("italic");
@@ -207,7 +214,11 @@ fn convert_declar<'a>(declarations: Vec<Declaration<'a>>) -> Style {
         }
     }
 
-    ret
+    CssStyle {
+        style: ret,
+        foreground_is_inherit,
+        background_is_inherit,
+    }
 }
 
 impl<'a, 'p, E, M> Clone for ElementView<'a, 'p, E, M> {
