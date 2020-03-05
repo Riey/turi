@@ -143,6 +143,13 @@ pub struct StyleSheet<'a> {
 }
 
 impl<'a> StyleSheet<'a> {
+    pub fn parse(text: &'a str) -> Self {
+        let css = SStyleSheet::parse(text);
+        Self {
+            rules: css.rules.into_iter().map(|r| Rule::new(r)).collect(),
+        }
+    }
+
     pub fn calc_style<E, M>(
         &self,
         parent_style: Style,
