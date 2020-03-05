@@ -1,6 +1,9 @@
-use crate::view::{
-    View,
-    ViewState,
+use crate::{
+    vec2::Vec2,
+    view::{
+        View,
+        ViewState,
+    },
 };
 pub use ansi_term::{
     Color as AnsiColor,
@@ -23,15 +26,20 @@ use simplecss::{
 };
 
 pub struct ElementView<'a, E, M> {
-    parent: Option<&'a Self>,
-    pos:    usize,
-    view:   View<'a, E, M>,
+    parent:   Option<&'a Self>,
+    property: CssProperty,
+    pos:      usize,
+    view:     View<'a, E, M>,
 }
 
 impl<'a, E, M> ElementView<'a, E, M> {
-    pub fn with_view(view: View<'a, E, M>) -> Self {
+    pub fn with_view(
+        view: View<'a, E, M>,
+        property: CssProperty,
+    ) -> Self {
         Self {
             parent: None,
+            property,
             pos: 0,
             view,
         }
@@ -43,9 +51,29 @@ impl<'a, E, M> ElementView<'a, E, M> {
     ) -> Option<Self> {
         Some(Self {
             parent: Some(self),
+            property: self.property,
             pos,
             view: self.view.children().get(pos).cloned()?,
         })
+    }
+
+    pub fn parent(self) -> Option<&'a Self> {
+        self.parent
+    }
+
+    pub fn pos(self) -> usize {
+        self.pos
+    }
+
+    pub fn set_property(
+        &mut self,
+        property: CssProperty,
+    ) {
+        self.property = property;
+    }
+
+    pub fn property(self) -> CssProperty {
+        self.property
     }
 
     pub fn view(self) -> View<'a, E, M> {
@@ -166,9 +194,9 @@ impl CssProperty {
 
     pub fn to_style(
         self,
-        parent: Style,
+        parent_style: Style,
     ) -> Style {
-        let mut ret = parent;
+        let mut ret = parent_style;
 
         if let Some(fg) = self.foreground {
             ret.foreground = fg;

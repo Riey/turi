@@ -1,10 +1,12 @@
-use crate::style::CssProperty;
-use crate::style::StyleSheet;
 use crate::{
     event::EventLike,
     event_filter::EventFilter,
     printer::Printer,
-    style::ElementView,
+    style::{
+        CssProperty,
+        ElementView,
+        StyleSheet,
+    },
     vec2::Vec2,
 };
 
@@ -121,20 +123,20 @@ impl<'a, E, M> View<'a, E, M> {
         E: 'static,
         M: 'static,
     {
-        Self::render_impl(&ElementView::with_view(self), Default::default(), css, printer);
+        let mut view = ElementView::with_view(self, Default::default());
+        view.set_property(css.calc_prop(view.property(), &view));
+        Self::render_impl(&view,  css, printer);
     }
 
     fn render_impl<'e>(
         view: &'e ElementView<'e, E, M>,
-        parent_prop: CssProperty,
         css: &StyleSheet,
         printer: &mut Printer,
     ) where
         E: 'static,
         M: 'static,
     {
-        let prop = css.calc_prop(parent_prop, view);
-        printer.with_style(prop.to_style(printer.style()), |printer| {
+        printer.with_style(view.property().to_style(printer.style()), |printer| {
             match view.view().body {
                 ViewBody::Text(text, _) => {
                     printer.print((0, 0), text);
@@ -144,7 +146,10 @@ impl<'a, E, M> View<'a, E, M> {
 
                     for (pos, child) in children.iter().enumerate() {
                         printer.with_bound(bound, |printer| {
-                            Self::render_impl(&view.make_child(pos).unwrap(), prop, css, printer);
+                            let mut child = view.make_child(pos).unwrap();
+                            let property = css.calc_prop(view.property(), &child);
+                            child.set_property(property);
+                            Self::render_impl(&child, css, printer);
                         });
                         bound = bound.add_start((0, child.desired_size().y));
                     }
