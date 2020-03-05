@@ -2,7 +2,7 @@ use crate::{
     event::EventLike,
     event_filter::EventFilter,
     printer::Printer,
-    vec2::Vec2,
+    vec2::Vec2, style::ElementView,
 };
 
 use enumset::{
@@ -114,21 +114,27 @@ impl<'a, E, M> View<'a, E, M> {
         self,
         printer: &mut Printer,
     ) {
-        match self.body {
-            ViewBody::Text(text, _) => {
-                printer.print((0, 0), text);
-            }
-            ViewBody::Children(children) => {
-                let mut bound = printer.bound();
+        self.render_impl(&ElementView::with_view(self), printer)
+    }
 
-                for child in children.iter() {
-                    printer.with_bound(bound, |printer| {
-                        child.render(printer);
-                    });
-                    bound = bound.add_start((0, child.desired_size().y));
+    fn render_impl<'e>(self, parent: &'e ElementView<'e, E, M>, printer: &mut Printer) {
+        printer.with_view_style(&parent, |printer| {
+            match self.body {
+                ViewBody::Text(text, _) => {
+                    printer.print((0, 0), text);
+                }
+                ViewBody::Children(children) => {
+                    let mut bound = printer.bound();
+
+                    for (pos, child) in children.iter().enumerate() {
+                        printer.with_bound(bound, |printer| {
+                            child.render_impl(&parent.make_child(pos).unwrap(), printer);
+                        });
+                        bound = bound.add_start((0, child.desired_size().y));
+                    }
                 }
             }
-        }
+        });
     }
 
     pub fn desired_size(self) -> Vec2 {

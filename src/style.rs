@@ -17,40 +17,37 @@ use simplecss::{
     StyleSheet as SStyleSheet,
 };
 
-pub struct ElementView<'a, 'p, E, M> {
-    parent: Option<&'p Self>,
+pub struct ElementView<'a, E, M> {
+    parent: Option<&'a Self>,
     pos:    usize,
     view:   View<'a, E, M>,
 }
 
-impl<'a, 'p, E, M> ElementView<'a, 'p, E, M> {
-    pub fn with_view(view: View<'a, E, M>) -> ElementView<'a, 'static, E, M> {
-        ElementView {
+impl<'a, E, M> ElementView<'a, E, M> {
+    pub fn with_view(view: View<'a, E, M>) -> Self {
+        Self {
             parent: None,
             pos: 0,
             view,
         }
     }
 
-    pub fn with_parent(
-        parent: &'p Self,
-        pos: usize,
-    ) -> Option<Self> {
+    pub fn make_child(&'a self, pos: usize) -> Option<Self> {
         Some(Self {
-            parent: Some(parent),
+            parent: Some(self),
             pos,
-            view: parent.view.children().get(pos).cloned()?,
+            view: self.view.children().get(pos).cloned()?,
         })
     }
 }
 
-impl<'a, 'p, E, M> Element for ElementView<'a, 'p, E, M> {
+impl<'a, E, M> Element for ElementView<'a, E, M> {
     fn parent_element(&self) -> Option<Self> {
         self.parent.copied()
     }
 
     fn prev_sibling_element(&self) -> Option<Self> {
-        Self::with_parent(self.parent?, self.pos.checked_sub(1)?)
+        self.parent?.make_child(self.pos.checked_sub(1)?)
     }
 
     fn has_local_name(
@@ -153,7 +150,7 @@ impl<'a> StyleSheet<'a> {
     pub fn calc_style<E, M>(
         &self,
         parent_style: Style,
-        view: &ElementView<'_, 'a, E, M>,
+        view: &ElementView<'a, E, M>,
     ) -> Style {
         for rule in self.rules.iter() {
             if rule.selector.matches(view) {
@@ -228,10 +225,10 @@ fn convert_declar<'a>(declarations: Vec<Declaration<'a>>) -> CssStyle {
     }
 }
 
-impl<'a, 'p, E, M> Clone for ElementView<'a, 'p, E, M> {
+impl<'a, E, M> Clone for ElementView<'a, E, M> {
     #[inline]
     fn clone(&self) -> Self {
         *self
     }
 }
-impl<'a, 'p, E, M> Copy for ElementView<'a, 'p, E, M> {}
+impl<'a, E, M> Copy for ElementView<'a, E, M> {}
