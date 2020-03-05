@@ -9,12 +9,12 @@ use enumset::{
     EnumSetType,
 };
 
+use crate::element_view::ElementView;
 use simplecss::{
     Declaration,
     Rule as SRule,
     StyleSheet as SStyleSheet,
 };
-use crate::element_view::ElementView;
 
 pub use simplecss::Selector;
 
@@ -30,22 +30,17 @@ pub enum CssFontStyle {
     StrikeThrough,
 }
 
-#[derive(Clone, Copy)]
-pub struct CssBorder {
-    width: Option<CssSize>,
-    // TODO: style
-    color: Option<Color>,
-}
-
 #[derive(Clone, Copy, Default)]
 pub struct CssProperty {
-    foreground: Option<Color>,
-    background: Option<Color>,
-    font_style: Option<EnumSet<CssFontStyle>>,
-    width:      Option<CssSize>,
-    height:     Option<CssSize>,
-    padding:    Option<CssSize>,
-    border:     Option<CssBorder>,
+    pub foreground:   Option<Color>,
+    pub background:   Option<Color>,
+    pub font_style:   Option<EnumSet<CssFontStyle>>,
+    pub width:        Option<CssSize>,
+    pub height:       Option<CssSize>,
+    pub padding:      Option<CssSize>,
+    pub margin:       Option<CssSize>,
+    pub border_width: Option<CssSize>,
+    pub border_color: Option<Color>,
 }
 
 impl CssProperty {
@@ -59,13 +54,15 @@ impl CssProperty {
             };
         }
         Self {
-            foreground: combine!(foreground),
-            background: combine!(background),
-            width:      combine!(width),
-            height:     combine!(height),
-            padding:    combine!(padding),
-            border:     combine!(border),
-            font_style: self
+            foreground:   combine!(foreground),
+            background:   combine!(background),
+            width:        combine!(width),
+            height:       combine!(height),
+            padding:      combine!(padding),
+            margin:       combine!(margin),
+            border_width: combine!(border_width),
+            border_color: combine!(border_color),
+            font_style:   self
                 .font_style
                 .and_then(|f| rhs.font_style.map(|rf| f.intersection(rf))),
         }
@@ -116,9 +113,18 @@ pub enum CssSize {
     Percent(u16),
 }
 
-#[derive(Clone, Copy)]
-pub struct Layout {
-    width: Option<CssSize>,
+impl CssSize {
+    pub fn calc(
+        self,
+        max: u16,
+    ) -> u16 {
+        let want = match self {
+            CssSize::Fixed(x) => x,
+            CssSize::Percent(p) => max * 100 / p,
+        };
+
+        want.min(max)
+    }
 }
 
 pub struct Rule<'a> {

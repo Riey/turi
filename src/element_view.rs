@@ -1,9 +1,12 @@
 use crate::{
     printer::Printer,
     style::{
+        Color,
         CssProperty,
+        CssSize,
         StyleSheet,
     },
+    vec2::Vec2,
     view::{
         View,
         ViewBody,
@@ -17,6 +20,20 @@ use simplecss::{
     PseudoClass,
 };
 
+macro_rules! prop_getter {
+    ($name:ident, $ty:ty, $def:expr) => {
+        fn $name(self) -> $ty {
+            if let Some(ret) = self.property.$name {
+                ret
+            } else if let Some(parent) = self.parent {
+                parent.$name()
+            } else {
+                $def
+            }
+        }
+    };
+}
+
 pub struct ElementView<'a, E, M> {
     parent:   Option<&'a Self>,
     property: CssProperty,
@@ -25,6 +42,18 @@ pub struct ElementView<'a, E, M> {
 }
 
 impl<'a, E, M> ElementView<'a, E, M> {
+    prop_getter!(width, CssSize, CssSize::Percent(100));
+
+    prop_getter!(height, CssSize, CssSize::Percent(100));
+
+    prop_getter!(padding, CssSize, CssSize::Fixed(0));
+
+    prop_getter!(margin, CssSize, CssSize::Fixed(0));
+
+    prop_getter!(border_width, CssSize, CssSize::Fixed(1));
+
+    prop_getter!(border_color, Color, None);
+
     pub fn with_view(
         view: View<'a, E, M>,
         property: CssProperty,
@@ -97,6 +126,13 @@ impl<'a, E, M> ElementView<'a, E, M> {
                 }
             }
         });
+    }
+
+    fn layout(
+        self,
+        max_size: Vec2,
+    ) -> Vec2 {
+        todo!()
     }
 }
 
