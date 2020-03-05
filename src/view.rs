@@ -5,6 +5,10 @@ use crate::{
     vec2::Vec2,
 };
 
+use enumset::{
+    EnumSet,
+    EnumSetType,
+};
 
 impl<'a, E, M> Clone for View<'a, E, M> {
     #[inline]
@@ -32,6 +36,7 @@ pub enum Tag {
 
 impl std::str::FromStr for Tag {
     type Err = ();
+
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "div" => Ok(Tag::Div),
@@ -46,8 +51,16 @@ pub enum ViewInner<'a, E, M> {
     Children(&'a [View<'a, E, M>]),
 }
 
+#[derive(EnumSetType, Debug)]
+pub enum ViewState {
+    Normal,
+    Focus,
+    Hover,
+}
+
 pub struct View<'a, E, M> {
     tag:   Tag,
+    state: EnumSet<ViewState>,
     attr:  Attribute<'a, E, M>,
     inner: ViewInner<'a, E, M>,
 }
@@ -58,11 +71,38 @@ impl<'a, E, M> View<'a, E, M> {
         attr: Attribute<'a, E, M>,
         inner: ViewInner<'a, E, M>,
     ) -> Self {
-        Self { tag, attr, inner }
+        Self {
+            tag,
+            state: EnumSet::new(),
+            attr,
+            inner,
+        }
     }
 
+    #[inline]
     pub fn tag(self) -> Tag {
         self.tag
+    }
+
+    #[inline]
+    pub fn state(self) -> EnumSet<ViewState> {
+        self.state
+    }
+
+    #[inline]
+    pub fn has_state(self, state: ViewState) -> bool {
+        self.state.contains(state)
+    }
+
+    pub fn attr(self) -> Attribute<'a, E, M> {
+        self.attr
+    }
+
+    pub fn children(self) -> &'a [Self] {
+        match self.inner {
+            ViewInner::Children(children) => children,
+            _ => &[],
+        }
     }
 
     pub fn render(
