@@ -1,94 +1,58 @@
 use crate::{
-    attribute::Attribute,
     event_filter::EventFilter,
     view::{
         Tag,
         View,
-        ViewInner,
+        ViewBody,
     },
 };
 use bumpalo::{
     collections::Vec,
     Bump,
 };
-use unicode_width::UnicodeWidthStr;
-
-pub struct EventBuilder<'a, E, M> {
-    events: Vec<'a, EventFilter<'a, E, M>>,
-}
-
-impl<'a, E, M> EventBuilder<'a, E, M> {
-    pub fn new(b: &'a Bump) -> Self {
-        Self {
-            events: Vec::new_in(b),
-        }
-    }
-
-    pub fn event(
-        mut self,
-        event: EventFilter<'a, E, M>,
-    ) -> Self {
-        self.events.push(event);
-        self
-    }
-
-    pub fn build(self) -> &'a [EventFilter<'a, E, M>] {
-        self.events.into_bump_slice()
-    }
-}
-
-pub struct AttributeBuilder<'a, E, M> {
-    class:  Vec<'a, &'a str>,
-    events: Vec<'a, EventFilter<'a, E, M>>,
-}
-
-impl<'a, E, M> AttributeBuilder<'a, E, M> {
-    pub fn new(b: &'a Bump) -> Self {
-        Self {
-            class:  Vec::new_in(b),
-            events: Vec::new_in(b),
-        }
-    }
-
-    pub fn class(
-        mut self,
-        class: &'a str,
-    ) -> Self {
-        self.class.push(class);
-        self
-    }
-
-    pub fn event(
-        mut self,
-        event: EventFilter<'a, E, M>,
-    ) -> Self {
-        self.events.push(event);
-        self
-    }
-
-    pub fn build(self) -> Attribute<'a, E, M> {
-        Attribute::new(self.class.into_bump_slice(), self.events.into_bump_slice())
-    }
-}
 
 pub struct ViewBuilder<'a, E, M> {
     tag:        Tag,
-    attr:       Attribute<'a, E, M>,
+    classes:    Vec<'a, &'a str>,
+    events:     Vec<'a, EventFilter<'a, E, M>>,
     children:   Vec<'a, View<'a, E, M>>,
     inner_text: &'a str,
 }
 
-impl<'a, E, M> ViewBuilder<'a, E, M> {
+impl<'a, E, M> ViewBuilder<'a, E, M>
+where
+    E: Clone,
+    M: Clone,
+{
     pub fn new(
         b: &'a Bump,
         tag: Tag,
     ) -> Self {
         Self {
             tag,
-            attr: Default::default(),
+            classes: Vec::new_in(b),
+            events: Vec::new_in(b),
             children: Vec::new_in(b),
             inner_text: "",
         }
+    }
+
+    #[inline]
+    pub fn class(
+        mut self,
+        class: &'a str,
+    ) -> Self {
+        self.classes.push(class);
+        self
+    }
+
+    #[inline]
+    pub fn event(
+        mut self,
+        event: EventFilter<'a, E, M>,
+    ) -> Self {
+        self.events.push(event);
+        self
     }
 
     #[inline]
@@ -105,7 +69,9 @@ impl<'a, E, M> ViewBuilder<'a, E, M> {
         mut self,
         children: impl AsRef<[View<'a, E, M>]>,
     ) -> Self {
-        self.children.extend_from_slice(children.as_ref());
+        for child in children.as_ref() {
+            self.children.push(child.clone());
+        }
         self
     }
 
@@ -119,44 +85,33 @@ impl<'a, E, M> ViewBuilder<'a, E, M> {
     }
 
     #[inline]
-    pub fn attr(
-        mut self,
-        attr: Attribute<'a, E, M>,
-    ) -> Self {
-        self.attr = attr;
-        self
-    }
-
-    #[inline]
     pub fn build(self) -> View<'a, E, M> {
         if self.children.is_empty() {
-            View::new(
+            View::with_inner_text(
                 self.tag,
-                self.attr,
-                ViewInner::Text(self.inner_text, self.inner_text.width() as u16),
+                self.classes.into_bump_slice(),
+                self.events.into_bump_slice(),
+                self.inner_text,
             )
         } else {
-            View::new(
+            View::with_children(
                 self.tag,
-                self.attr,
-                ViewInner::Children(self.children.into_bump_slice()),
+                self.classes.into_bump_slice(),
+                self.events.into_bump_slice(),
+                self.children.into_bump_slice_mut(),
             )
         }
     }
 }
 
-pub fn attr<E, M>(b: &Bump) -> AttributeBuilder<E, M> {
-    AttributeBuilder::new(b)
-}
-
-pub fn div<E, M>(b: &Bump) -> ViewBuilder<E, M> {
+pub fn div<E, M>(b: &Bump) -> ViewBuilder<E, M>
+where
+    E: Clone,
+    M: Clone,
+{
     ViewBuilder::new(b, Tag::Div)
 }
 
 pub fn text<'a, E, M>(text: &'a str) -> View<'a, E, M> {
-    View::new(
-        Tag::Div,
-        Default::default(),
-        ViewInner::Text(text, text.width() as u16),
-    )
+    View::with_inner_text(Tag::Div, &[], &[], text)
 }

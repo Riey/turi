@@ -7,21 +7,16 @@ pub use ansi_term::{
     Color,
     Style,
 };
+use css_color_parser::Color as CssColor;
 
 use simplecss::{
     AttributeOperator as AttrOp,
+    Declaration,
     Element,
     PseudoClass,
     Rule as SRule,
     StyleSheet as SStyleSheet,
 };
-
-impl<'a, 'p, E, M> Clone for ElementView<'a, 'p, E, M> {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-impl<'a, 'p, E, M> Copy for ElementView<'a, 'p, E, M> {}
 
 struct ElementView<'a, 'p, E, M> {
     parent: Option<&'p Self>,
@@ -45,7 +40,7 @@ impl<'a, 'p, E, M> ElementView<'a, 'p, E, M> {
         Some(Self {
             parent: Some(parent),
             pos,
-            view: parent.view.children().get(pos).copied()?,
+            view: parent.view.children().get(pos).cloned()?,
         })
     }
 }
@@ -63,7 +58,7 @@ impl<'a, 'p, E, M> Element for ElementView<'a, 'p, E, M> {
         &self,
         name: &str,
     ) -> bool {
-        Ok(self.view.tag()) == name.parse()
+        Ok(self.view.header().tag) == name.parse()
     }
 
     fn attribute_matches(
@@ -71,15 +66,17 @@ impl<'a, 'p, E, M> Element for ElementView<'a, 'p, E, M> {
         local_name: &str,
         op: AttrOp,
     ) -> bool {
-        let attr = self.view.attr();
+        let header = self.view.header();
         match local_name {
             "class" => {
                 match op {
-                    AttrOp::Contains(name) => attr.class.iter().any(|class| class.contains(name)),
-                    AttrOp::Matches(name) => attr.class.iter().any(|class| *class == name),
-                    AttrOp::Exists => !attr.class.is_empty(),
+                    AttrOp::Contains(name) => {
+                        header.classes.iter().any(|class| class.contains(name))
+                    }
+                    AttrOp::Matches(name) => header.classes.iter().any(|class| *class == name),
+                    AttrOp::Exists => !header.classes.is_empty(),
                     AttrOp::StartsWith(name) => {
-                        attr.class.iter().any(|class| class.starts_with(name))
+                        header.classes.iter().any(|class| class.starts_with(name))
                     }
                 }
             }
@@ -104,9 +101,43 @@ impl<'a, 'p, E, M> Element for ElementView<'a, 'p, E, M> {
 
 pub use simplecss::Selector;
 
+#[derive(Clone, Copy)]
+struct CssStyle {
+    style:                 Style,
+    foreground_is_inherit: bool,
+    background_is_inherit: bool,
+}
+
+impl CssStyle {
+    pub fn to_style(
+        self,
+        parent: Style,
+    ) -> Style {
+        let mut ret = self.style;
+        if self.foreground_is_inherit {
+            ret.foreground = parent.foreground;
+        }
+
+        if self.background_is_inherit {
+            ret.background = parent.background;
+        }
+
+        ret
+    }
+}
+
 pub struct Rule<'a> {
-    pub selector: Selector<'a>,
-    pub style:    Style,
+    selector: Selector<'a>,
+    style:    CssStyle,
+}
+
+impl<'a> Rule<'a> {
+    pub fn new(rule: SRule<'a>) -> Self {
+        Self {
+            selector: rule.selector,
+            style:    todo!(),
+        }
+    }
 }
 
 pub struct StyleSheet<'a> {
@@ -116,8 +147,68 @@ pub struct StyleSheet<'a> {
 impl<'a> StyleSheet<'a> {
     pub fn calc_style<E, M>(
         &self,
+        parent_style: Style,
         view: View<E, M>,
     ) -> Style {
         Style::new()
     }
 }
+
+fn convert_color(css_color: &str) -> Option<Color> {
+    match css_color {
+        "transparent" | "inherit" => return None,
+        "red" => return Some(Color::Red),
+        "green" => return Some(Color::Green),
+        "blue" => return Some(Color::Blue),
+        "black" => return Some(Color::Black),
+        "white" => return Some(Color::White),
+        "purple" => return Some(Color::Purple),
+        "yellow" => return Some(Color::Yellow),
+        "cyan" => return Some(Color::Cyan),
+        _ => {}
+    }
+
+    let color: CssColor = match css_color.parse() {
+        Ok(color) => color,
+        Err(err) => {
+            log::error!("Color parsing error: {:?}", err);
+            return None;
+        }
+    };
+
+    Some(Color::RGB(color.r, color.g, color.b))
+}
+
+fn convert_declar<'a>(declarations: Vec<Declaration<'a>>) -> Style {
+    let mut ret = Style::new();
+
+    for Declaration { name, value, .. } in declarations {
+        match name {
+            "color" => {
+                ret.foreground = convert_color(value);
+            }
+            "background" => {
+                ret.background = convert_color(value);
+            }
+            "font" => {
+                ret.is_italic = value.contains("italic");
+                ret.is_bold = value.contains("bold");
+                ret.is_blink = value.contains("blink");
+                ret.is_hidden = value.contains("hidden");
+                ret.is_reverse = value.contains("reverse");
+                ret.is_dimmed = value.contains("dimmed");
+            }
+            _ => {}
+        }
+    }
+
+    ret
+}
+
+impl<'a, 'p, E, M> Clone for ElementView<'a, 'p, E, M> {
+    #[inline]
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl<'a, 'p, E, M> Copy for ElementView<'a, 'p, E, M> {}

@@ -78,7 +78,12 @@ impl<'a> Printer<'a> {
         view: View<E, M>,
         f: impl FnOnce(&mut Self) -> T,
     ) -> T {
-        self.with_style(self.css.calc_style(view), f)
+        let old_style = self.backend.style();
+        let style = self.css.calc_style(old_style, view);
+        self.backend.set_style(style);
+        let ret = f(self);
+        self.backend.set_style(old_style);
+        ret
     }
 
     #[inline]

@@ -21,6 +21,7 @@ log = "0.4.8"
 simplecss = "0.2.0"
 enumset = "0.4.5"
 enumset_derive = "0.4.4"
+css-color-parser = "0.1.2"
 
 [target.'cfg(unix)'.dependencies]
 libc = "0.2"

@@ -1,6 +1,6 @@
 use crate::{
-    attribute::Attribute,
     event::EventLike,
+    event_filter::EventFilter,
     printer::Printer,
     vec2::Vec2,
 };
@@ -9,24 +9,7 @@ use enumset::{
     EnumSet,
     EnumSetType,
 };
-
-impl<'a, E, M> Clone for View<'a, E, M> {
-    #[inline]
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-
-impl<'a, E, M> Copy for View<'a, E, M> {}
-
-impl<'a, E, M> Clone for ViewInner<'a, E, M> {
-    #[inline]
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-
-impl<'a, E, M> Copy for ViewInner<'a, E, M> {}
+use unicode_width::UnicodeWidthStr;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Tag {
@@ -46,7 +29,7 @@ impl std::str::FromStr for Tag {
     }
 }
 
-pub enum ViewInner<'a, E, M> {
+pub enum ViewBody<'a, E, M> {
     Text(&'a str, u16),
     Children(&'a [View<'a, E, M>]),
 }
@@ -58,30 +41,60 @@ pub enum ViewState {
     Hover,
 }
 
+#[derive(Clone, Copy)]
+pub struct ViewHeader<'a> {
+    pub tag:     Tag,
+    pub classes: &'a [&'a str],
+}
+
 pub struct View<'a, E, M> {
-    tag:   Tag,
-    state: EnumSet<ViewState>,
-    attr:  Attribute<'a, E, M>,
-    inner: ViewInner<'a, E, M>,
+    header: ViewHeader<'a>,
+    parent: Option<ViewHeader<'a>>,
+    state:  EnumSet<ViewState>,
+    events: &'a [EventFilter<'a, E, M>],
+    body:   ViewBody<'a, E, M>,
 }
 
 impl<'a, E, M> View<'a, E, M> {
-    pub fn new(
+    pub fn with_children(
         tag: Tag,
-        attr: Attribute<'a, E, M>,
-        inner: ViewInner<'a, E, M>,
+        classes: &'a [&'a str],
+        events: &'a [EventFilter<'a, E, M>],
+        children: &'a mut [View<'a, E, M>],
+    ) -> Self {
+        let header = ViewHeader { tag, classes };
+
+        for child in children.iter_mut() {
+            child.parent = Some(header);
+        }
+
+        Self {
+            header,
+            state: EnumSet::new(),
+            parent: None,
+            events,
+            body: ViewBody::Children(children),
+        }
+    }
+
+    pub fn with_inner_text(
+        tag: Tag,
+        classes: &'a [&'a str],
+        events: &'a [EventFilter<'a, E, M>],
+        inner_text: &'a str,
     ) -> Self {
         Self {
-            tag,
+            header: ViewHeader { tag, classes },
             state: EnumSet::new(),
-            attr,
-            inner,
+            parent: None,
+            events,
+            body: ViewBody::Text(inner_text, inner_text.width() as u16),
         }
     }
 
     #[inline]
-    pub fn tag(self) -> Tag {
-        self.tag
+    pub fn header(self) -> ViewHeader<'a> {
+        self.header
     }
 
     #[inline]
@@ -90,17 +103,16 @@ impl<'a, E, M> View<'a, E, M> {
     }
 
     #[inline]
-    pub fn has_state(self, state: ViewState) -> bool {
+    pub fn has_state(
+        self,
+        state: ViewState,
+    ) -> bool {
         self.state.contains(state)
     }
 
-    pub fn attr(self) -> Attribute<'a, E, M> {
-        self.attr
-    }
-
     pub fn children(self) -> &'a [Self] {
-        match self.inner {
-            ViewInner::Children(children) => children,
+        match self.body {
+            ViewBody::Children(children) => children,
             _ => &[],
         }
     }
@@ -109,11 +121,11 @@ impl<'a, E, M> View<'a, E, M> {
         self,
         printer: &mut Printer,
     ) {
-        match &self.inner {
-            ViewInner::Text(text, _) => {
+        match &self.body {
+            ViewBody::Text(text, _) => {
                 printer.print((0, 0), text);
             }
-            ViewInner::Children(children) => {
+            ViewBody::Children(children) => {
                 let mut bound = printer.bound();
 
                 for child in children.iter() {
@@ -127,9 +139,9 @@ impl<'a, E, M> View<'a, E, M> {
     }
 
     pub fn desired_size(self) -> Vec2 {
-        match self.inner {
-            ViewInner::Text(_, width) => Vec2::new(width, 1),
-            ViewInner::Children(children) => {
+        match self.body {
+            ViewBody::Text(_, width) => Vec2::new(width, 1),
+            ViewBody::Children(children) => {
                 let mut ret = Vec2::new(0, 0);
 
                 for child in children {
@@ -152,15 +164,15 @@ where
         self,
         e: E,
     ) -> Option<M> {
-        for event in self.attr.events {
+        for event in self.events {
             if let msg @ Some(_) = event.check(&e) {
                 return msg;
             }
         }
 
-        match self.inner {
-            ViewInner::Text(..) => None,
-            ViewInner::Children(children) => {
+        match self.body {
+            ViewBody::Text(..) => None,
+            ViewBody::Children(children) => {
                 for child in children {
                     if let msg @ Some(_) = child.on_event(e) {
                         return msg;
@@ -171,3 +183,19 @@ where
         }
     }
 }
+
+impl<'a, E, M> Clone for ViewBody<'a, E, M> {
+    #[inline]
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl<'a, E, M> Copy for ViewBody<'a, E, M> {}
+
+impl<'a, E, M> Clone for View<'a, E, M> {
+    #[inline]
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl<'a, E, M> Copy for View<'a, E, M> {}

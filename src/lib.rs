@@ -1,4 +1,3 @@
-pub mod attribute;
 pub mod backend;
 pub mod builder;
 pub mod event;
