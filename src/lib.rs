@@ -1,5 +1,6 @@
 pub mod backend;
 pub mod builder;
+pub mod element_view;
 pub mod event;
 pub mod event_filter;
 pub mod executor;

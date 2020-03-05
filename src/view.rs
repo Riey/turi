@@ -1,12 +1,9 @@
 use crate::{
+    element_view::ElementView,
     event::EventLike,
     event_filter::EventFilter,
     printer::Printer,
-    style::{
-        CssProperty,
-        ElementView,
-        StyleSheet,
-    },
+    style::StyleSheet,
     vec2::Vec2,
 };
 
