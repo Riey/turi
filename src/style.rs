@@ -1,7 +1,9 @@
 use crate::{
+    printer::Printer,
     vec2::Vec2,
     view::{
         View,
+        ViewBody,
         ViewState,
     },
 };
@@ -78,6 +80,33 @@ impl<'a, E, M> ElementView<'a, E, M> {
 
     pub fn view(self) -> View<'a, E, M> {
         self.view
+    }
+
+    pub fn render(
+        self,
+        css: &StyleSheet,
+        printer: &mut Printer,
+    ) {
+        printer.with_style(self.property.to_style(printer.style()), |printer| {
+            match self.view.body() {
+                ViewBody::Text(text, _) => {
+                    printer.print((0, 0), text);
+                }
+                ViewBody::Children(children) => {
+                    let mut bound = printer.bound();
+
+                    for (pos, child) in children.iter().enumerate() {
+                        printer.with_bound(bound, |printer| {
+                            let mut child = self.make_child(pos).unwrap();
+                            let property = css.calc_prop(self.property, &child);
+                            child.set_property(property);
+                            child.render(css, printer);
+                        });
+                        bound = bound.add_start((0, child.desired_size().y));
+                    }
+                }
+            }
+        });
     }
 }
 

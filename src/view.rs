@@ -108,6 +108,11 @@ impl<'a, E, M> View<'a, E, M> {
         self.state.contains(state)
     }
 
+    #[inline]
+    pub fn body(self) -> ViewBody<'a, E, M> {
+        self.body
+    }
+
     pub fn children(self) -> &'a [Self] {
         match self.body {
             ViewBody::Children(children) => children,
@@ -119,43 +124,10 @@ impl<'a, E, M> View<'a, E, M> {
         self,
         css: &StyleSheet,
         printer: &mut Printer,
-    ) where
-        E: 'static,
-        M: 'static,
-    {
+    ) {
         let mut view = ElementView::with_view(self, Default::default());
         view.set_property(css.calc_prop(view.property(), &view));
-        Self::render_impl(&view,  css, printer);
-    }
-
-    fn render_impl<'e>(
-        view: &'e ElementView<'e, E, M>,
-        css: &StyleSheet,
-        printer: &mut Printer,
-    ) where
-        E: 'static,
-        M: 'static,
-    {
-        printer.with_style(view.property().to_style(printer.style()), |printer| {
-            match view.view().body {
-                ViewBody::Text(text, _) => {
-                    printer.print((0, 0), text);
-                }
-                ViewBody::Children(children) => {
-                    let mut bound = printer.bound();
-
-                    for (pos, child) in children.iter().enumerate() {
-                        printer.with_bound(bound, |printer| {
-                            let mut child = view.make_child(pos).unwrap();
-                            let property = css.calc_prop(view.property(), &child);
-                            child.set_property(property);
-                            Self::render_impl(&child, css, printer);
-                        });
-                        bound = bound.add_start((0, child.desired_size().y));
-                    }
-                }
-            }
-        });
+        view.render(css, printer);
     }
 
     pub fn desired_size(self) -> Vec2 {
