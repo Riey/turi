@@ -1,3 +1,5 @@
+mod calc;
+mod combine;
 mod css_val;
 mod font_style;
 mod property;
@@ -6,12 +8,23 @@ mod rule;
 mod size;
 mod style_sheet;
 
+use self::{
+    combine::Combine,
+    rule::CssRule,
+};
+
 pub use self::{
+    calc::Calc,
     css_val::CssVal,
     font_style::CssFontStyle,
-    property::CssProperty,
-    rect::CssRect,
-    rule::CssRule,
+    property::{
+        CalcCssProperty,
+        CssProperty,
+    },
+    rect::{
+        CalcCssRect,
+        CssRect,
+    },
     size::CssSize,
     style_sheet::StyleSheet,
 };

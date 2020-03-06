@@ -1,12 +1,45 @@
 use crate::css::{
+    calc::Calc,
     AnsiStyle,
+    CalcCssRect,
     Color,
+    Combine,
     CssFontStyle,
     CssRect,
     CssSize,
     CssVal,
 };
 use enumset::EnumSet;
+
+#[derive(Clone, Copy, Default)]
+pub struct CalcCssProperty {
+    pub style:        AnsiStyle,
+    pub width:        CssSize,
+    pub height:       CssSize,
+    pub padding:      CalcCssRect,
+    pub margin:       CalcCssRect,
+    pub border_width: CalcCssRect,
+    pub border_color: Color,
+}
+
+impl Calc for CssProperty {
+    type Output = CalcCssProperty;
+
+    fn calc(
+        self,
+        parent: Self::Output,
+    ) -> Self::Output {
+        CalcCssProperty {
+            style:        self.to_style(parent.style),
+            width:        self.width.calc(parent.width),
+            height:       self.height.calc(parent.height),
+            padding:      self.padding.nest_calc(parent.padding),
+            margin:       self.margin.nest_calc(parent.margin),
+            border_width: self.border_width.nest_calc(parent.border_width),
+            border_color: self.border_color.calc(parent.border_color),
+        }
+    }
+}
 
 #[derive(Clone, Copy, Default)]
 pub struct CssProperty {

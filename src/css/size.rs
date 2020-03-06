@@ -1,3 +1,24 @@
+use crate::css::Combine;
+
+impl Combine for CssSize {
+    fn combine(
+        self,
+        other: Self,
+    ) -> Self {
+        match (self, other) {
+            (CssSize::Percent(x), CssSize::Percent(y)) => CssSize::Percent(x.max(y)),
+            (CssSize::Percent(p), _) | (_, CssSize::Percent(p)) => CssSize::Percent(p),
+            (CssSize::Fixed(x), CssSize::Fixed(y)) => CssSize::Fixed(x.max(y)),
+        }
+    }
+}
+
+impl Default for CssSize {
+    fn default() -> Self {
+        CssSize::Fixed(0)
+    }
+}
+
 #[derive(Clone, Copy)]
 pub enum CssSize {
     Fixed(u16),

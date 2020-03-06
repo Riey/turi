@@ -122,9 +122,8 @@ impl<'a, E, M> View<'a, E, M> {
         css: &StyleSheet,
         printer: &mut Printer,
     ) {
-        let mut view = ElementView::with_view(self, Default::default());
-        view.set_property(css.calc_prop(view.property(), &view));
-        view.render(css, printer);
+        let mut view = ElementView::with_view(self);
+        view.render(css, Default::default(), printer);
     }
 
     pub fn desired_size(self) -> Vec2 {

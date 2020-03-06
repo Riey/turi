@@ -1,5 +1,6 @@
 use crate::{
     css::{
+        Combine,
         CssProperty,
         CssRule,
     },
@@ -27,10 +28,9 @@ impl<'a> StyleSheet<'a> {
 
     pub fn calc_prop<E, M>(
         &self,
-        parent_prop: CssProperty,
         view: &ElementView<'a, E, M>,
     ) -> CssProperty {
-        let mut prop = parent_prop;
+        let mut prop = CssProperty::default();
 
         for rule in self.rules.iter() {
             if rule.selector.matches(view) {

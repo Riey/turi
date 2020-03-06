@@ -1,5 +1,8 @@
 use crate::{
     css::{
+        Calc,
+        CalcCssProperty,
+        CalcCssRect,
         Color,
         CssProperty,
         CssRect,
@@ -22,62 +25,16 @@ use simplecss::{
     PseudoClass,
 };
 
-macro_rules! prop_getter {
-    ($name:ident, $ty:ty, $def:expr) => {
-        fn $name(self) -> $ty {
-            if let CssVal::Val(ret) = self.property.$name {
-                ret
-            } else if let Some(parent) = self.parent {
-                parent.$name()
-            } else {
-                $def
-            }
-        }
-    };
-}
-
 pub struct ElementView<'a, E, M> {
-    parent:   Option<&'a Self>,
-    property: CssProperty,
-    pos:      usize,
-    view:     View<'a, E, M>,
+    parent: Option<&'a Self>,
+    pos:    usize,
+    view:   View<'a, E, M>,
 }
 
 impl<'a, E, M> ElementView<'a, E, M> {
-    prop_getter!(width, CssSize, CssSize::Percent(100));
-
-    prop_getter!(height, CssSize, CssSize::Percent(100));
-
-    prop_getter!(padding, CssRect, CssRect {
-        top:    CssVal::Val(CssSize::Fixed(0)),
-        left:   CssVal::Val(CssSize::Fixed(0)),
-        right:  CssVal::Val(CssSize::Fixed(0)),
-        bottom: CssVal::Val(CssSize::Fixed(0)),
-    });
-
-    prop_getter!(margin, CssRect, CssRect {
-        top:    CssVal::Val(CssSize::Fixed(0)),
-        left:   CssVal::Val(CssSize::Fixed(0)),
-        right:  CssVal::Val(CssSize::Fixed(0)),
-        bottom: CssVal::Val(CssSize::Fixed(0)),
-    });
-
-    prop_getter!(border_width, CssRect, CssRect {
-        top:    CssVal::Val(CssSize::Fixed(0)),
-        left:   CssVal::Val(CssSize::Fixed(0)),
-        right:  CssVal::Val(CssSize::Fixed(0)),
-        bottom: CssVal::Val(CssSize::Fixed(0)),
-    });
-
-    prop_getter!(border_color, Color, None);
-
-    pub fn with_view(
-        view: View<'a, E, M>,
-        property: CssProperty,
-    ) -> Self {
+    pub fn with_view(view: View<'a, E, M>) -> Self {
         Self {
             parent: None,
-            property,
             pos: 0,
             view,
         }
@@ -89,7 +46,6 @@ impl<'a, E, M> ElementView<'a, E, M> {
     ) -> Option<Self> {
         Some(Self {
             parent: Some(self),
-            property: self.property,
             pos,
             view: self.view.children().get(pos).cloned()?,
         })
@@ -103,17 +59,6 @@ impl<'a, E, M> ElementView<'a, E, M> {
         self.pos
     }
 
-    pub fn set_property(
-        &mut self,
-        property: CssProperty,
-    ) {
-        self.property = property;
-    }
-
-    pub fn property(self) -> CssProperty {
-        self.property
-    }
-
     pub fn view(self) -> View<'a, E, M> {
         self.view
     }
@@ -121,9 +66,11 @@ impl<'a, E, M> ElementView<'a, E, M> {
     pub fn render(
         self,
         css: &StyleSheet,
+        parent_property: CalcCssProperty,
         printer: &mut Printer,
     ) {
-        printer.with_style(self.property.to_style(printer.style()), |printer| {
+        let property = css.calc_prop(&self).calc(parent_property);
+        printer.with_style(property.style, |printer| {
             match self.view.body() {
                 ViewBody::Text(text, _) => {
                     printer.print((0, 0), text);
@@ -134,22 +81,14 @@ impl<'a, E, M> ElementView<'a, E, M> {
                     for (pos, child) in children.iter().enumerate() {
                         printer.with_bound(bound, |printer| {
                             let mut child = self.make_child(pos).unwrap();
-                            let property = css.calc_prop(self.property, &child);
-                            child.set_property(property);
-                            child.render(css, printer);
+                            let child_prop = css.calc_prop(&child).calc(property);
+                            child.render(css, property, printer);
                         });
                         bound = bound.add_start((0, child.desired_size().y));
                     }
                 }
             }
         });
-    }
-
-    fn layout(
-        self,
-        max_size: Vec2,
-    ) -> Vec2 {
-        todo!()
     }
 }
 

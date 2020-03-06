@@ -1,3 +1,35 @@
+use crate::css::{
+    Calc,
+    Combine,
+};
+
+impl<T: Copy + Combine> Combine for CssVal<T> {
+    fn combine(
+        self,
+        rhs: Self,
+    ) -> Self {
+        match (self, rhs) {
+            (CssVal::Val(l), CssVal::Val(r)) => CssVal::Val(l.combine(r)),
+            (CssVal::Val(v), _) | (_, CssVal::Val(v)) => CssVal::Val(v),
+            _ => CssVal::Inherit,
+        }
+    }
+}
+
+impl<T: Copy> Calc for CssVal<T> {
+    type Output = T;
+
+    fn calc(
+        self,
+        parent: T,
+    ) -> Self::Output {
+        match self {
+            CssVal::Val(v) => v,
+            _ => parent,
+        }
+    }
+}
+
 #[derive(Clone, Copy)]
 pub enum CssVal<T: Copy> {
     Val(T),
@@ -11,13 +43,16 @@ impl<T: Copy> Default for CssVal<T> {
 }
 
 impl<T: Copy> CssVal<T> {
-    pub fn combine(
+    pub fn nest_calc<U>(
         self,
-        rhs: Self,
-    ) -> Self {
-        match (self, rhs) {
-            (CssVal::Val(v), _) | (_, CssVal::Val(v)) => CssVal::Val(v),
-            _ => CssVal::Inherit,
+        parent: U,
+    ) -> U
+    where
+        T: Calc<Output = U>,
+    {
+        match self {
+            CssVal::Val(val) => val.calc(parent),
+            CssVal::Inherit => parent,
         }
     }
 
