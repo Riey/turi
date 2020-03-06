@@ -2,6 +2,7 @@ use crate::css::{
     calc::Calc,
     AnsiStyle,
     CalcCssRect,
+    CssColor,
     Color,
     Combine,
     CssFontStyle,
@@ -60,22 +61,22 @@ impl Calc for CssProperty {
             padding:      self.padding.nest_calc(parent.padding),
             margin:       self.margin.nest_calc(parent.margin),
             border_width: self.border_width.calc(parent.border_width),
-            border_color: self.border_color.calc(parent.border_color),
+            border_color: self.border_color.map(CssColor::color).calc(parent.border_color),
         }
     }
 }
 
 #[derive(Clone, Copy, Debug, Default)]
 pub struct CssProperty {
-    pub foreground:   CssVal<Color>,
-    pub background:   CssVal<Color>,
+    pub foreground:   CssVal<CssColor>,
+    pub background:   CssVal<CssColor>,
     pub font_style:   CssVal<EnumSet<CssFontStyle>>,
     pub width:        CssVal<CssSize>,
     pub height:       CssVal<CssSize>,
     pub padding:      CssVal<CssRect>,
     pub margin:       CssVal<CssRect>,
     pub border_width: CssVal<CssSize>,
-    pub border_color: CssVal<Color>,
+    pub border_color: CssVal<CssColor>,
 }
 
 impl CssProperty {
@@ -86,11 +87,11 @@ impl CssProperty {
         let mut ret = parent_style;
 
         if let CssVal::Val(fg) = self.foreground {
-            ret.foreground = fg;
+            ret.foreground = fg.color();
         }
 
         if let CssVal::Val(bg) = self.background {
-            ret.background = bg;
+            ret.background = bg.color();
         }
 
         if let CssVal::Val(font_style) = self.font_style {

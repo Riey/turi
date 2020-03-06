@@ -1,5 +1,6 @@
 mod calc;
 mod combine;
+mod color;
 mod css_val;
 mod font_style;
 mod property;
@@ -15,6 +16,7 @@ use self::{
 
 pub use self::{
     calc::Calc,
+    color::CssColor,
     css_val::CssVal,
     font_style::CssFontStyle,
     property::{
