@@ -47,6 +47,10 @@ impl<'a, E, M> ElementView<'a, E, M> {
         })
     }
 
+    pub fn view(self) -> View<'a, E, M> {
+        self.view
+    }
+
     pub fn render(
         self,
         css: &StyleSheet,

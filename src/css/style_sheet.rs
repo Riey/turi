@@ -23,6 +23,7 @@ impl<'a> StyleSheet<'a> {
                 .len()
                 .cmp(&r.selector.to_string().len())
         });
+
         Self { rules }
     }
 
@@ -51,6 +52,7 @@ fn style_test() {
             div,
         },
         css::{
+            AnsiColor,
             Calc,
             CssSize,
             CssVal,
@@ -58,7 +60,8 @@ fn style_test() {
         },
     };
     use bumpalo::Bump;
-    let css = StyleSheet::parse("div { height: 10; } div.hello { width: 10; }");
+    let css =
+        StyleSheet::parse("div { color: green; height: 10; } div.hello { color: red; width: 10; }");
 
     let b = Bump::new();
     let view = div(
@@ -67,13 +70,16 @@ fn style_test() {
         body(&b).child(div(class(&b).class("hello"), (), "Hi")),
     );
     let element = ElementView::<(), ()>::with_view(view);
-    let element = element.make_child(0).unwrap();
+    let child = element.make_child(0).unwrap();
 
-    let prop = css.calc_prop(&element);
+    assert_eq!(child.view().classes(), &["hello"]);
+
+    let prop = css.calc_prop(&child);
     assert_eq!(prop.width, CssVal::Val(CssSize::Fixed(10)));
     assert_eq!(prop.height, CssVal::Val(CssSize::Fixed(10)));
 
     let calc_prop = prop.calc(Default::default());
     assert_eq!(calc_prop.width, CssSize::Fixed(10));
     assert_eq!(calc_prop.height, CssSize::Fixed(10));
+    assert_eq!(calc_prop.style.foreground, Some(AnsiColor::Red));
 }

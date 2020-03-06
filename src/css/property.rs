@@ -30,7 +30,7 @@ impl Combine for CssProperty {
     ) -> Self {
         macro_rules! combine {
             ($field:ident) => {
-                rhs.$field.combine(self.$field)
+                self.$field.combine(rhs.$field)
             };
         }
         Self {

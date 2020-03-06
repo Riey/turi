@@ -14,12 +14,21 @@ pub mod view;
 
 pub mod util;
 
-pub use bumpalo;
 pub use self::{
+    builder::{
+        body,
+        class,
+        div,
+        event,
+    },
     bumpalo::Bump,
-    builder::{event, body, class, div},
     model::Model,
-    update_result::{UpdateResult, Exit, Ignore, Redraw},
+    update_result::{
+        Exit,
+        Ignore,
+        Redraw,
+        UpdateResult,
+    },
     view::View,
 };
-
+pub use bumpalo;

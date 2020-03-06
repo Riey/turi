@@ -149,7 +149,7 @@ pub fn body<E, M>(b: &Bump) -> BodyBuilder<E, M> {
 ///             Ignore
 ///         }
 ///     }
-/// 
+///
 ///     fn view<'a>(
 ///         &self,
 ///         b: &'a Bump,
