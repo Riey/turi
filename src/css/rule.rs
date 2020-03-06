@@ -65,6 +65,26 @@ fn convert_declar<'a>(declarations: Vec<Declaration<'a>>) -> CssProperty {
                     property.background = CssVal::Val(convert_color(value));
                 }
             }
+            "margin" => {
+                if let Ok(width) = value.parse() {
+                    property.margin = width;
+                }
+            }
+            "padding" => {
+                if let Ok(width) = value.parse() {
+                    property.padding = width;
+                }
+            }
+            "border-width" => {
+                if let Ok(width) = value.parse() {
+                    property.border_width = width;
+                }
+            }
+            "border-color" => {
+                if value != "inherit" {
+                    property.border_color = CssVal::Val(convert_color(value));
+                }
+            }
             "font" => {
                 if value.contains("italic") {
                     property

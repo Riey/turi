@@ -7,6 +7,7 @@ use crate::{
     },
     rect::Rect,
 };
+use core::str::FromStr;
 
 impl Combine for CssRect {
     fn combine(
@@ -63,6 +64,62 @@ impl Calc for CssRect {
             bottom: self.bottom.calc(parent.bottom),
             left:   self.left.calc(parent.left),
             right:  self.right.calc(parent.right),
+        }
+    }
+}
+
+impl FromStr for CssRect {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let mut parts = s.split(' ').map(|s| s.parse());
+
+        let first = parts.next().ok_or(())??;
+
+        match parts.next() {
+            Some(second) => {
+                let second = second?;
+                match parts.next() {
+                    Some(third) => {
+                        let third = third?;
+                        match parts.next() {
+                            Some(forth) => {
+                                let forth = forth?;
+                                Ok(CssRect {
+                                    top:    first,
+                                    bottom: third,
+                                    left:   forth,
+                                    right:  second,
+                                })
+                            }
+                            None => {
+                                Ok(CssRect {
+                                    top:    first,
+                                    bottom: third,
+                                    left:   second,
+                                    right:  second,
+                                })
+                            }
+                        }
+                    }
+                    None => {
+                        Ok(CssRect {
+                            top:    first,
+                            bottom: first,
+                            left:   second,
+                            right:  second,
+                        })
+                    }
+                }
+            }
+            None => {
+                Ok(CssRect {
+                    top:    first,
+                    bottom: first,
+                    left:   first,
+                    right:  first,
+                })
+            }
         }
     }
 }

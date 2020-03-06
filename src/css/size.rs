@@ -1,4 +1,5 @@
 use crate::css::Combine;
+use core::str::FromStr;
 
 impl Combine for CssSize {
     fn combine(
@@ -16,6 +17,23 @@ impl Combine for CssSize {
 impl Default for CssSize {
     fn default() -> Self {
         CssSize::Fixed(0)
+    }
+}
+
+impl FromStr for CssSize {
+    type Err = ();
+
+    fn from_str(mut s: &str) -> Result<Self, Self::Err> {
+        if s.ends_with('%') {
+            s.split_at(s.len() - 1)
+                .0
+                .parse()
+                .map(CssSize::Percent)
+                .map_err(|_| ())
+        } else {
+            s = s.trim_end_matches("px");
+            s.parse().map(CssSize::Fixed).map_err(|_| ())
+        }
     }
 }
 

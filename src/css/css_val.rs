@@ -3,6 +3,20 @@ use crate::css::{
     Combine,
 };
 
+use std::str::FromStr;
+
+impl<T: Copy + FromStr> FromStr for CssVal<T> {
+    type Err = T::Err;
+
+    fn from_str(text: &str) -> Result<Self, T::Err> {
+        if text == "inherit" {
+            Ok(CssVal::Inherit)
+        } else {
+            T::from_str(text).map(CssVal::Val)
+        }
+    }
+}
+
 impl<T: Copy + Combine> Combine for CssVal<T> {
     fn combine(
         self,
