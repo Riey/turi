@@ -46,6 +46,7 @@ impl<'a> StyleSheet<'a> {
 fn style_test() {
     use crate::{
         builder::{
+            body,
             class,
             div,
         },
@@ -60,8 +61,13 @@ fn style_test() {
     let css = StyleSheet::parse("div { height: 10; } div.hello { width: 10; }");
 
     let b = Bump::new();
-    let view = div(class(&b).class("hello"), (), "Hi");
+    let view = div(
+        (),
+        (),
+        body(&b).child(div(class(&b).class("hello"), (), "Hi")),
+    );
     let element = ElementView::<(), ()>::with_view(view);
+    let element = element.make_child(0).unwrap();
 
     let prop = css.calc_prop(&element);
     assert_eq!(prop.width, CssVal::Val(CssSize::Fixed(10)));
