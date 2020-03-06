@@ -5,7 +5,6 @@ use crate::{
         CssSize,
         CssVal,
     },
-    element_view::ElementView,
     rect::Rect,
 };
 
@@ -31,7 +30,20 @@ pub struct CalcCssRect {
     pub right:  CssSize,
 }
 
-#[derive(Clone, Copy, Default)]
+impl CalcCssRect {
+    pub fn calc_bound(
+        self,
+        bound: Rect,
+    ) -> Rect {
+        let w = bound.w();
+        let h = bound.h();
+        bound
+            .add_start((self.left.calc_size(w), self.top.calc_size(h)))
+            .sub_size((self.right.calc_size(w), self.bottom.calc_size(h)))
+    }
+}
+
+#[derive(Clone, Copy, Default, Debug)]
 pub struct CssRect {
     pub top:    CssVal<CssSize>,
     pub bottom: CssVal<CssSize>,

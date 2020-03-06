@@ -13,7 +13,7 @@ impl Combine for EnumSet<CssFontStyle> {
     }
 }
 
-#[derive(EnumSetType)]
+#[derive(EnumSetType, Debug)]
 pub enum CssFontStyle {
     Bold,
     Dimmed,

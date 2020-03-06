@@ -122,7 +122,7 @@ impl<'a, E, M> View<'a, E, M> {
         css: &StyleSheet,
         printer: &mut Printer,
     ) {
-        let mut view = ElementView::with_view(self);
+        let view = ElementView::with_view(self);
         view.render(css, Default::default(), printer);
     }
 

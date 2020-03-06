@@ -10,8 +10,8 @@ pub trait Combine {
 impl Combine for Color {
     fn combine(
         self,
-        other: Self,
+        _: Self,
     ) -> Self {
-        other
+        self
     }
 }

@@ -19,14 +19,20 @@ impl Default for CssSize {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum CssSize {
     Fixed(u16),
     Percent(u16),
 }
 
 impl CssSize {
-    pub fn calc(
+    pub fn is_zero(self) -> bool {
+        match self {
+            CssSize::Fixed(x) | CssSize::Percent(x) => x == 0,
+        }
+    }
+
+    pub fn calc_size(
         self,
         max: u16,
     ) -> u16 {
