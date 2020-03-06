@@ -105,30 +105,22 @@ impl<'a, E, M> ElementView<'a, E, M> {
             log::trace!("content_size {:?}", content_size);
             log::trace!("margin {:?} {:?}", margin_start, margin_size);
 
-            view_size = margin_start
-                + margin_size
-                + border_start
-                + border_size
-                + padding_start
-                + padding_size
-                + content_size;
+            let border_bound = Rect::new(
+                bound.start() + margin_start,
+                border_start + border_size + padding_start + padding_size + content_size,
+            );
 
             // border
             if border_start.x > 0 {
-                printer.with_bound(
-                    Rect::new(
-                        bound.start() + margin_start,
-                        border_start + border_size + padding_start + padding_size + content_size,
-                    ),
-                    |printer| {
-                        let mut style = Style::default();
-                        style.foreground = property.border_color;
-                        printer.with_style(style, |printer| {
-                            printer.print_rect();
-                        });
-                    },
-                );
+                printer.with_bound(border_bound, |printer| {
+                    let mut style = Style::default();
+                    style.foreground = property.border_color;
+                    printer.with_style(style, |printer| {
+                        printer.print_rect();
+                    });
+                });
             }
+            view_size = border_bound.size() + margin_start + margin_size;
         });
 
         log::trace!("view_size: {:?}", view_size);
