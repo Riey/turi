@@ -58,6 +58,16 @@ fn convert_declar<'a>(declarations: Vec<Declaration<'a>>) -> CssProperty {
                     property.border_color = color;
                 }
             }
+            "width" => {
+                if let Ok(width) = value.parse() {
+                    property.width = width;
+                }
+            }
+            "height" => {
+                if let Ok(width) = value.parse() {
+                    property.height = width;
+                }
+            }
             "font" => {
                 if value.contains("italic") {
                     property
