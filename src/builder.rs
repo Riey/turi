@@ -132,17 +132,36 @@ pub fn body<E, M>(b: &Bump) -> BodyBuilder<E, M> {
 /// # Examples
 ///
 /// ```
-/// fn view<'a>(
-///     &self,
-///     b: &'a Bump,
-/// ) -> View<'a, Event, Self::Msg> {
-///     div(
-///         (),
-///         event(b).ctrl_char('c', true),
-///         body(b)
-///             .child(div(class(b).class("hello"), (), "Hello"))
-///             .child(div((), (), "World!")),
-///     )
+/// use turi::*;
+///
+/// struct Simple;
+///
+/// impl Model<()> for Simple {
+///     type Msg = bool;
+///
+///     fn update(
+///         &mut self,
+///         msg: Self::Msg,
+///     ) -> UpdateResult {
+///         if msg {
+///             Exit
+///         } else {
+///             Ignore
+///         }
+///     }
+/// 
+///     fn view<'a>(
+///         &self,
+///         b: &'a Bump,
+///     ) -> View<'a, (), Self::Msg> {
+///         div(
+///             (),
+///             event(b).ctrl_char('c', true),
+///             body(b)
+///                 .child(div(class(b).class("hello"), (), "Hello"))
+///                 .child(div((), (), "World!")),
+///         )
+///     }
 /// }
 /// ```
 pub fn div<'a, E, M>(
