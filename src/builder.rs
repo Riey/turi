@@ -132,9 +132,6 @@ pub fn div<'a, E, M>(
     events: impl Builder<&'a [EventFilter<'a, E, M>]>,
     body: impl Builder<ViewBody<'a, E, M>>,
 ) -> View<'a, E, M>
-where
-    E: Clone,
-    M: Clone,
 {
     View::new(Tag::Div, classes.build(), events.build(), body.build())
 }
