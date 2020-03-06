@@ -127,11 +127,28 @@ pub fn body<E, M>(b: &Bump) -> BodyBuilder<E, M> {
     BodyBuilder::new(b)
 }
 
+/// Build div view
+///
+/// # Examples
+///
+/// ```
+/// fn view<'a>(
+///     &self,
+///     b: &'a Bump,
+/// ) -> View<'a, Event, Self::Msg> {
+///     div(
+///         (),
+///         event(b).ctrl_char('c', true),
+///         body(b)
+///             .child(div(class(b).class("hello"), (), "Hello"))
+///             .child(div((), (), "World!")),
+///     )
+/// }
+/// ```
 pub fn div<'a, E, M>(
     classes: impl Builder<&'a [&'a str]>,
     events: impl Builder<&'a [EventFilter<'a, E, M>]>,
     body: impl Builder<ViewBody<'a, E, M>>,
-) -> View<'a, E, M>
-{
+) -> View<'a, E, M> {
     View::new(Tag::Div, classes.build(), events.build(), body.build())
 }
