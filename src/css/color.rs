@@ -29,14 +29,23 @@ impl FromStr for CssColor {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let color = match s {
             "transparent" => None,
-            "red" => Some(AnsiColor::Red),
-            "green" => Some(AnsiColor::Green),
-            "blue" => Some(AnsiColor::Blue),
             "black" => Some(AnsiColor::Black),
-            "white" => Some(AnsiColor::White),
-            "purple" => Some(AnsiColor::Purple),
-            "yellow" => Some(AnsiColor::Yellow),
-            "cyan" => Some(AnsiColor::Cyan),
+            "darkred" => Some(AnsiColor::Red),
+            "darkmagenta" => Some(AnsiColor::Purple),
+            "darkcyan" => Some(AnsiColor::Cyan),
+            "darkgreen" => Some(AnsiColor::Green),
+            "darkblue" => Some(AnsiColor::Blue),
+            "lightgray" => Some(AnsiColor::White),
+            "khaki" => Some(AnsiColor::Yellow),
+            "gray" => Some(AnsiColor::Fixed(8)),
+            "red" => Some(AnsiColor::Fixed(9)),
+            "green" => Some(AnsiColor::Fixed(10)),
+            "yellow" => Some(AnsiColor::Fixed(11)),
+            "blue" => Some(AnsiColor::Fixed(12)),
+            "magenta" => Some(AnsiColor::Fixed(13)),
+            "cyan" => Some(AnsiColor::Fixed(14)),
+            "white" => Some(AnsiColor::Fixed(15)),
+            // TODO: other ansi256 color
             s => {
                 match s.parse() {
                     Ok(Color { r, g, b, a: _ }) => Some(AnsiColor::RGB(r, g, b)),

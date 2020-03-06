@@ -92,10 +92,7 @@ impl<'a, E, M> ElementView<'a, E, M> {
 
                             for pos in 0..children.len() {
                                 let child = self.make_child(pos).unwrap();
-                                let child_property = css.calc_prop(&child);
-                                let s = simplecss::Selector::parse("div.hello").unwrap();
-
-                                let child_property = child_property.calc(property);
+                                let child_property = css.calc_prop(&child).calc(property);
                                 let mut child_size = Vec2::new(0, 0);
                                 printer.with_bound(bound, |printer| {
                                     child_size = child.render(css, child_property, printer);
