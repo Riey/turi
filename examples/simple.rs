@@ -72,12 +72,7 @@ fn main() {
     let backend = CrosstermBackend::new(out, size.into());
     let mut guard = CrosstermBackendGuard::new(backend);
 
-    let css = StyleSheet::parse(
-        "
-div { color: green; text-decoration-line: underline; margin: 2; border-width: 1; }
-div.hello { color: red; font: bold;  }
-",
-    );
+    let css = StyleSheet::parse(include_str!("../res/simple.css"));
 
     turi::executor::simple(guard.inner(), &css, &mut Simple, |backend, need_redraw| {
         loop {

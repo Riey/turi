@@ -32,6 +32,7 @@ impl std::str::FromStr for Tag {
     }
 }
 
+#[derive(Debug)]
 pub enum ViewBody<'a, E, M> {
     Text(&'a str, u16),
     Children(&'a [View<'a, E, M>]),
@@ -44,6 +45,7 @@ pub enum ViewState {
     Hover,
 }
 
+#[derive(Debug)]
 pub struct View<'a, E, M> {
     tag:     Tag,
     classes: &'a [&'a str],

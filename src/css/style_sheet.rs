@@ -8,6 +8,7 @@ use crate::{
 };
 use simplecss::StyleSheet as SStyleSheet;
 
+#[derive(Debug)]
 pub struct StyleSheet<'a> {
     rules: Vec<CssRule<'a>>,
 }
@@ -60,16 +61,18 @@ fn style_test() {
         },
     };
     use bumpalo::Bump;
-    let css =
-        StyleSheet::parse("div { color: green; height: 10; } div.hello { color: red; width: 10; }");
+    let css = StyleSheet::parse(include_str!("../../res/simple.css"));
 
     let b = Bump::new();
     let view = div(
         (),
         (),
-        body(&b).child(div(class(&b).class("hello"), (), "Hi")),
+        body(&b)
+            .child(div(class(&b).class("hello"), (), "Hi"))
+            .child(div((), (), "wi")),
     );
     let element = ElementView::<(), ()>::with_view(view);
+    let element_prop = css.calc_prop(&element).calc(Default::default());
     let child = element.make_child(0).unwrap();
 
     assert_eq!(child.view().classes(), &["hello"]);
@@ -78,7 +81,7 @@ fn style_test() {
     assert_eq!(prop.width, CssVal::Val(CssSize::Fixed(10)));
     assert_eq!(prop.height, CssVal::Val(CssSize::Fixed(10)));
 
-    let calc_prop = prop.calc(Default::default());
+    let calc_prop = prop.calc(element_prop);
     assert_eq!(calc_prop.width, CssSize::Fixed(10));
     assert_eq!(calc_prop.height, CssSize::Fixed(10));
     assert_eq!(calc_prop.style.foreground, Some(AnsiColor::Red));

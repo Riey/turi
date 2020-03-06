@@ -4,6 +4,7 @@ use crate::event::{
     MouseEventLike,
 };
 use bumpalo::Bump;
+use std::fmt;
 
 impl<'a, E, M> Clone for EventFilter<'a, E, M>
 where
@@ -15,6 +16,15 @@ where
     }
 }
 impl<'a, E, M> Copy for EventFilter<'a, E, M> where M: Copy {}
+
+impl<'a, E, M: fmt::Debug> fmt::Debug for EventFilter<'a, E, M> {
+    fn fmt(
+        &self,
+        f: &mut fmt::Formatter,
+    ) -> fmt::Result {
+        write!(f, "event(msg: {:?})", self.msg)
+    }
+}
 
 pub struct EventFilter<'a, E, M> {
     filter: &'a dyn Fn(&E) -> bool,

@@ -9,6 +9,7 @@ use simplecss::{
     Selector,
 };
 
+#[derive(Debug)]
 pub struct CssRule<'a> {
     pub selector: Selector<'a>,
     pub property: CssProperty,
@@ -74,26 +75,22 @@ fn convert_declar<'a>(declarations: Vec<Declaration<'a>>) -> CssProperty {
                         .font_style
                         .get_or_insert(EnumSet::new())
                         .insert(CssFontStyle::Italic);
-                }
-                if value.contains("bold") {
+                } else if value.contains("bold") {
                     property
                         .font_style
                         .get_or_insert(EnumSet::new())
                         .insert(CssFontStyle::Bold);
-                }
-                if value.contains("hidden") {
+                } else if value.contains("hidden") {
                     property
                         .font_style
                         .get_or_insert(EnumSet::new())
                         .insert(CssFontStyle::Hidden);
-                }
-                if value.contains("reverse") {
+                } else if value.contains("reverse") {
                     property
                         .font_style
                         .get_or_insert(EnumSet::new())
                         .insert(CssFontStyle::Reverse);
-                }
-                if value.contains("dimmed") {
+                } else if value.contains("dimmed") {
                     property
                         .font_style
                         .get_or_insert(EnumSet::new())
@@ -106,14 +103,12 @@ fn convert_declar<'a>(declarations: Vec<Declaration<'a>>) -> CssProperty {
                         .font_style
                         .get_or_insert(EnumSet::new())
                         .insert(CssFontStyle::Blink);
-                }
-                if value.contains("underline") {
+                } else if value.contains("underline") {
                     property
                         .font_style
                         .get_or_insert(EnumSet::new())
                         .insert(CssFontStyle::Underline);
-                }
-                if value.contains("line-through") {
+                } else if value.contains("line-through") {
                     property
                         .font_style
                         .get_or_insert(EnumSet::new())

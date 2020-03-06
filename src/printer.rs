@@ -192,7 +192,6 @@ impl<'a> Printer<'a> {
     pub fn print_rect(&mut self) {
         let w = self.bound.w().saturating_sub(1);
         let h = self.bound.h().saturating_sub(1);
-        log::trace!("print_rect w: {}, h: {}", w, h);
 
         self.print_horizontal_line(0);
         self.print_horizontal_line(h);

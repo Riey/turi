@@ -21,6 +21,7 @@ use simplecss::{
     PseudoClass,
 };
 
+#[derive(Debug)]
 pub struct ElementView<'a, E, M> {
     parent: Option<&'a Self>,
     pos:    usize,
@@ -91,23 +92,21 @@ impl<'a, E, M> ElementView<'a, E, M> {
 
                             for pos in 0..children.len() {
                                 let child = self.make_child(pos).unwrap();
-                                let child_property = css.calc_prop(&self).calc(property);
+                                let child_property = css.calc_prop(&child);
+                                let s = simplecss::Selector::parse("div.hello").unwrap();
+
+                                let child_property = child_property.calc(property);
                                 let mut child_size = Vec2::new(0, 0);
                                 printer.with_bound(bound, |printer| {
                                     child_size = child.render(css, child_property, printer);
                                 });
                                 bound = bound.add_start((0, child_size.y));
-                                log::trace!("child_size {:?}", child_size);
                                 content_size = content_size.add_y(child_size.y).max_x(child_size.x);
                             }
                         }
                     }
                 },
             );
-
-            log::trace!("content_start {:?}", content_start);
-            log::trace!("content_size {:?}", content_size);
-            log::trace!("margin {:?} {:?}", margin_start, margin_size);
 
             let border_bound = Rect::new(
                 bound.start() + margin_start,
@@ -126,8 +125,6 @@ impl<'a, E, M> ElementView<'a, E, M> {
             }
             view_size = border_bound.size() + margin_start + margin_size;
         });
-
-        log::trace!("view_size: {:?}", view_size);
 
         view_size
     }
