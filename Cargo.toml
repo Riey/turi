@@ -12,6 +12,7 @@ default = ["crossterm-backend"]
 crossterm-backend = ["crossterm"]
 test-backend = []
 bench = []
+example-not-use-tty = []
 
 [dependencies]
 unicode-width = "0.1.7"

@@ -44,7 +44,7 @@ impl<T: Copy> Calc for CssVal<T> {
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum CssVal<T: Copy> {
     Val(T),
     Inherit,

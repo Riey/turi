@@ -22,11 +22,11 @@ impl<'a> Printer<'a> {
         }
     }
 
-    pub fn sliced<T>(
+    pub fn sliced(
         &mut self,
         pos: impl Into<Vec2>,
-        f: impl FnOnce(&mut Printer) -> T,
-    ) -> T {
+        f: impl FnOnce(&mut Printer),
+    ) {
         let pos = pos.into();
         let mut backend = SlicedBackend::new(self.backend, pos);
         let mut printer = Printer {
@@ -36,30 +36,28 @@ impl<'a> Printer<'a> {
             ),
             backend: &mut backend,
         };
-        f(&mut printer)
+        f(&mut printer);
     }
 
-    pub fn with_bound<T>(
+    pub fn with_bound(
         &mut self,
         mut bound: Rect,
-        f: impl FnOnce(&mut Self) -> T,
-    ) -> T {
+        f: impl FnOnce(&mut Self),
+    ) {
         swap(&mut self.bound, &mut bound);
-        let ret = f(self);
+        f(self);
         swap(&mut self.bound, &mut bound);
-        ret
     }
 
-    pub fn with_style<T>(
+    pub fn with_style(
         &mut self,
         style: Style,
-        f: impl FnOnce(&mut Self) -> T,
-    ) -> T {
+        f: impl FnOnce(&mut Self),
+    ) {
         let old_style = self.backend.style();
         self.backend.set_style(style);
-        let ret = f(self);
+        f(self);
         self.backend.set_style(old_style);
-        ret
     }
 
     #[inline]
@@ -97,8 +95,7 @@ impl<'a> Printer<'a> {
         start: impl Into<Vec2>,
         text: &str,
     ) {
-        self.backend
-            .print_at(self.bound.start() + start.into(), text);
+        self.backend.print_at(self.bound.start() + start, text);
     }
 
     #[inline]
@@ -118,7 +115,7 @@ impl<'a> Printer<'a> {
         &mut self,
         pos: u16,
     ) {
-        self.print_vertical_line_at((pos, 0), self.bound.h() as usize);
+        self.print_vertical_line_at((pos, 0), self.bound.h() as usize - 1);
     }
 
     #[inline]
@@ -156,7 +153,7 @@ impl<'a> Printer<'a> {
         &mut self,
         pos: u16,
     ) {
-        self.print_horizontal_line_at((0, pos), self.bound().w() as usize);
+        self.print_horizontal_line_at((0, pos), self.bound().w() as usize - 1);
     }
 
     #[inline]
@@ -180,22 +177,21 @@ impl<'a> Printer<'a> {
     }
 
     pub fn print_rect(&mut self) {
+        let w = self.bound.w() - 1;
+        let h = self.bound.h() - 1;
         self.print_horizontal_line(0);
-        self.print_horizontal_line(self.bound.h() - 1);
+        self.print_horizontal_line(h);
         self.print_vertical_line(0);
-        self.print_vertical_line(self.bound.w() - 1);
+        self.print_vertical_line(w);
 
         const LEFT_TOP: &str = "┌";
         const RIGHT_TOP: &str = "┐";
         const LEFT_BOTTOM: &str = "└";
         const RIGHT_BOTTOM: &str = "┘";
 
-        let start = self.bound.start();
-        let end = self.bound.end();
-
-        self.raw_print(start, LEFT_TOP);
-        self.raw_print((end.x, start.y), RIGHT_TOP);
-        self.raw_print((start.x, end.y), LEFT_BOTTOM);
-        self.raw_print(end, RIGHT_BOTTOM);
+        self.raw_print((0, 0), LEFT_TOP);
+        self.raw_print((w, 0), RIGHT_TOP);
+        self.raw_print((0, h), LEFT_BOTTOM);
+        self.raw_print((w, h), RIGHT_BOTTOM);
     }
 }

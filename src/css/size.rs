@@ -37,7 +37,7 @@ impl FromStr for CssSize {
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum CssSize {
     Fixed(u16),
     Percent(u16),
@@ -61,4 +61,10 @@ impl CssSize {
 
         want.min(max)
     }
+}
+
+#[test]
+fn parse_test() {
+    assert_eq!(Ok(CssSize::Fixed(123)), "123".parse());
+    assert_eq!(Ok(CssSize::Fixed(4)), "4px".parse());
 }

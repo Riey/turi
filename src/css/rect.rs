@@ -6,6 +6,7 @@ use crate::{
         CssVal,
     },
     rect::Rect,
+    vec2::Vec2,
 };
 use core::str::FromStr;
 
@@ -23,7 +24,7 @@ impl Combine for CssRect {
     }
 }
 
-#[derive(Clone, Copy, Default)]
+#[derive(Clone, Copy, Default, Debug)]
 pub struct CalcCssRect {
     pub top:    CssSize,
     pub bottom: CssSize,
@@ -32,6 +33,16 @@ pub struct CalcCssRect {
 }
 
 impl CalcCssRect {
+    pub fn calc_size(
+        self,
+        size: Vec2,
+    ) -> Vec2 {
+        Vec2::new(
+            self.left.calc_size(size.x) + self.right.calc_size(size.x),
+            self.top.calc_size(size.y) + self.bottom.calc_size(size.y),
+        )
+    }
+
     pub fn calc_bound(
         self,
         bound: Rect,
@@ -44,7 +55,7 @@ impl CalcCssRect {
     }
 }
 
-#[derive(Clone, Copy, Default, Debug)]
+#[derive(Clone, Copy, Default, Debug, Eq, PartialEq)]
 pub struct CssRect {
     pub top:    CssVal<CssSize>,
     pub bottom: CssVal<CssSize>,
@@ -122,4 +133,17 @@ impl FromStr for CssRect {
             }
         }
     }
+}
+
+#[test]
+fn parse_test() {
+    assert_eq!(
+        Ok(CssRect {
+            top:    CssVal::Val(CssSize::Fixed(12)),
+            bottom: CssVal::Val(CssSize::Fixed(12)),
+            left:   CssVal::Val(CssSize::Fixed(12)),
+            right:  CssVal::Val(CssSize::Fixed(12)),
+        }),
+        "12".parse()
+    );
 }

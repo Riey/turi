@@ -11,7 +11,7 @@ use crate::css::{
 };
 use enumset::EnumSet;
 
-#[derive(Clone, Copy, Default)]
+#[derive(Clone, Copy, Default, Debug)]
 pub struct CalcCssProperty {
     pub style:        AnsiStyle,
     pub width:        CssSize,

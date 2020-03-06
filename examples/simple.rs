@@ -63,12 +63,17 @@ fn main() {
     let out = turi::util::get_raw_stdout_file();
     let out = BufWriter::with_capacity(1024 * 1024 * 10, out);
 
-    let backend = CrosstermBackend::new(out, crossterm::terminal::size().unwrap().into());
+    let size = if cfg!(feature = "example-not-use-tty") {
+        (30, 20)
+    } else {
+        crossterm::terminal::size().unwrap()
+    };
+    let backend = CrosstermBackend::new(out, size.into());
     let mut guard = CrosstermBackendGuard::new(backend);
 
     let css = StyleSheet::parse(
         "
-div { color: green; text-decoration-line: underline; margin: 3; }
+div { color: green; text-decoration-line: underline; margin: 3; border-width: 1; }
 div.hello { color: red; font: bold;  }
 ",
     );

@@ -6,6 +6,21 @@
     "configurations": [
         {
             "type": "lldb",
+            "request": "launch",
+            "name": "Cargo launch",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--example=simple",
+                    "--features=example-not-use-tty"
+                ]
+            },
+            "terminal": "external",
+            "program": "${workspaceFolder}/target/debug/examples/simple",
+            "args": []
+        },
+        {
+            "type": "lldb",
             "request": "attach",
             "name": "Attach Lorem",
             "program": "${workspaceFolder}/lorem"

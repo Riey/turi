@@ -5,6 +5,7 @@ use crate::{
         StyleSheet,
     },
     printer::Printer,
+    vec2::Vec2,
     view::{
         View,
         ViewBody,
@@ -12,6 +13,7 @@ use crate::{
     },
 };
 
+use ansi_term::Style;
 use simplecss::{
     AttributeOperator as AttrOp,
     Element,
@@ -47,16 +49,20 @@ impl<'a, E, M> ElementView<'a, E, M> {
     pub fn render(
         self,
         css: &StyleSheet,
-        parent_property: CalcCssProperty,
+        property: CalcCssProperty,
         printer: &mut Printer,
     ) {
-        let property = css.calc_prop(&self).calc(parent_property);
         printer.with_style(property.style, |printer| {
+            let bound = property.margin.calc_bound(printer.bound());
             // margin
-            printer.with_bound(property.margin.calc_bound(printer.bound()), |printer| {
+            printer.with_bound(bound, |printer| {
                 let mut bound = printer.bound();
                 if !property.border_width.is_zero() {
-                    printer.print_rect();
+                    let mut style = Style::default();
+                    style.foreground = property.border_color;
+                    printer.with_style(style, |printer| {
+                        printer.print_rect();
+                    });
                     bound = bound.add_start((1, 1)).sub_size((1, 1));
                 }
 
@@ -74,12 +80,16 @@ impl<'a, E, M> ElementView<'a, E, M> {
                             ViewBody::Children(children) => {
                                 let mut bound = printer.bound();
 
-                                for (pos, child) in children.iter().enumerate() {
+                                for pos in 0..children.len() {
+                                    let child = self.make_child(pos).unwrap();
+                                    let child_property = css.calc_prop(&self).calc(property);
                                     printer.with_bound(bound, |printer| {
-                                        let child = self.make_child(pos).unwrap();
-                                        child.render(css, property, printer);
+                                        child.render(css, child_property, printer);
                                     });
-                                    bound = bound.add_start((0, child.desired_size().y));
+                                    bound = bound.add_start((
+                                        0,
+                                        child.calc_size(&child_property, bound.size()).y,
+                                    ));
                                 }
                             }
                         }
@@ -87,6 +97,22 @@ impl<'a, E, M> ElementView<'a, E, M> {
                 });
             });
         })
+    }
+
+    fn calc_size(
+        self,
+        property: &CalcCssProperty,
+        max: Vec2,
+    ) -> Vec2 {
+        let mut ret = self.view.desired_size();
+        if !property.border_width.is_zero() {
+            ret += (2, 2);
+        }
+
+        ret += property.margin.calc_size(max);
+        ret += property.padding.calc_size(max);
+
+        ret
     }
 }
 
