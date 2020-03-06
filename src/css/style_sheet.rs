@@ -41,3 +41,33 @@ impl<'a> StyleSheet<'a> {
         prop
     }
 }
+
+#[test]
+fn style_test() {
+    use crate::{
+        builder::{
+            class,
+            div,
+        },
+        css::{
+            Calc,
+            CssSize,
+            CssVal,
+            StyleSheet,
+        },
+    };
+    use bumpalo::Bump;
+    let css = StyleSheet::parse("div { height: 10; } div.hello { width: 10; }");
+
+    let b = Bump::new();
+    let view = div(class(&b).class("hello"), (), "Hi");
+    let element = ElementView::<(), ()>::with_view(view);
+
+    let prop = css.calc_prop(&element);
+    assert_eq!(prop.width, CssVal::Val(CssSize::Fixed(10)));
+    assert_eq!(prop.height, CssVal::Val(CssSize::Fixed(10)));
+
+    let calc_prop = prop.calc(Default::default());
+    assert_eq!(calc_prop.width, CssSize::Fixed(10));
+    assert_eq!(calc_prop.height, CssSize::Fixed(10));
+}
