@@ -1,6 +1,6 @@
 mod calc;
-mod combine;
 mod color;
+mod combine;
 mod css_val;
 mod font_style;
 mod property;

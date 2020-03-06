@@ -2,9 +2,9 @@ use crate::css::{
     calc::Calc,
     AnsiStyle,
     CalcCssRect,
-    CssColor,
     Color,
     Combine,
+    CssColor,
     CssFontStyle,
     CssRect,
     CssSize,
@@ -61,7 +61,10 @@ impl Calc for CssProperty {
             padding:      self.padding.nest_calc(parent.padding),
             margin:       self.margin.nest_calc(parent.margin),
             border_width: self.border_width.calc(parent.border_width),
-            border_color: self.border_color.map(CssColor::color).calc(parent.border_color),
+            border_color: self
+                .border_color
+                .map(CssColor::color)
+                .calc(parent.border_color),
         }
     }
 }

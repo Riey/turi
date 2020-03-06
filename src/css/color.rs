@@ -1,7 +1,12 @@
-use crate::css::combine::Combine;
-use crate::css::AnsiColor;
+use crate::css::{
+    combine::Combine,
+    AnsiColor,
+};
+use css_color_parser::{
+    Color,
+    ColorParseError,
+};
 use std::str::FromStr;
-use css_color_parser::{Color, ColorParseError};
 
 #[derive(Clone, Copy, Debug)]
 pub struct CssColor {
@@ -9,20 +14,18 @@ pub struct CssColor {
 }
 
 impl CssColor {
-
     pub fn new(color: Option<AnsiColor>) -> Self {
-        Self {
-            color,
-        }
+        Self { color }
     }
+
     pub fn color(self) -> Option<AnsiColor> {
         self.color
     }
-
 }
 
 impl FromStr for CssColor {
     type Err = ColorParseError;
+
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let color = match s {
             "transparent" => None,
@@ -54,4 +57,3 @@ impl Combine for CssColor {
         other
     }
 }
-

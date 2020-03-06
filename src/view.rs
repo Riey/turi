@@ -13,7 +13,6 @@ use enumset::{
     EnumSet,
     EnumSetType,
 };
-use unicode_width::UnicodeWidthStr;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Tag {
@@ -54,33 +53,18 @@ pub struct View<'a, E, M> {
 }
 
 impl<'a, E, M> View<'a, E, M> {
-    pub fn with_children(
+    pub fn new(
         tag: Tag,
         classes: &'a [&'a str],
         events: &'a [EventFilter<'a, E, M>],
-        children: &'a [View<'a, E, M>],
+        body: ViewBody<'a, E, M>,
     ) -> Self {
         Self {
             tag,
             classes,
             state: EnumSet::new(),
             events,
-            body: ViewBody::Children(children),
-        }
-    }
-
-    pub fn with_inner_text(
-        tag: Tag,
-        classes: &'a [&'a str],
-        events: &'a [EventFilter<'a, E, M>],
-        inner_text: &'a str,
-    ) -> Self {
-        Self {
-            tag,
-            classes,
-            state: EnumSet::new(),
-            events,
-            body: ViewBody::Text(inner_text, inner_text.width() as u16),
+            body,
         }
     }
 

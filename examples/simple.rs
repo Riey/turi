@@ -8,11 +8,12 @@ use turi::{
         CrosstermBackendGuard,
     },
     builder::{
+        body,
+        class,
         div,
-        text,
+        event,
     },
     css::StyleSheet,
-    event_filter::EventFilter,
     model::Model,
     update_result::{
         Exit,
@@ -42,13 +43,13 @@ impl Model<Event> for Simple {
         &self,
         b: &'a Bump,
     ) -> View<'a, Event, Self::Msg> {
-        div(b)
-            .event(EventFilter::ctrl_char(b, 'c', true))
-            .children([
-                div(b).inner_text("Hello").class("hello").build(),
-                text("World!"),
-            ])
-            .build()
+        div(
+            (),
+            event(b).ctrl_char('c', true),
+            body(b)
+                .child(div(class(b).class("hello"), (), "Hello"))
+                .child(div((), (), "World!")),
+        )
     }
 }
 
