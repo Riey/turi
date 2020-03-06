@@ -33,25 +33,28 @@ pub struct CalcCssRect {
 }
 
 impl CalcCssRect {
+    pub fn calc_start(
+        self,
+        size: Vec2,
+    ) -> Vec2 {
+        Vec2::new(self.left.calc_size(size.x), self.top.calc_size(size.y))
+    }
+
     pub fn calc_size(
         self,
         size: Vec2,
     ) -> Vec2 {
-        Vec2::new(
-            self.left.calc_size(size.x) + self.right.calc_size(size.x),
-            self.top.calc_size(size.y) + self.bottom.calc_size(size.y),
-        )
+        Vec2::new(self.right.calc_size(size.x), self.bottom.calc_size(size.y))
     }
 
     pub fn calc_bound(
         self,
         bound: Rect,
     ) -> Rect {
-        let w = bound.w();
-        let h = bound.h();
+        let size = bound.size();
         bound
-            .add_start((self.left.calc_size(w), self.top.calc_size(h)))
-            .sub_size((self.right.calc_size(w), self.bottom.calc_size(h)))
+            .add_start(self.calc_start(size))
+            .sub_size(self.calc_size(size))
     }
 }
 
@@ -146,4 +149,16 @@ fn parse_test() {
         }),
         "12".parse()
     );
+}
+
+#[test]
+fn calc_test() {
+    let ret = CssVal::Val(CssRect {
+        top: CssVal::Val(CssSize::Fixed(12)),
+        ..Default::default()
+    })
+    .nest_calc(CalcCssRect {
+        ..Default::default()
+    });
+    assert_eq!(ret.top, CssSize::Fixed(12));
 }

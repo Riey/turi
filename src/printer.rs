@@ -115,7 +115,7 @@ impl<'a> Printer<'a> {
         &mut self,
         pos: u16,
     ) {
-        self.print_vertical_line_at((pos, 0), self.bound.h() as usize - 1);
+        self.print_vertical_line_at((pos, 0), self.bound.h() as usize);
     }
 
     #[inline]
@@ -176,9 +176,24 @@ impl<'a> Printer<'a> {
         self.raw_print(start, &BLOCK_STRING[..size * "█".len()]);
     }
 
+    // pub fn fill_bg(&mut self) {
+    //     static EMPTY_STRING: &str = "                                                                                                                                                                ";
+    //     let mut style = Style::new();
+    //     let old_style = self.style();
+    //     style.background = old_style.background;
+    //     //style.foreground = old_style.background;
+    //     self.with_style(style, |printer| {
+    //         for y in 0..printer.bound.h() {
+    //             printer.raw_print((0, y), &EMPTY_STRING[..printer.bound.w() as usize * " ".len()]);
+    //         }
+    //     });
+    // }
+
     pub fn print_rect(&mut self) {
-        let w = self.bound.w() - 1;
-        let h = self.bound.h() - 1;
+        let w = self.bound.w().saturating_sub(1);
+        let h = self.bound.h().saturating_sub(1);
+        log::trace!("print_rect w: {}, h: {}", w, h);
+
         self.print_horizontal_line(0);
         self.print_horizontal_line(h);
         self.print_vertical_line(0);

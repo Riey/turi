@@ -5,6 +5,7 @@ use crate::{
         StyleSheet,
     },
     printer::Printer,
+    rect::Rect,
     vec2::Vec2,
     view::{
         View,
@@ -51,68 +52,88 @@ impl<'a, E, M> ElementView<'a, E, M> {
         css: &StyleSheet,
         property: CalcCssProperty,
         printer: &mut Printer,
-    ) {
+    ) -> Vec2 {
+        let mut view_size = Vec2::new(0, 0);
+
         printer.with_style(property.style, |printer| {
-            let bound = property.margin.calc_bound(printer.bound());
-            // margin
-            printer.with_bound(bound, |printer| {
-                let mut bound = printer.bound();
-                if !property.border_width.is_zero() {
-                    let mut style = Style::default();
-                    style.foreground = property.border_color;
-                    printer.with_style(style, |printer| {
-                        printer.print_rect();
-                    });
-                    bound = bound.add_start((1, 1)).sub_size((1, 1));
-                }
+            let bound = printer.bound();
+            let size = bound.size();
+            let margin_start = property.margin.calc_start(size);
+            let margin_size = property.margin.calc_size(size);
+            let border_start = if property.border_width.is_zero() {
+                Vec2::new(0, 0)
+            } else {
+                Vec2::new(1, 1)
+            };
+            let border_size = border_start;
+            let padding_start = property.padding.calc_start(size);
+            let padding_size = property.padding.calc_size(size);
+            let content_start = margin_start + border_start + padding_start;
+            let mut content_size = Vec2::new(0, 0);
 
-                // border
-                printer.with_bound(bound, |printer| {
-                    // TODO: fill background
+            // content
+            printer.with_bound(
+                bound
+                    .add_start(content_start)
+                    .sub_size(margin_size + padding_size + border_size),
+                |printer| {
+                    match self.view.body() {
+                        ViewBody::Text(text, width) => {
+                            printer.print((0, 0), text);
+                            content_size = Vec2::new(width, 1);
+                        }
+                        ViewBody::Children(children) => {
+                            let mut bound = printer.bound();
 
-                    // padding
-                    printer.with_bound(property.padding.calc_bound(printer.bound()), |printer| {
-                        // content
-                        match self.view.body() {
-                            ViewBody::Text(text, _) => {
-                                printer.print((0, 0), text);
-                            }
-                            ViewBody::Children(children) => {
-                                let mut bound = printer.bound();
-
-                                for pos in 0..children.len() {
-                                    let child = self.make_child(pos).unwrap();
-                                    let child_property = css.calc_prop(&self).calc(property);
-                                    printer.with_bound(bound, |printer| {
-                                        child.render(css, child_property, printer);
-                                    });
-                                    bound = bound.add_start((
-                                        0,
-                                        child.calc_size(&child_property, bound.size()).y,
-                                    ));
-                                }
+                            for pos in 0..children.len() {
+                                let child = self.make_child(pos).unwrap();
+                                let child_property = css.calc_prop(&self).calc(property);
+                                let mut child_size = Vec2::new(0, 0);
+                                printer.with_bound(bound, |printer| {
+                                    child_size = child.render(css, child_property, printer);
+                                });
+                                bound = bound.add_start((0, child_size.y));
+                                log::trace!("child_size {:?}", child_size);
+                                content_size = content_size.add_y(child_size.y).max_x(child_size.x);
                             }
                         }
-                    })
-                });
-            });
-        })
-    }
+                    }
+                },
+            );
 
-    fn calc_size(
-        self,
-        property: &CalcCssProperty,
-        max: Vec2,
-    ) -> Vec2 {
-        let mut ret = self.view.desired_size();
-        if !property.border_width.is_zero() {
-            ret += (2, 2);
-        }
+            log::trace!("content_start {:?}", content_start);
+            log::trace!("content_size {:?}", content_size);
+            log::trace!("margin {:?} {:?}", margin_start, margin_size);
 
-        ret += property.margin.calc_size(max);
-        ret += property.padding.calc_size(max);
+            view_size = margin_start
+                + margin_size
+                + border_start
+                + border_size
+                + padding_start
+                + padding_size
+                + content_size;
 
-        ret
+            // border
+            if border_start.x > 0 {
+                printer.with_bound(
+                    Rect::new(
+                        bound.start() + margin_start,
+                        border_start + border_size + padding_start + padding_size + content_size,
+                    ),
+                    |printer| {
+                        let mut style = Style::default();
+                        style.foreground = property.border_color;
+                        printer.with_style(style, |printer| {
+                            printer.print_rect();
+                        });
+                    },
+                );
+            }
+        });
+
+        log::trace!("view_size: {:?}", view_size);
+
+        view_size
     }
 }
 

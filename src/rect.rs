@@ -46,7 +46,7 @@ impl Rect {
         let add = add.into();
         Self {
             start: self.start + add,
-            size:  self.size - add,
+            size:  self.size.saturating_sub(add),
         }
     }
 
@@ -57,7 +57,7 @@ impl Rect {
         let sub = sub.into();
         Self {
             start: self.start,
-            size:  self.size - sub,
+            size:  self.size.saturating_sub(sub),
         }
     }
 

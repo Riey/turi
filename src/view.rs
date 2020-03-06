@@ -1,10 +1,12 @@
 use crate::{
-    css::StyleSheet,
+    css::{
+        Calc,
+        StyleSheet,
+    },
     element_view::ElementView,
     event::EventLike,
     event_filter::EventFilter,
     printer::Printer,
-    vec2::Vec2,
 };
 
 use enumset::{
@@ -123,24 +125,8 @@ impl<'a, E, M> View<'a, E, M> {
         printer: &mut Printer,
     ) {
         let view = ElementView::with_view(self);
-        view.render(css, Default::default(), printer);
-    }
-
-    pub fn desired_size(self) -> Vec2 {
-        match self.body {
-            ViewBody::Text(_, width) => Vec2::new(width, 1),
-            ViewBody::Children(children) => {
-                let mut ret = Vec2::new(0, 0);
-
-                for child in children {
-                    let size = child.desired_size();
-                    ret.x = ret.x.max(size.x);
-                    ret.y += size.y;
-                }
-
-                ret
-            }
-        }
+        let property = css.calc_prop(&view).calc(Default::default());
+        view.render(css, property, printer);
     }
 }
 impl<'a, E, M> View<'a, E, M>
