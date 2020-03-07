@@ -22,7 +22,7 @@ use simplecss::{
     PseudoClass,
 };
 
-#[derive(Default, Clone, Copy)]
+#[derive(Default, Clone, Copy, Debug)]
 pub struct LayoutResult {
     size:         Vec2,
     border:       Rect,
@@ -73,7 +73,7 @@ impl<'a, E, M> ElementView<'a, E, M> {
         css: &StyleSheet,
         printer: &mut Printer,
         layout_cache: &mut IntMap<u64, LayoutResult>,
-    ) -> LayoutResult {
+    ) -> Vec2 {
         let layout = layout_cache[&self.view.hash_tag()];
 
         printer.with_style(layout.style, |printer| {
@@ -89,8 +89,8 @@ impl<'a, E, M> ElementView<'a, E, M> {
                         for pos in 0..children.len() {
                             let child = self.make_child(pos).unwrap();
                             printer.with_bound(bound, |printer| {
-                                let layout = child.render(css, printer, layout_cache);
-                                bound = bound.add_start((0, layout.size.y));
+                                let child_size = child.render(css, printer, layout_cache);
+                                bound = bound.add_start((0, child_size.y));
                             });
                         }
                     }
@@ -109,7 +109,7 @@ impl<'a, E, M> ElementView<'a, E, M> {
             // TODO: padding
         });
 
-        layout
+        layout.size
     }
 
     pub fn layout(
@@ -144,7 +144,7 @@ impl<'a, E, M> ElementView<'a, E, M> {
                             css,
                             child_property,
                             layout_cache,
-                            max_content_bound.add_start(ret),
+                            max_content_bound.add_start(Vec2::new(0, ret.y)),
                         );
                         ret = ret.max_x(child_layout.size.x).add_y(child_layout.size.y);
                     }
@@ -160,7 +160,7 @@ impl<'a, E, M> ElementView<'a, E, M> {
             );
             let border_bound = Rect::new(
                 padding_bound.start() - border_size,
-                padding_bound.size() + border_size,
+                padding_bound.size() + border_size + border_size,
             );
             let size = border_bound.size() + margin_start + margin_size;
 
