@@ -1,14 +1,7 @@
 use crate::{
-    css::StyleSheet,
-    element_view::{
-        ElementView,
-        LayoutResult,
-    },
     event::EventLike,
     event_filter::EventFilter,
-    printer::Printer,
 };
-use nohash_hasher::IntMap;
 
 use enumset::{
     EnumSet,
@@ -37,8 +30,8 @@ pub enum ViewState {
 #[derive(Debug)]
 pub struct View<'a, E, M> {
     tag:      Tag,
-    classes:  &'a [&'a str],
     state:    EnumSet<ViewState>,
+    classes:  &'a [&'a str],
     events:   &'a [EventFilter<'a, E, M>],
     body:     ViewBody<'a, E, M>,
     hash_tag: u64,
@@ -53,8 +46,8 @@ impl<'a, E, M> View<'a, E, M> {
     ) -> Self {
         let mut view = Self {
             tag,
-            classes,
             state: EnumSet::new(),
+            classes,
             events,
             body,
             hash_tag: 0,
@@ -71,6 +64,7 @@ impl<'a, E, M> View<'a, E, M> {
         view
     }
 
+    #[inline]
     pub fn hash_tag(self) -> u64 {
         self.hash_tag
     }
@@ -109,17 +103,8 @@ impl<'a, E, M> View<'a, E, M> {
             _ => &[],
         }
     }
-
-    pub fn render(
-        self,
-        css: &StyleSheet,
-        printer: &mut Printer,
-        layout_cache: &mut IntMap<u64, LayoutResult>,
-    ) {
-        let view = ElementView::with_view(self);
-        view.render(css, printer, layout_cache);
-    }
 }
+
 impl<'a, E, M> View<'a, E, M>
 where
     E: EventLike + Copy,

@@ -33,35 +33,22 @@ pub struct CalcCssRect {
 }
 
 impl CalcCssRect {
-    pub fn calc_start(
-        self,
-        size: Vec2,
-    ) -> Vec2 {
-        Vec2::new(self.left.calc_size(size.x), self.top.calc_size(size.y))
-    }
-
-    pub fn calc_size(
-        self,
-        size: Vec2,
-    ) -> Vec2 {
-        Vec2::new(self.right.calc_size(size.x), self.bottom.calc_size(size.y))
-    }
-
     pub fn calc_rect(
         self,
         size: Vec2,
-    ) -> Vec2 {
-        self.calc_start(size) + self.calc_size(size)
+    ) -> (Vec2, Vec2) {
+        (
+            Vec2::new(self.left.calc_size(size.x), self.top.calc_size(size.y)),
+            Vec2::new(self.right.calc_size(size.x), self.bottom.calc_size(size.y)),
+        )
     }
 
     pub fn calc_bound(
         self,
         bound: Rect,
     ) -> Rect {
-        let size = bound.size();
-        bound
-            .add_start(self.calc_start(size))
-            .sub_size(self.calc_size(size))
+        let (start, size) = self.calc_rect(bound.size());
+        bound.add_start(start).sub_size(size)
     }
 }
 

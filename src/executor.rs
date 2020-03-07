@@ -1,18 +1,20 @@
 use crate::{
     backend::Backend,
-    css::StyleSheet,
+    css::{
+        Calc,
+        StyleSheet,
+    },
+    element_view::ElementView,
     event::EventLike,
     model::Model,
     printer::Printer,
+    rect::Rect,
     update_result::UpdateResult,
 };
 
 use bumpalo::Bump;
 
 use nohash_hasher::IntMap;
-
-#[cfg(feature = "test-backend")]
-use crate::vec2::Vec2;
 
 pub fn simple<E: EventLike + Copy, B: Backend, M: Model<E>>(
     backend: &mut B,
@@ -24,26 +26,45 @@ pub fn simple<E: EventLike + Copy, B: Backend, M: Model<E>>(
 {
     let mut cache = IntMap::default();
     let mut bump = Bump::with_capacity(1024 * 1024);
-    backend.clear();
 
-    let mut view = model.view(&bump);
+    let mut view = ElementView::with_view(model.view(&bump));
     let mut need_redraw = true;
 
+    backend.clear();
+    view.layout(
+        css,
+        css.calc_prop(&view).calc(Default::default()),
+        &mut cache,
+        Rect::new((0, 0), backend.size()),
+    );
+    view.render(css, &mut Printer::new(backend), &mut cache);
+    backend.flush();
+
     loop {
+        let e = event_source(backend, &mut need_redraw);
+        if let Some(size) = e.try_resize() {
+            view.layout(
+                css,
+                css.calc_prop(&view).calc(Default::default()),
+                &mut cache,
+                Rect::new((0, 0), size),
+            );
+            need_redraw = true;
+        }
+
         if need_redraw {
             backend.clear();
             view.render(css, &mut Printer::new(backend), &mut cache);
             backend.flush();
             need_redraw = false
         }
-        let e = event_source(backend, &mut need_redraw);
-        match view.on_event(e) {
+        match view.view().on_event(e) {
             Some(msg) => {
                 match model.update(msg) {
                     UpdateResult::Redraw => {
                         need_redraw = true;
                         bump.reset();
-                        view = model.view(&bump);
+                        view = ElementView::with_view(model.view(&bump));
                     }
                     UpdateResult::Ignore => continue,
                     UpdateResult::Exit => return,
