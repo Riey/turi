@@ -1,3 +1,4 @@
+mod auto;
 mod calc;
 mod color;
 mod combine;
@@ -15,6 +16,7 @@ use self::{
 };
 
 pub use self::{
+    auto::CssAuto,
     calc::Calc,
     color::CssColor,
     css_val::CssVal,

@@ -132,9 +132,9 @@ impl<'a, E, M> ElementView<'a, E, M> {
                 .add_start(margin_start + border_size + padding_start)
                 .sub_size(margin_size + border_size + padding_size);
 
-            let content_size = match self.view.body() {
+            let desired_content_size = match self.view.body() {
                 // known size
-                ViewBody::Text(_, width) => Vec2::new(width, 1).min(max_content_bound.size()),
+                ViewBody::Text(_, width) => Vec2::new(width, 1),
                 ViewBody::Children(children) => {
                     let mut ret = Vec2::new(0, 0);
                     for (i, child) in children.iter().enumerate() {
@@ -151,6 +151,17 @@ impl<'a, E, M> ElementView<'a, E, M> {
 
                     ret
                 }
+            };
+
+            let content_size = {
+                let mut content_size = desired_content_size;
+                if let Some(width) = property.width.calc_size(max_content_bound.w()) {
+                    content_size = content_size.max_x(width);
+                }
+                if let Some(height) = property.height.calc_size(max_content_bound.h()) {
+                    content_size = content_size.max_y(height);
+                }
+                content_size.min(max_content_bound.size())
             };
 
             let content_bound = Rect::new(max_content_bound.start(), content_size);
