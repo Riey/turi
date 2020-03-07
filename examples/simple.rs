@@ -13,14 +13,12 @@ use turi::{
         div,
         event,
     },
-    css::StyleSheet,
-    model::Model,
-    update_result::{
-        Exit,
-        Ignore,
-        UpdateResult,
-    },
-    view::View,
+    Exit,
+    Ignore,
+    Model,
+    StyleSheet,
+    UpdateResult,
+    View,
 };
 
 struct Simple;

@@ -1,27 +1,32 @@
 pub mod backend;
 pub mod builder;
-pub mod css;
-pub mod element_view;
-pub mod event;
-pub mod event_filter;
 pub mod executor;
-pub mod model;
-pub mod printer;
-pub mod rect;
-pub mod update_result;
-pub mod vec2;
-pub mod view;
+
+mod css;
+mod element_view;
+mod event;
+mod event_filter;
+mod model;
+mod printer;
+mod rect;
+mod update_result;
+mod vec2;
+mod view;
 
 pub mod util;
 
 pub use self::{
-    builder::{
-        body,
-        class,
-        div,
-        event,
-    },
     bumpalo::Bump,
+    css::{
+        AnsiColor,
+        AnsiStyle,
+        StyleSheet,
+    },
+    event::{
+        EventLike,
+        KeyEventLike,
+        MouseEventLike,
+    },
     model::Model,
     update_result::{
         Exit,
@@ -31,4 +36,6 @@ pub use self::{
     },
     view::View,
 };
+
+pub use ansi_term;
 pub use bumpalo;
