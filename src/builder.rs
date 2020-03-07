@@ -92,14 +92,23 @@ impl<'a, E, M> EventBuilder<'a, E, M> {
 }
 
 pub struct BodyBuilder<'a, E, M> {
+    b:        &'a Bump,
     children: Vec<'a, View<'a, E, M>>,
 }
 
 impl<'a, E, M> BodyBuilder<'a, E, M> {
     pub fn new(b: &'a Bump) -> Self {
         Self {
+            b,
             children: Vec::with_capacity_in(3, b),
         }
+    }
+
+    pub fn text(
+        self,
+        text: &str,
+    ) -> &'a str {
+        self.b.alloc_str(text)
     }
 
     pub fn child(
