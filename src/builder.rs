@@ -1,5 +1,9 @@
 use crate::{
-    event::EventLike,
+    event::{
+        EventLike,
+        KeyEventLike,
+        MouseEventLike,
+    },
     event_filter::EventFilter,
     view::{
         Tag,
@@ -56,7 +60,33 @@ impl<'a, E, M> EventBuilder<'a, E, M> {
         E: EventLike,
         M: Copy,
     {
-        self.events.push(EventFilter::ctrl_char(self.b, ch, msg));
+        self.events.push(EventFilter::new(
+            self.b.alloc(move |e: &E| {
+                e.try_key()
+                    .and_then(|ke| ke.try_ctrl_char())
+                    .map_or(false, |c| c == ch)
+            }),
+            msg,
+        ));
+        self
+    }
+
+    pub fn click(
+        mut self,
+        msg: M,
+    ) -> Self
+    where
+        E: EventLike,
+        M: Copy,
+    {
+        self.events.push(EventFilter::new(
+            &|e| {
+                e.try_mouse()
+                    .and_then(|me| me.try_left_down())
+                    .map_or(false, |_| true)
+            },
+            msg,
+        ));
         self
     }
 }
