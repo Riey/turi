@@ -1,9 +1,9 @@
 pub mod backend;
 pub mod builder;
+pub mod element_view;
 pub mod executor;
 
 mod css;
-mod element_view;
 mod event;
 mod event_filter;
 mod model;
@@ -28,12 +28,14 @@ pub use self::{
         MouseEventLike,
     },
     model::Model,
+    rect::Rect,
     update_result::{
         Exit,
         Ignore,
         Redraw,
         UpdateResult,
     },
+    vec2::Vec2,
     view::View,
 };
 
