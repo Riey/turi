@@ -1,35 +1,24 @@
 use crate::{
-    css::{
-        Calc,
-        StyleSheet,
+    css::StyleSheet,
+    element_view::{
+        ElementView,
+        LayoutResult,
     },
-    element_view::ElementView,
     event::EventLike,
     event_filter::EventFilter,
     printer::Printer,
 };
+use nohash_hasher::IntMap;
 
 use enumset::{
     EnumSet,
     EnumSetType,
 };
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 pub enum Tag {
     Div,
     Button,
-}
-
-impl std::str::FromStr for Tag {
-    type Err = ();
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "div" => Ok(Tag::Div),
-            "button" => Ok(Tag::Button),
-            _ => Err(()),
-        }
-    }
 }
 
 #[derive(Debug)]
@@ -47,11 +36,12 @@ pub enum ViewState {
 
 #[derive(Debug)]
 pub struct View<'a, E, M> {
-    tag:     Tag,
-    classes: &'a [&'a str],
-    state:   EnumSet<ViewState>,
-    events:  &'a [EventFilter<'a, E, M>],
-    body:    ViewBody<'a, E, M>,
+    tag:      Tag,
+    classes:  &'a [&'a str],
+    state:    EnumSet<ViewState>,
+    events:   &'a [EventFilter<'a, E, M>],
+    body:     ViewBody<'a, E, M>,
+    hash_tag: u64,
 }
 
 impl<'a, E, M> View<'a, E, M> {
@@ -61,13 +51,28 @@ impl<'a, E, M> View<'a, E, M> {
         events: &'a [EventFilter<'a, E, M>],
         body: ViewBody<'a, E, M>,
     ) -> Self {
-        Self {
+        let mut view = Self {
             tag,
             classes,
             state: EnumSet::new(),
             events,
             body,
-        }
+            hash_tag: 0,
+        };
+
+        use std::hash::{
+            Hash,
+            Hasher,
+        };
+        let mut hasher = ahash::AHasher::default();
+        view.hash(&mut hasher);
+        view.hash_tag = hasher.finish();
+
+        view
+    }
+
+    pub fn hash_tag(self) -> u64 {
+        self.hash_tag
     }
 
     #[inline]
@@ -109,10 +114,10 @@ impl<'a, E, M> View<'a, E, M> {
         self,
         css: &StyleSheet,
         printer: &mut Printer,
+        layout_cache: &mut IntMap<u64, LayoutResult>,
     ) {
         let view = ElementView::with_view(self);
-        let property = css.calc_prop(&view).calc(Default::default());
-        view.render(css, property, printer);
+        view.render(css, printer, layout_cache);
     }
 }
 impl<'a, E, M> View<'a, E, M>
@@ -144,18 +149,94 @@ where
     }
 }
 
-impl<'a, E, M> Clone for ViewBody<'a, E, M> {
-    #[inline]
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-impl<'a, E, M> Copy for ViewBody<'a, E, M> {}
+#[doc(hidden)]
+mod _impl {
+    use super::*;
+    use std::hash::{
+        Hash,
+        Hasher,
+    };
 
-impl<'a, E, M> Clone for View<'a, E, M> {
-    #[inline]
-    fn clone(&self) -> Self {
-        *self
+    impl std::str::FromStr for Tag {
+        type Err = ();
+
+        fn from_str(s: &str) -> Result<Self, Self::Err> {
+            match s {
+                "div" => Ok(Tag::Div),
+                "button" => Ok(Tag::Button),
+                _ => Err(()),
+            }
+        }
+    }
+
+    impl<'a, E, M> Clone for ViewBody<'a, E, M> {
+        #[inline]
+        fn clone(&self) -> Self {
+            *self
+        }
+    }
+    impl<'a, E, M> Copy for ViewBody<'a, E, M> {}
+
+    impl<'a, E, M> Hash for ViewBody<'a, E, M> {
+        fn hash<H: Hasher>(
+            &self,
+            state: &mut H,
+        ) {
+            match self {
+                ViewBody::Text(text, _) => {
+                    text.hash(state);
+                }
+                ViewBody::Children(children) => {
+                    children.hash(state);
+                }
+            }
+        }
+    }
+
+    impl<'a, E, M> Eq for ViewBody<'a, E, M> {}
+
+    impl<'a, E, M> PartialEq for ViewBody<'a, E, M> {
+        fn eq(
+            &self,
+            other: &Self,
+        ) -> bool {
+            match (self, other) {
+                (ViewBody::Text(l, _), ViewBody::Text(r, _)) => l == r,
+                (ViewBody::Children(l), ViewBody::Children(r)) => l == r,
+                _ => false,
+            }
+        }
+    }
+    impl<'a, E, M> Clone for View<'a, E, M> {
+        #[inline]
+        fn clone(&self) -> Self {
+            *self
+        }
+    }
+    impl<'a, E, M> Copy for View<'a, E, M> {}
+    impl<'a, E, M> Hash for View<'a, E, M> {
+        fn hash<H: Hasher>(
+            &self,
+            state: &mut H,
+        ) {
+            self.tag.hash(state);
+            self.classes.hash(state);
+            self.state.hash(state);
+            self.body.hash(state);
+        }
+    }
+
+    impl<'a, E, M> Eq for View<'a, E, M> {}
+
+    impl<'a, E, M> PartialEq for View<'a, E, M> {
+        fn eq(
+            &self,
+            other: &Self,
+        ) -> bool {
+            self.tag == other.tag
+                && self.classes == other.classes
+                && self.state == other.state
+                && self.body == other.body
+        }
     }
 }
-impl<'a, E, M> Copy for View<'a, E, M> {}

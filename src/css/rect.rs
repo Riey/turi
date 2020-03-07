@@ -47,6 +47,13 @@ impl CalcCssRect {
         Vec2::new(self.right.calc_size(size.x), self.bottom.calc_size(size.y))
     }
 
+    pub fn calc_rect(
+        self,
+        size: Vec2,
+    ) -> Vec2 {
+        self.calc_start(size) + self.calc_size(size)
+    }
+
     pub fn calc_bound(
         self,
         bound: Rect,

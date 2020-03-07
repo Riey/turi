@@ -9,6 +9,8 @@ use crate::{
 
 use bumpalo::Bump;
 
+use nohash_hasher::IntMap;
+
 #[cfg(feature = "test-backend")]
 use crate::vec2::Vec2;
 
@@ -20,6 +22,7 @@ pub fn simple<E: EventLike + Copy, B: Backend, M: Model<E>>(
 ) where
     M::Msg: Copy,
 {
+    let mut cache = IntMap::default();
     let mut bump = Bump::with_capacity(1024 * 1024);
     backend.clear();
 
@@ -29,7 +32,7 @@ pub fn simple<E: EventLike + Copy, B: Backend, M: Model<E>>(
     loop {
         if need_redraw {
             backend.clear();
-            view.render(css, &mut Printer::new(backend));
+            view.render(css, &mut Printer::new(backend), &mut cache);
             backend.flush();
             need_redraw = false
         }

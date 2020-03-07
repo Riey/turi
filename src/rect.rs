@@ -1,6 +1,6 @@
 use crate::vec2::Vec2;
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Default, Debug, Eq, PartialEq)]
 pub struct Rect {
     start: Vec2,
     size:  Vec2,

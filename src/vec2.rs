@@ -5,7 +5,7 @@ use std::ops::{
     SubAssign,
 };
 
-#[derive(Debug, Clone, Copy, Ord, PartialOrd, Eq, PartialEq)]
+#[derive(Debug, Default, Clone, Copy, Ord, PartialOrd, Eq, PartialEq)]
 pub struct Vec2 {
     pub x: u16,
     pub y: u16,

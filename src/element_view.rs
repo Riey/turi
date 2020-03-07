@@ -1,6 +1,5 @@
 use crate::{
     css::{
-        Calc,
         CalcCssProperty,
         StyleSheet,
     },
@@ -13,6 +12,7 @@ use crate::{
         ViewState,
     },
 };
+use nohash_hasher::IntMap;
 
 use ansi_term::Style;
 use simplecss::{
@@ -20,6 +20,15 @@ use simplecss::{
     Element,
     PseudoClass,
 };
+
+#[derive(Default, Clone, Copy)]
+pub struct LayoutResult {
+    size:     Vec2,
+    border:   Rect,
+    padding:  Rect,
+    content:  Rect,
+    property: CalcCssProperty,
+}
 
 #[derive(Debug)]
 pub struct ElementView<'a, E, M> {
@@ -44,7 +53,7 @@ impl<'a, E, M> ElementView<'a, E, M> {
         Some(Self {
             parent: Some(self),
             pos,
-            view: self.view.children().get(pos).cloned()?,
+            view: self.view.children().get(pos).copied()?,
         })
     }
 
@@ -55,75 +64,81 @@ impl<'a, E, M> ElementView<'a, E, M> {
     pub fn render(
         self,
         css: &StyleSheet,
-        property: CalcCssProperty,
         printer: &mut Printer,
-    ) -> Vec2 {
-        let mut view_size = Vec2::new(0, 0);
+        layout_cache: &mut IntMap<u64, LayoutResult>,
+    ) -> LayoutResult {
+        let layout = *layout_cache
+            .entry(self.view.hash_tag())
+            .or_insert_with(|| self.layout(css, printer.bound()));
 
-        printer.with_style(property.style, |printer| {
-            let bound = printer.bound();
-            let size = bound.size();
-            let margin_start = property.margin.calc_start(size);
-            let margin_size = property.margin.calc_size(size);
-            let border_start = if property.border_width.is_zero() {
-                Vec2::new(0, 0)
-            } else {
-                Vec2::new(1, 1)
-            };
-            let border_size = border_start;
-            let padding_start = property.padding.calc_start(size);
-            let padding_size = property.padding.calc_size(size);
-            let content_start = margin_start + border_start + padding_start;
-            let mut content_size = Vec2::new(0, 0);
-
+        printer.with_style(layout.property.style, |printer| {
             // content
-            printer.with_bound(
-                bound
-                    .add_start(content_start)
-                    .sub_size(margin_size + padding_size + border_size),
-                |printer| {
-                    match self.view.body() {
-                        ViewBody::Text(text, width) => {
-                            printer.print((0, 0), text);
-                            content_size = Vec2::new(width, 1);
-                        }
-                        ViewBody::Children(children) => {
-                            let mut bound = printer.bound();
+            printer.with_bound(layout.content, |printer| {
+                match self.view.body() {
+                    ViewBody::Text(text, _) => {
+                        printer.print((0, 0), text);
+                    }
+                    ViewBody::Children(children) => {
+                        let mut bound = printer.bound();
 
-                            for pos in 0..children.len() {
-                                let child = self.make_child(pos).unwrap();
-                                let child_property = css.calc_prop(&child).calc(property);
-                                let mut child_size = Vec2::new(0, 0);
-                                printer.with_bound(bound, |printer| {
-                                    child_size = child.render(css, child_property, printer);
-                                });
-                                bound = bound.add_start((0, child_size.y));
-                                content_size = content_size.add_y(child_size.y).max_x(child_size.x);
-                            }
+                        for pos in 0..children.len() {
+                            let child = self.make_child(pos).unwrap();
+                            printer.with_bound(bound, |printer| {
+                                let layout = child.render(css, printer, layout_cache);
+                                bound = bound.add_start((0, layout.size.y));
+                            });
                         }
                     }
-                },
-            );
-
-            let border_bound = Rect::new(
-                bound.start() + margin_start,
-                border_start + border_size + padding_start + padding_size + content_size,
-            );
+                }
+            });
 
             // border
-            if border_start.x > 0 {
-                printer.with_bound(border_bound, |printer| {
+            if layout.border.x() > 0 {
+                printer.with_bound(layout.border, |printer| {
                     let mut style = Style::default();
-                    style.foreground = property.border_color;
+                    style.foreground = layout.property.border_color;
                     printer.with_style(style, |printer| {
                         printer.print_rect();
                     });
                 });
             }
-            view_size = border_bound.size() + margin_start + margin_size;
+
+            // TODO: padding
         });
 
-        view_size
+        layout
+    }
+
+    pub fn layout(
+        self,
+        css: &StyleSheet,
+        max_bound: Rect,
+    ) -> LayoutResult {
+        todo!()
+        /*
+        self.property = css.calc_prop(self).calc(self.parent.map(|p| p.property).unwrap_or_default());
+        let mut bound = max_bound;
+        bound = self.property.margin.calc_bound(bound);
+
+        if !self.property.border_width.is_zero() {
+            self.layout.border = bound;
+            bound = bound.with_margin(1);
+        }
+
+        self.layout.padding = bound;
+        bound = self.property.padding.calc_bound(bound);
+
+        let content_bound = match self.view.body() {
+            ViewBody::Text(_, width) => {
+                Rect::new(bound.start(), (width, 1))
+            }
+            ViewBody::Children(children) => {
+
+            }
+        }
+
+        bound
+        */
     }
 }
 
