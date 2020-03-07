@@ -1,6 +1,6 @@
 use crate::{
     backend::Backend,
-    style::AnsiStyle as Style,
+    css::AnsiStyle as Style,
     vec2::Vec2,
 };
 

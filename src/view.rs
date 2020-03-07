@@ -1,153 +1,227 @@
 use crate::{
-    converters::{
-        Map,
-        MapE,
-        MapOptE,
-        OrElse,
-        OrElseFirst,
-    },
-    orientation::Orientation,
-    printer::Printer,
-    vec2::Vec2,
-    view_wrappers::{
-        ConsumeEvent,
-        ScrollView,
-    },
+    event::EventLike,
+    event_filter::EventFilter,
 };
 
-pub trait View<S, E> {
-    type Message;
+use enumset::{
+    EnumSet,
+    EnumSetType,
+};
 
-    fn render(
-        &self,
-        printer: &mut Printer,
-    );
-    fn layout(
-        &mut self,
-        size: Vec2,
-    );
-    fn desired_size(&self) -> Vec2;
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
+pub enum Tag {
+    Div,
+    Button,
+}
 
-    fn on_event(
-        &mut self,
-        state: &mut S,
-        event: E,
-    ) -> Option<Self::Message>;
+#[derive(Debug)]
+pub enum ViewBody<'a, E, M> {
+    Text(&'a str, u16),
+    Children(&'a [View<'a, E, M>]),
+}
 
-    #[inline]
-    fn scrollable(
-        self,
-        orientation: Orientation,
-    ) -> ScrollView<Self>
-    where
-        Self: Sized,
-    {
-        ScrollView::new(self, orientation)
+#[derive(EnumSetType, Debug)]
+pub enum ViewState {
+    Normal,
+    Focus,
+    Hover,
+}
+
+#[derive(Debug)]
+pub struct View<'a, E, M> {
+    tag:      Tag,
+    state:    EnumSet<ViewState>,
+    classes:  &'a [&'a str],
+    events:   &'a [EventFilter<'a, E, M>],
+    body:     ViewBody<'a, E, M>,
+    hash_tag: u64,
+}
+
+impl<'a, E, M> View<'a, E, M> {
+    pub fn new(
+        tag: Tag,
+        classes: &'a [&'a str],
+        events: &'a [EventFilter<'a, E, M>],
+        body: ViewBody<'a, E, M>,
+    ) -> Self {
+        let mut view = Self {
+            tag,
+            state: EnumSet::new(),
+            classes,
+            events,
+            body,
+            hash_tag: 0,
+        };
+
+        use std::hash::{
+            Hash,
+            Hasher,
+        };
+        let mut hasher = ahash::AHasher::default();
+        view.hash(&mut hasher);
+        view.hash_tag = hasher.finish();
+
+        view
     }
 
     #[inline]
-    fn consume_event<M>(
-        self,
-        msg: M,
-    ) -> ConsumeEvent<Self, M>
-    where
-        Self: Sized,
-        M: Clone,
-    {
-        ConsumeEvent::new(self, msg)
+    pub fn hash_tag(self) -> u64 {
+        self.hash_tag
     }
 
     #[inline]
-    fn map<U, F>(
-        self,
-        f: F,
-    ) -> Map<Self, U, F>
-    where
-        Self: Sized,
-        F: FnMut(&mut Self, &mut S, Self::Message) -> U,
-    {
-        Map::new(self, f)
+    pub fn tag(self) -> Tag {
+        self.tag
     }
 
     #[inline]
-    fn map_e<NE, F>(
-        self,
-        f: F,
-    ) -> MapE<Self, NE, F>
-    where
-        Self: Sized,
-        F: FnMut(&mut Self, &mut S, NE) -> E,
-    {
-        MapE::new(self, f)
+    pub fn classes(self) -> &'a [&'a str] {
+        self.classes
     }
 
     #[inline]
-    fn map_opt_e<NE, F>(
-        self,
-        f: F,
-    ) -> MapOptE<Self, NE, F>
-    where
-        Self: Sized,
-        F: FnMut(&mut Self, &mut S, NE) -> Option<E>,
-    {
-        MapOptE::new(self, f)
+    pub fn state(self) -> EnumSet<ViewState> {
+        self.state
     }
 
     #[inline]
-    fn or_else<F>(
+    pub fn has_state(
         self,
-        f: F,
-    ) -> OrElse<Self, F>
-    where
-        Self: Sized,
-        F: FnMut(&mut Self, &mut S, E) -> Option<Self::Message>,
-    {
-        OrElse::new(self, f)
+        state: ViewState,
+    ) -> bool {
+        self.state.contains(state)
     }
 
     #[inline]
-    fn or_else_first<F>(
-        self,
-        f: F,
-    ) -> OrElseFirst<Self, F>
-    where
-        Self: Sized,
-        F: FnMut(&mut Self, &mut S, E) -> Option<Self::Message>,
-    {
-        OrElseFirst::new(self, f)
+    pub fn body(self) -> ViewBody<'a, E, M> {
+        self.body
+    }
+
+    pub fn children(self) -> &'a [Self] {
+        match self.body {
+            ViewBody::Children(children) => children,
+            _ => &[],
+        }
     }
 }
 
-impl<S, E, M> View<S, E> for Box<dyn View<S, E, Message = M>> {
-    type Message = M;
-
-    #[inline]
-    fn desired_size(&self) -> Vec2 {
-        (**self).desired_size()
-    }
-
-    #[inline]
-    fn layout(
-        &mut self,
-        size: Vec2,
-    ) {
-        (**self).layout(size)
-    }
-
-    #[inline]
-    fn render(
-        &self,
-        printer: &mut Printer,
-    ) {
-        (**self).render(printer);
-    }
-
-    #[inline]
-    fn on_event(
-        &mut self,
-        state: &mut S,
-        event: E,
+impl<'a, E, M> View<'a, E, M>
+where
+    E: EventLike + Copy,
+    M: Copy,
+{
+    pub fn on_event(
+        self,
+        e: E,
     ) -> Option<M> {
-        (**self).on_event(state, event)
+        for event in self.events {
+            if let msg @ Some(_) = event.check(&e) {
+                return msg;
+            }
+        }
+
+        match self.body {
+            ViewBody::Text(..) => None,
+            ViewBody::Children(children) => {
+                for child in children {
+                    if let msg @ Some(_) = child.on_event(e) {
+                        return msg;
+                    }
+                }
+                None
+            }
+        }
+    }
+}
+
+#[doc(hidden)]
+mod _impl {
+    use super::*;
+    use std::hash::{
+        Hash,
+        Hasher,
+    };
+
+    impl std::str::FromStr for Tag {
+        type Err = ();
+
+        fn from_str(s: &str) -> Result<Self, Self::Err> {
+            match s {
+                "div" => Ok(Tag::Div),
+                "button" => Ok(Tag::Button),
+                _ => Err(()),
+            }
+        }
+    }
+
+    impl<'a, E, M> Clone for ViewBody<'a, E, M> {
+        #[inline]
+        fn clone(&self) -> Self {
+            *self
+        }
+    }
+    impl<'a, E, M> Copy for ViewBody<'a, E, M> {}
+
+    impl<'a, E, M> Hash for ViewBody<'a, E, M> {
+        fn hash<H: Hasher>(
+            &self,
+            state: &mut H,
+        ) {
+            match self {
+                ViewBody::Text(text, _) => {
+                    text.hash(state);
+                }
+                ViewBody::Children(children) => {
+                    children.hash(state);
+                }
+            }
+        }
+    }
+
+    impl<'a, E, M> Eq for ViewBody<'a, E, M> {}
+
+    impl<'a, E, M> PartialEq for ViewBody<'a, E, M> {
+        fn eq(
+            &self,
+            other: &Self,
+        ) -> bool {
+            match (self, other) {
+                (ViewBody::Text(l, _), ViewBody::Text(r, _)) => l == r,
+                (ViewBody::Children(l), ViewBody::Children(r)) => l == r,
+                _ => false,
+            }
+        }
+    }
+    impl<'a, E, M> Clone for View<'a, E, M> {
+        #[inline]
+        fn clone(&self) -> Self {
+            *self
+        }
+    }
+    impl<'a, E, M> Copy for View<'a, E, M> {}
+    impl<'a, E, M> Hash for View<'a, E, M> {
+        fn hash<H: Hasher>(
+            &self,
+            state: &mut H,
+        ) {
+            self.tag.hash(state);
+            self.classes.hash(state);
+            self.state.hash(state);
+            self.body.hash(state);
+        }
+    }
+
+    impl<'a, E, M> Eq for View<'a, E, M> {}
+
+    impl<'a, E, M> PartialEq for View<'a, E, M> {
+        fn eq(
+            &self,
+            other: &Self,
+        ) -> bool {
+            self.tag == other.tag
+                && self.classes == other.classes
+                && self.state == other.state
+                && self.body == other.body
+        }
     }
 }

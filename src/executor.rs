@@ -1,35 +1,73 @@
 use crate::{
     backend::Backend,
+    css::{
+        Calc,
+        StyleSheet,
+    },
+    element_view::ElementView,
+    event::EventLike,
+    model::Model,
     printer::Printer,
-    state::RedrawState,
-    style::Theme,
-    vec2::Vec2,
-    view::View,
+    rect::Rect,
+    update_result::UpdateResult,
 };
 
-pub fn simple<S: RedrawState, E, B: Backend, V: View<S, E, Message = bool>>(
-    state: &mut S,
+use bumpalo::Bump;
+
+use nohash_hasher::IntMap;
+
+pub fn simple<E: EventLike + Copy, B: Backend, M: Model<E>>(
     backend: &mut B,
-    theme: &Theme,
-    view: &mut V,
-    mut event_source: impl FnMut(&mut S, &mut B) -> E,
-) {
+    css: &StyleSheet,
+    model: &mut M,
+    mut event_source: impl FnMut(&mut B, &mut bool) -> E,
+) where
+    M::Msg: Copy,
+{
+    let mut cache = IntMap::default();
+    let mut bump = Bump::with_capacity(1024 * 1024);
+
+    let mut view = ElementView::with_view(model.view(&bump));
+    let mut need_redraw = true;
+
     backend.clear();
-    state.set_need_redraw(true);
+    view.layout(
+        css,
+        css.calc_prop(&view).calc(Default::default()),
+        &mut cache,
+        Rect::new((0, 0), backend.size()),
+    );
+    view.render(css, &mut Printer::new(backend), &mut cache);
+    backend.flush();
 
     loop {
-        if state.is_need_redraw() {
-            backend.clear();
-            view.layout(backend.size());
-            view.render(&mut Printer::new(backend, theme));
-            backend.flush();
-            state.set_need_redraw(false);
+        let e = event_source(backend, &mut need_redraw);
+        if let Some(size) = e.try_resize() {
+            view.layout(
+                css,
+                css.calc_prop(&view).calc(Default::default()),
+                &mut cache,
+                Rect::new((0, 0), size),
+            );
+            need_redraw = true;
         }
-        let e = event_source(state, backend);
-        match view.on_event(state, e) {
-            Some(exit) => {
-                if exit {
-                    break;
+
+        if need_redraw {
+            backend.clear();
+            view.render(css, &mut Printer::new(backend), &mut cache);
+            backend.flush();
+            need_redraw = false
+        }
+        match view.view().on_event(e) {
+            Some(msg) => {
+                match model.update(msg) {
+                    UpdateResult::Redraw => {
+                        need_redraw = true;
+                        bump.reset();
+                        view = ElementView::with_view(model.view(&bump));
+                    }
+                    UpdateResult::Ignore => continue,
+                    UpdateResult::Exit => return,
                 }
             }
             None => continue,

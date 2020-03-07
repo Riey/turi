@@ -3,40 +3,30 @@ use crate::{
         Backend,
         SlicedBackend,
     },
+    css::AnsiStyle as Style,
     rect::Rect,
-    style::{
-        Style,
-        Theme,
-    },
     vec2::Vec2,
 };
 use std::mem::swap;
 
 pub struct Printer<'a> {
     bound:   Rect,
-    style:   Style,
     backend: &'a mut dyn Backend,
-    theme:   &'a Theme,
 }
 
 impl<'a> Printer<'a> {
-    pub fn new(
-        backend: &'a mut dyn Backend,
-        theme: &'a Theme,
-    ) -> Self {
+    pub fn new(backend: &'a mut dyn Backend) -> Self {
         Self {
             bound: Rect::new((0, 0), backend.size()),
-            style: Style::default(),
             backend,
-            theme,
         }
     }
 
-    pub fn sliced<T>(
+    pub fn sliced(
         &mut self,
         pos: impl Into<Vec2>,
-        f: impl FnOnce(&mut Printer) -> T,
-    ) -> T {
+        f: impl FnOnce(&mut Printer),
+    ) {
         let pos = pos.into();
         let mut backend = SlicedBackend::new(self.backend, pos);
         let mut printer = Printer {
@@ -44,36 +34,30 @@ impl<'a> Printer<'a> {
                 self.bound.start().saturating_sub(pos),
                 self.bound.size() + pos,
             ),
-            style:   self.style,
             backend: &mut backend,
-            theme:   self.theme,
         };
-        f(&mut printer)
+        f(&mut printer);
     }
 
-    pub fn with_bound<T>(
+    pub fn with_bound(
         &mut self,
         mut bound: Rect,
-        f: impl FnOnce(&mut Self) -> T,
-    ) -> T {
+        f: impl FnOnce(&mut Self),
+    ) {
         swap(&mut self.bound, &mut bound);
-        let ret = f(self);
+        f(self);
         swap(&mut self.bound, &mut bound);
-        ret
     }
 
-    pub fn with_style<T>(
+    pub fn with_style(
         &mut self,
-        mut style: Style,
-        f: impl FnOnce(&mut Self) -> T,
-    ) -> T {
+        style: Style,
+        f: impl FnOnce(&mut Self),
+    ) {
         let old_style = self.backend.style();
-        self.backend.set_style(self.theme.resolve_style(&style));
-        swap(&mut style, &mut self.style);
-        let ret = f(self);
-        swap(&mut style, &mut self.style);
+        self.backend.set_style(style);
+        f(self);
         self.backend.set_style(old_style);
-        ret
     }
 
     #[inline]
@@ -82,13 +66,12 @@ impl<'a> Printer<'a> {
     }
 
     #[inline]
-    pub fn style(&self) -> Style {
-        self.style
-    }
-
-    #[inline]
     pub fn bound(&self) -> Rect {
         self.bound
+    }
+
+    pub fn style(&self) -> Style {
+        self.backend.style()
     }
 
     pub fn print(
@@ -112,8 +95,7 @@ impl<'a> Printer<'a> {
         start: impl Into<Vec2>,
         text: &str,
     ) {
-        self.backend
-            .print_at(self.bound.start() + start.into(), text);
+        self.backend.print_at(self.bound.start() + start, text);
     }
 
     #[inline]
@@ -171,7 +153,7 @@ impl<'a> Printer<'a> {
         &mut self,
         pos: u16,
     ) {
-        self.print_horizontal_line_at((0, pos), self.bound().w() as usize);
+        self.print_horizontal_line_at((0, pos), self.bound().w() as usize - 1);
     }
 
     #[inline]
@@ -194,23 +176,36 @@ impl<'a> Printer<'a> {
         self.raw_print(start, &BLOCK_STRING[..size * "█".len()]);
     }
 
+    // pub fn fill_bg(&mut self) {
+    //     static EMPTY_STRING: &str = "                                                                                                                                                                ";
+    //     let mut style = Style::new();
+    //     let old_style = self.style();
+    //     style.background = old_style.background;
+    //     //style.foreground = old_style.background;
+    //     self.with_style(style, |printer| {
+    //         for y in 0..printer.bound.h() {
+    //             printer.raw_print((0, y), &EMPTY_STRING[..printer.bound.w() as usize * " ".len()]);
+    //         }
+    //     });
+    // }
+
     pub fn print_rect(&mut self) {
+        let w = self.bound.w().saturating_sub(1);
+        let h = self.bound.h().saturating_sub(1);
+
         self.print_horizontal_line(0);
-        self.print_horizontal_line(self.bound.h() - 1);
+        self.print_horizontal_line(h);
         self.print_vertical_line(0);
-        self.print_vertical_line(self.bound.w() - 1);
+        self.print_vertical_line(w);
 
         const LEFT_TOP: &str = "┌";
         const RIGHT_TOP: &str = "┐";
         const LEFT_BOTTOM: &str = "└";
         const RIGHT_BOTTOM: &str = "┘";
 
-        let start = self.bound.start();
-        let end = self.bound.end();
-
-        self.raw_print(start, LEFT_TOP);
-        self.raw_print((end.x, start.y), RIGHT_TOP);
-        self.raw_print((start.x, end.y), LEFT_BOTTOM);
-        self.raw_print(end, RIGHT_BOTTOM);
+        self.raw_print((0, 0), LEFT_TOP);
+        self.raw_print((w, 0), RIGHT_TOP);
+        self.raw_print((0, h), LEFT_BOTTOM);
+        self.raw_print((w, h), RIGHT_BOTTOM);
     }
 }

@@ -1,6 +1,6 @@
 use crate::vec2::Vec2;
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Default, Debug, Eq, PartialEq)]
 pub struct Rect {
     start: Vec2,
     size:  Vec2,
@@ -46,7 +46,7 @@ impl Rect {
         let add = add.into();
         Self {
             start: self.start + add,
-            size:  self.size - add,
+            size:  self.size.saturating_sub(add),
         }
     }
 
@@ -57,7 +57,7 @@ impl Rect {
         let sub = sub.into();
         Self {
             start: self.start,
-            size:  self.size - sub,
+            size:  self.size.saturating_sub(sub),
         }
     }
 

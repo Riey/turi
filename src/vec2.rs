@@ -5,7 +5,7 @@ use std::ops::{
     SubAssign,
 };
 
-#[derive(Debug, Clone, Copy, Ord, PartialOrd, Eq, PartialEq)]
+#[derive(Debug, Default, Clone, Copy, Ord, PartialOrd, Eq, PartialEq)]
 pub struct Vec2 {
     pub x: u16,
     pub y: u16,
@@ -57,6 +57,36 @@ impl Vec2 {
             y: self.y - y,
             ..self
         }
+    }
+
+    pub fn checked_sub(
+        self,
+        other: Self,
+    ) -> Option<Self> {
+        Some(Self {
+            x: self.x.checked_sub(other.x)?,
+            y: self.y.checked_sub(other.y)?,
+        })
+    }
+
+    pub fn checked_sub_x(
+        self,
+        x: u16,
+    ) -> Option<Self> {
+        Some(Self {
+            x: self.x.checked_sub(x)?,
+            y: self.y,
+        })
+    }
+
+    pub fn checked_sub_y(
+        self,
+        y: u16,
+    ) -> Option<Self> {
+        Some(Self {
+            x: self.x,
+            y: self.y.checked_sub(y)?,
+        })
     }
 
     pub fn saturating_add(
