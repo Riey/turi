@@ -5,7 +5,7 @@ use crate::css::{
 };
 use std::str::FromStr;
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum CssAuto<T> {
     Manual(T),
     Auto,

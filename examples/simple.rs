@@ -9,7 +9,7 @@ use turi::{
     },
     builder::{
         body,
-        class,
+        class_ref,
         div,
         event,
     },
@@ -45,7 +45,7 @@ impl Model<Event> for Simple {
             (),
             event(b).ctrl_char('c', true),
             body(b)
-                .child(div(class(b).class("hello"), (), "Hello"))
+                .child(div(class_ref(b, ["hello"]), (), "Hello"))
                 .child(div((), (), "World!")),
         )
     }
