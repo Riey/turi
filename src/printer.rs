@@ -176,18 +176,18 @@ impl<'a> Printer<'a> {
         self.raw_print(start, &BLOCK_STRING[..size * "█".len()]);
     }
 
-    // pub fn fill_bg(&mut self) {
-    //     static EMPTY_STRING: &str = "                                                                                                                                                                ";
-    //     let mut style = Style::new();
-    //     let old_style = self.style();
-    //     style.background = old_style.background;
-    //     //style.foreground = old_style.background;
-    //     self.with_style(style, |printer| {
-    //         for y in 0..printer.bound.h() {
-    //             printer.raw_print((0, y), &EMPTY_STRING[..printer.bound.w() as usize * " ".len()]);
-    //         }
-    //     });
-    // }
+    pub fn fill_bg(&mut self) {
+        static EMPTY_STRING: &str = "                                                                                                                                                                ";
+        let mut style = Style::new();
+        let old_style = self.style();
+        style.background = old_style.background;
+        //style.foreground = old_style.background;
+        self.with_style(style, |printer| {
+            for y in 0..printer.bound.h() {
+                printer.raw_print((0, y), &EMPTY_STRING[..printer.bound.w() as usize * " ".len()]);
+            }
+        });
+    }
 
     pub fn print_rect(&mut self) {
         let w = self.bound.w().saturating_sub(1);

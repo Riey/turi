@@ -77,6 +77,19 @@ impl<'a, E, M> ElementView<'a, E, M> {
         let layout = layout_cache[&self.view.hash_tag()];
 
         printer.with_style(layout.style, |printer| {
+            // border
+            if layout.border.x() > 0 {
+                printer.with_bound(layout.border, |printer| {
+                    printer.with_style(layout.border_style, |printer| {
+                        printer.print_rect();
+                    });
+                });
+            }
+
+            printer.with_bound(layout.padding, |printer| {
+                printer.fill_bg();
+            });
+
             // content
             printer.with_bound(layout.content, |printer| {
                 match self.view.body() {
@@ -96,17 +109,6 @@ impl<'a, E, M> ElementView<'a, E, M> {
                     }
                 }
             });
-
-            // border
-            if layout.border.x() > 0 {
-                printer.with_bound(layout.border, |printer| {
-                    printer.with_style(layout.border_style, |printer| {
-                        printer.print_rect();
-                    });
-                });
-            }
-
-            // TODO: padding
         });
 
         layout.size
@@ -183,6 +185,7 @@ impl<'a, E, M> ElementView<'a, E, M> {
                 style: property.style,
                 border_style: Style {
                     foreground: property.border_color,
+                    background: property.style.background,
                     ..Default::default()
                 },
             });

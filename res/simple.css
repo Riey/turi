@@ -1,14 +1,16 @@
 div {
-  color: green;
-  text-decoration-line: underline;
-  margin: 2;
-  border-width: 1;
-  width: 10px;
+    color: green;
+    background: gray;
+    text-decoration-line: underline;
+    margin: 2;
+    border-width: 1;
+    width: 10px;
 }
 
 div.hello {
-  color: red;
-  font: bold;
-  height: 10px;
+    color: red;
+    background: white;
+    font: bold;
+    height: 10px;
 }
 
