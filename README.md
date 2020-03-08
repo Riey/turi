@@ -1,2 +1,2 @@
 # turi
-Monadic tui library with Rust
+Tui library with Rust
