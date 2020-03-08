@@ -70,6 +70,13 @@ impl<T: Copy> CssVal<T> {
         }
     }
 
+    pub fn unwrap_val(self) -> T {
+        match self {
+            CssVal::Val(val) => val,
+            CssVal::Inherit => panic!("called `CssVal::unwrap_val` on a `Inherit` value"),
+        }
+    }
+
     pub fn and_then(
         self,
         f: impl FnOnce(T) -> Self,

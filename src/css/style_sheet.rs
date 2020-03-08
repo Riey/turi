@@ -56,6 +56,7 @@ fn style_test() {
             AnsiColor,
             Calc,
             CssAuto,
+            CssFontStyle,
             CssSize,
             CssVal,
             StyleSheet,
@@ -79,6 +80,9 @@ fn style_test() {
     assert_eq!(child.view().classes(), &["hello"]);
 
     let prop = css.calc_prop(&child);
+
+    let font = prop.font_style.unwrap_val();
+    assert!(font.contains(CssFontStyle::Bold));
     assert_eq!(prop.width, CssVal::Val(CssAuto::Manual(CssSize::Fixed(10))));
     assert_eq!(
         prop.height,

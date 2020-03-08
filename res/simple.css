@@ -10,7 +10,6 @@ div {
 div.hello {
     color: red;
     background: white;
-    font-style: italic;
     font-weight: bold;
     height: 10px;
 }
