@@ -27,6 +27,15 @@ impl<'a> CssRule<'a> {
 fn convert_declar<'a>(declarations: Vec<Declaration<'a>>) -> CssProperty {
     let mut property = CssProperty::default();
 
+    macro_rules! set_style {
+        ($style:expr) => {
+            property
+                .font_style
+                .get_or_insert(EnumSet::new())
+                .insert($style);
+        };
+    }
+
     for Declaration { name, value, .. } in declarations {
         match name {
             "color" => {
@@ -69,50 +78,25 @@ fn convert_declar<'a>(declarations: Vec<Declaration<'a>>) -> CssProperty {
                     property.height = width;
                 }
             }
-            "font" => {
-                if value.contains("italic") {
-                    property
-                        .font_style
-                        .get_or_insert(EnumSet::new())
-                        .insert(CssFontStyle::Italic);
-                } else if value.contains("bold") {
-                    property
-                        .font_style
-                        .get_or_insert(EnumSet::new())
-                        .insert(CssFontStyle::Bold);
-                } else if value.contains("hidden") {
-                    property
-                        .font_style
-                        .get_or_insert(EnumSet::new())
-                        .insert(CssFontStyle::Hidden);
-                } else if value.contains("reverse") {
-                    property
-                        .font_style
-                        .get_or_insert(EnumSet::new())
-                        .insert(CssFontStyle::Reverse);
-                } else if value.contains("dimmed") {
-                    property
-                        .font_style
-                        .get_or_insert(EnumSet::new())
-                        .insert(CssFontStyle::Dimmed);
+            "font-weight" => {
+                if value == "bold" || value == "bolder" {
+                    set_style!(CssFontStyle::Bold);
+                } else if value == "lighter" {
+                    set_style!(CssFontStyle::Dimmed);
+                }
+            }
+            "font-style" => {
+                if value == "italic" || value == "oblique" {
+                    set_style!(CssFontStyle::Italic);
                 }
             }
             "text-decoration-line" => {
                 if value.contains("blink") {
-                    property
-                        .font_style
-                        .get_or_insert(EnumSet::new())
-                        .insert(CssFontStyle::Blink);
+                    set_style!(CssFontStyle::Blink);
                 } else if value.contains("underline") {
-                    property
-                        .font_style
-                        .get_or_insert(EnumSet::new())
-                        .insert(CssFontStyle::Underline);
+                    set_style!(CssFontStyle::Underline);
                 } else if value.contains("line-through") {
-                    property
-                        .font_style
-                        .get_or_insert(EnumSet::new())
-                        .insert(CssFontStyle::StrikeThrough);
+                    set_style!(CssFontStyle::StrikeThrough);
                 }
             }
             _ => {}

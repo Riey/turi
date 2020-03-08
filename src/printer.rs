@@ -184,7 +184,10 @@ impl<'a> Printer<'a> {
         //style.foreground = old_style.background;
         self.with_style(style, |printer| {
             for y in 0..printer.bound.h() {
-                printer.raw_print((0, y), &EMPTY_STRING[..printer.bound.w() as usize * " ".len()]);
+                printer.raw_print(
+                    (0, y),
+                    &EMPTY_STRING[..printer.bound.w() as usize * " ".len()],
+                );
             }
         });
     }

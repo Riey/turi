@@ -49,12 +49,13 @@ fn style_test() {
     use crate::{
         builder::{
             body,
-            class,
+            class_ref,
             div,
         },
         css::{
             AnsiColor,
             Calc,
+            CssAuto,
             CssSize,
             CssVal,
             StyleSheet,
@@ -68,7 +69,7 @@ fn style_test() {
         (),
         (),
         body(&b)
-            .child(div(class(&b).class("hello"), (), "Hi"))
+            .child(div(class_ref(&b, ["hello"]), (), "Hi"))
             .child(div((), (), "wi")),
     );
     let element = ElementView::<(), ()>::with_view(view);
@@ -78,11 +79,14 @@ fn style_test() {
     assert_eq!(child.view().classes(), &["hello"]);
 
     let prop = css.calc_prop(&child);
-    assert_eq!(prop.width, CssVal::Val(CssSize::Fixed(10)));
-    assert_eq!(prop.height, CssVal::Val(CssSize::Fixed(10)));
+    assert_eq!(prop.width, CssVal::Val(CssAuto::Manual(CssSize::Fixed(10))));
+    assert_eq!(
+        prop.height,
+        CssVal::Val(CssAuto::Manual(CssSize::Fixed(10)))
+    );
 
     let calc_prop = prop.calc(element_prop);
-    assert_eq!(calc_prop.width, CssSize::Fixed(10));
-    assert_eq!(calc_prop.height, CssSize::Fixed(10));
-    assert_eq!(calc_prop.style.foreground, Some(AnsiColor::Red));
+    assert_eq!(calc_prop.width, CssAuto::Manual(CssSize::Fixed(10)));
+    assert_eq!(calc_prop.height, CssAuto::Manual(CssSize::Fixed(10)));
+    assert_eq!(calc_prop.style.foreground, Some(AnsiColor::Fixed(9)));
 }

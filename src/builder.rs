@@ -18,26 +18,6 @@ use bumpalo::{
 };
 use unicode_width::UnicodeWidthStr;
 
-pub struct ClassBuilder<'a> {
-    classes: Vec<'a, &'a str>,
-}
-
-impl<'a> ClassBuilder<'a> {
-    pub fn new(b: &'a Bump) -> Self {
-        Self {
-            classes: Vec::with_capacity_in(3, b),
-        }
-    }
-
-    pub fn class(
-        mut self,
-        class: &'a str,
-    ) -> Self {
-        self.classes.push(class);
-        self
-    }
-}
-
 pub struct EventBuilder<'a, E, M> {
     b:      &'a Bump,
     events: Vec<'a, EventFilter<'a, E, M>>,
@@ -136,12 +116,6 @@ pub trait Builder<T> {
     fn build(self) -> T;
 }
 
-impl<'a> Builder<&'a [&'a str]> for ClassBuilder<'a> {
-    fn build(self) -> &'a [&'a str] {
-        self.classes.into_bump_slice()
-    }
-}
-
 impl<'a, E, M> Builder<&'a [EventFilter<'a, E, M>]> for EventBuilder<'a, E, M> {
     fn build(self) -> &'a [EventFilter<'a, E, M>] {
         self.events.into_bump_slice()
@@ -154,8 +128,25 @@ impl<'a, T> Builder<&'a [T]> for () {
     }
 }
 
-pub fn class(b: &Bump) -> ClassBuilder {
-    ClassBuilder::new(b)
+impl<T> Builder<T> for T {
+    fn build(self) -> T {
+        self
+    }
+}
+
+pub fn class_ref<'a>(
+    b: &'a Bump,
+    classes: impl AsRef<[&'a str]>,
+) -> &'a [&'a str] {
+    b.alloc_slice_copy(classes.as_ref())
+}
+
+pub fn class<'a, 'b>(
+    b: &'a Bump,
+    classes: impl AsRef<[&'b str]>,
+) -> &'a [&'a str] {
+    let classes = classes.as_ref();
+    b.alloc_slice_fill_iter(classes.iter().map(|class| b.alloc_str(class) as &str)) as &[_]
 }
 
 pub fn event<E, M>(b: &Bump) -> EventBuilder<E, M> {
@@ -171,7 +162,20 @@ pub fn body<E, M>(b: &Bump) -> BodyBuilder<E, M> {
 /// # Examples
 ///
 /// ```
-/// use turi::*;
+/// use turi::{
+///     builder::{
+///         body,
+///         class_ref,
+///         div,
+///         event,
+///     },
+///     Model,
+///     UpdateResult,
+///     Exit,
+///     Ignore,
+///     Bump,
+///     View,
+/// };
 ///
 /// struct Simple;
 ///
@@ -197,7 +201,7 @@ pub fn body<E, M>(b: &Bump) -> BodyBuilder<E, M> {
 ///             (),
 ///             event(b).ctrl_char('c', true),
 ///             body(b)
-///                 .child(div(class(b).class("hello"), (), "Hello"))
+///                 .child(div(class_ref(b, ["hello"]), (), "Hello"))
 ///                 .child(div((), (), "World!")),
 ///         )
 ///     }
