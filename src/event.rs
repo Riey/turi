@@ -1,3 +1,9 @@
+#[cfg(feature = "crossterm-event")]
+mod crossterm;
+
+#[cfg(feature = "winit-event")]
+mod winit;
+
 use crate::vec2::Vec2;
 
 pub trait MouseEventLike: Sized {
