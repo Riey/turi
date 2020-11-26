@@ -4,6 +4,9 @@ use ansi_term::Style;
 #[cfg(feature = "crossterm-backend")]
 mod crossterm;
 
+#[cfg(feature = "wgpu-backend")]
+mod wgpu;
+
 mod dummy;
 
 mod test;
@@ -15,6 +18,9 @@ pub use self::crossterm::{
     CrosstermBackend,
     CrosstermBackendGuard,
 };
+
+#[cfg(feature = "wgpu-backend")]
+pub use self::wgpu::WgpuBackend;
 
 #[cfg(feature = "test-backend")]
 pub use self::test::TestBackend;
