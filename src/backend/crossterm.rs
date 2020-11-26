@@ -1,8 +1,8 @@
-use crate::vec2::Vec2;
 use ansi_term::Style;
 use crossterm::{
     cursor::{
         Hide,
+        MoveTo,
         Show,
     },
     event::{
@@ -12,6 +12,7 @@ use crossterm::{
         KeyCode,
         KeyEvent,
         KeyModifiers,
+        MouseButton,
         MouseEvent,
     },
     execute,
@@ -26,10 +27,7 @@ use crossterm::{
         LeaveAlternateScreen,
     },
 };
-use std::{
-    fmt,
-    io::Write,
-};
+use std::io::Write;
 
 use crate::{
     backend::Backend,
@@ -38,36 +36,8 @@ use crate::{
         KeyEventLike,
         MouseEventLike,
     },
+    vec2::Vec2,
 };
-use crossterm::{
-    event::MouseButton,
-    Command,
-};
-
-#[derive(Clone, Copy)]
-struct TuriMoveTo(pub Vec2);
-
-impl fmt::Display for TuriMoveTo {
-    fn fmt(
-        &self,
-        formatter: &mut fmt::Formatter,
-    ) -> fmt::Result {
-        write!(formatter, "\x1B[{};{}H", self.0.y + 1, self.0.x + 1)
-    }
-}
-
-impl Command for TuriMoveTo {
-    type AnsiType = Self;
-
-    fn ansi_code(&self) -> Self::AnsiType {
-        *self
-    }
-
-    #[cfg(windows)]
-    fn execute_winapi(&self) -> crossterm::Result<()> {
-        crossterm::cursor::MoveTo(self.0.x, self.0.y).execute_winapi()
-    }
-}
 
 pub struct CrosstermBackend<W: Write> {
     out:   W,
@@ -127,7 +97,7 @@ impl<W: Write> Backend for CrosstermBackend<W> {
         pos: Vec2,
         text: &str,
     ) {
-        queue!(self.out, TuriMoveTo(pos), Print(text),).unwrap();
+        queue!(self.out, MoveTo(pos.x, pos.y), Print(text),).unwrap();
     }
 
     fn flush(&mut self) {
