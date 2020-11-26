@@ -1,5 +1,4 @@
 use crate::{
-    never::Never,
     printer::Printer,
     style::Style,
     vec2::Vec2,
@@ -28,7 +27,7 @@ impl<S, E> TextView<S, E> {
 }
 
 impl<S, E> View<S, E> for TextView<S, E> {
-    type Message = Never;
+    type Message = !;
 
     #[inline]
     fn desired_size(&self) -> Vec2 {
@@ -57,7 +56,7 @@ impl<S, E> View<S, E> for TextView<S, E> {
         &mut self,
         _state: &mut S,
         _event: E,
-    ) -> Option<Never> {
+    ) -> Option<Self::Message> {
         None
     }
 }

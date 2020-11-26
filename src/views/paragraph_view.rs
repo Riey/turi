@@ -1,5 +1,4 @@
 use crate::{
-    never::Never,
     printer::Printer,
     style::Style,
     vec2::Vec2,
@@ -71,7 +70,7 @@ impl<S, E> ParagraphView<S, E> {
 }
 
 impl<S, E> View<S, E> for ParagraphView<S, E> {
-    type Message = Never;
+    type Message = !;
 
     fn render(
         &self,
@@ -98,7 +97,7 @@ impl<S, E> View<S, E> for ParagraphView<S, E> {
         &mut self,
         _: &mut S,
         _: E,
-    ) -> Option<Never> {
+    ) -> Option<Self::Message> {
         None
     }
 }

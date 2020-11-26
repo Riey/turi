@@ -1,5 +1,4 @@
 use crate::{
-    never::Never,
     style::Style,
     vec2::Vec2,
     view::View,
@@ -25,7 +24,7 @@ impl<S, E> FpsView<S, E> {
 }
 
 impl<S, E> View<S, E> for FpsView<S, E> {
-    type Message = Never;
+    type Message = !;
 
     fn render(
         &self,
