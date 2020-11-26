@@ -9,9 +9,11 @@ debug = true
 
 [features]
 default = ["crossterm-backend", "test-backend"]
-crossterm-backend = ["crossterm"]
+crossterm-backend = ["crossterm", "crossterm-event"]
 wgpu-backend = ["wgpu_glyph", "wgpu", "futures"]
 test-backend = []
+winit-event = ["winit"]
+crossterm-event = ["crossterm"]
 bench = []
 
 [dependencies]
@@ -20,6 +22,7 @@ enum-map = "0.6.4"
 enumset = "1.0.1"
 enumset_derive = "0.5.0"
 ansi_term = "0.12.1"
+winit = { version = "0.23.0", optional = true }
 
 [target.'cfg(unix)'.dependencies]
 libc = "0.2"
@@ -47,3 +50,5 @@ optional = true
 pretty_assertions = "0.6.1"
 log = "0.4.11"
 simplelog = "0.8.0"
+crossbeam-channel = "0.5.0"
+crossbeam = "0.8.0"

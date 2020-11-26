@@ -4,7 +4,6 @@ use ansi_term::Style;
 use futures::executor::block_on;
 use wgpu_glyph::{
     ab_glyph::{
-        Font,
         FontArc,
     },
     GlyphBrush,
@@ -16,6 +15,7 @@ use wgpu_glyph::{
 pub struct WgpuBackend {
     device:       wgpu::Device,
     queue:        wgpu::Queue,
+    surface:      wgpu::Surface,
     staging_belt: wgpu::util::StagingBelt,
     swap_chain:   wgpu::SwapChain,
     glyph_brush:  GlyphBrush<()>,
@@ -83,6 +83,8 @@ fn ansi_color_to_gpu_color(c: ansi_term::Color) -> wgpu::Color {
     }
 }
 
+const RENDER_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Bgra8UnormSrgb;
+
 impl WgpuBackend {
     pub fn new(
         instance: wgpu::Instance,
@@ -113,34 +115,58 @@ impl WgpuBackend {
                 .expect("Request device")
         });
 
-        let render_format = wgpu::TextureFormat::Bgra8UnormSrgb;
-        let letter_width = font.units_per_em().unwrap_or(std::u16::MAX as f32);
+        let letter_width = font_size; // font.units_per_em().unwrap_or(std::u16::MAX as f32);
         let letter_height = font_size;
-
-        let term_size = Vec2::new(
-            (window_size.0 as f32 / letter_width) as _,
-            (window_size.1 as f32 / letter_height) as _,
-        );
+        let letter_size = (letter_width, letter_height);
 
         Self {
             staging_belt: wgpu::util::StagingBelt::new(1024),
             swap_chain: device.create_swap_chain(&surface, &wgpu::SwapChainDescriptor {
                 usage:        wgpu::TextureUsage::OUTPUT_ATTACHMENT,
-                format:       render_format,
+                format:       RENDER_FORMAT,
                 width:        window_size.0,
                 height:       window_size.1,
                 present_mode: wgpu::PresentMode::Mailbox,
             }),
-            glyph_brush: GlyphBrushBuilder::using_font(font).build(&device, render_format),
-            letter_size: (letter_width, letter_height),
-            term_size,
-            color: [1.0, 0.0, 0.0, 0.0],
+            glyph_brush: GlyphBrushBuilder::using_font(font).build(&device, RENDER_FORMAT),
+            letter_size,
+            term_size: Self::calc_term_size(window_size, letter_size),
+            color: [0.0, 0.0, 0.0, 1.0],
             bg_color: wgpu::Color::BLACK,
             ansi_style: Style::default(),
             window_size,
             device,
             queue,
+            surface,
         }
+    }
+
+    pub fn calc_term_size(
+        window_size: (u32, u32),
+        letter_size: (f32, f32),
+    ) -> Vec2 {
+        Vec2::new(
+            (window_size.0 as f32 / letter_size.0) as u16,
+            (window_size.1 as f32 / letter_size.1) as u16,
+        )
+    }
+
+    pub fn resize(
+        &mut self,
+        window_size: (u32, u32),
+    ) {
+        self.swap_chain =
+            self.device
+                .create_swap_chain(&self.surface, &wgpu::SwapChainDescriptor {
+                    usage:        wgpu::TextureUsage::OUTPUT_ATTACHMENT,
+                    format:       RENDER_FORMAT,
+                    width:        window_size.0,
+                    height:       window_size.1,
+                    present_mode: wgpu::PresentMode::Mailbox,
+                });
+
+        self.window_size = window_size;
+        self.term_size = Self::calc_term_size(window_size, self.letter_size);
     }
 }
 
@@ -169,6 +195,8 @@ impl Backend for WgpuBackend {
             }],
             depth_stencil_attachment: None,
         });
+
+        self.queue.submit(Some(encoder.finish()));
     }
 
     fn size(&self) -> crate::vec2::Vec2 {
@@ -187,7 +215,7 @@ impl Backend for WgpuBackend {
             .foreground
             .map(ansi_color_to_gpu_color)
             .unwrap_or(wgpu::Color::BLACK);
-        self.color = [color.a as _, color.r as _, color.g as _, color.b as _];
+        self.color = [color.r as _, color.g as _, color.b as _, color.a as _];
         self.ansi_style = style;
     }
 
@@ -235,8 +263,9 @@ impl Backend for WgpuBackend {
                 self.window_size.1,
             )
             .expect("draw queued");
+
         self.staging_belt.finish();
         self.queue.submit(Some(encoder.finish()));
-        block_on(self.staging_belt.recall());
+        // block_on(self.staging_belt.recall());
     }
 }
