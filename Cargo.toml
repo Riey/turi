@@ -16,8 +16,8 @@ bench = []
 [dependencies]
 unicode-width = "0.1.7"
 enum-map = "0.6.2"
-enumset = "0.4.5"
-enumset_derive = "0.4.4"
+enumset = "1.0.1"
+enumset_derive = "0.5.0"
 ansi_term = "0.12.1"
 
 [target.'cfg(unix)'.dependencies]
@@ -27,10 +27,10 @@ libc = "0.2"
 winapi = "0.3.8"
 
 [dependencies.crossterm]
-version = "0.16"
+version = "0.18.2"
 optional = true
 
 [dev-dependencies]
 pretty_assertions = "0.6.1"
 log = "0.4.8"
-simplelog = "0.7.4"
+simplelog = "0.8.0"
