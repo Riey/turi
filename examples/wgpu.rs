@@ -92,11 +92,11 @@ fn main() {
             &mut DialogView::new(EditView::new().map(|v, _s, m| {
                 match m {
                     EditViewMessage::Edit => {
-                        log::trace!("edit: {}", v.text());
+                        log::debug!("edit: {}", v.text());
                         false
                     }
                     EditViewMessage::Submit => {
-                        log::trace!("submit: {}", v.text());
+                        log::debug!("submit: {}", v.text());
                         true
                     }
                 }
@@ -104,7 +104,7 @@ fn main() {
             .title("Title")
             .button("Click", |s: &mut MyState| {
                 s.btn_cnt += 1;
-                log::trace!("btn click count: {}", s.btn_cnt);
+                log::debug!("btn click count: {}", s.btn_cnt);
                 false
             }),
             |state, backend| {

@@ -182,8 +182,9 @@ where
                 let mut x = me.pos().x;
                 for (i, btn) in self.buttons.iter_mut().enumerate() {
                     if btn.width() > x {
-                        state.set_need_redraw(self.focus == DialogFocus::Button(i));
+                        state.set_need_redraw(self.focus != DialogFocus::Button(i));
                         self.focus = DialogFocus::Button(i);
+                        log::debug!("Set focus button{}", i);
                         return btn.on_event(state, event);
                     } else {
                         x -= btn.width();
@@ -192,6 +193,9 @@ where
 
                 return None;
             }
+
+            state.set_need_redraw(self.focus != DialogFocus::Content);
+            self.focus = DialogFocus::Content;
 
             let is_content = me.filter_map_pos(|pos| {
                 let desired_size = self.content.desired_size();
@@ -203,8 +207,6 @@ where
             });
 
             if is_content {
-                state.set_need_redraw(self.focus == DialogFocus::Content);
-                self.focus = DialogFocus::Content;
                 self.content.on_event(state, event)
             } else {
                 None
