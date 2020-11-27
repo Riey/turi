@@ -6,7 +6,10 @@ use crate::{
 use ansi_term::Style;
 use futures::executor::block_on;
 use wgpu_glyph::{
-    ab_glyph::{Font, FontArc},
+    ab_glyph::{
+        Font,
+        FontArc,
+    },
     GlyphBrush,
     GlyphBrushBuilder,
     Section,
