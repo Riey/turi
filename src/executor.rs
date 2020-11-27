@@ -66,7 +66,7 @@ pub fn bench<B: Backend, E, V: View<bool, E>>(
     }
 }
 
-#[cfg(feature = "test-backend")]
+#[cfg(feature = "test")]
 pub fn test<E, V: View<bool, E>>(
     view: &mut V,
     events: impl IntoIterator<Item = E>,
@@ -74,7 +74,7 @@ pub fn test<E, V: View<bool, E>>(
     cb: impl FnOnce(&[String]),
 ) {
     let theme = Theme::default();
-    let mut backend = crate::backend::TestBackend::new(size);
+    let mut backend = crate::backend::BufferBackend::new(size);
     let mut printer = Printer::new(&mut backend, &theme);
 
     let mut state = false;

@@ -13,8 +13,8 @@
         {
             "type": "lldb",
             "request": "attach",
-            "name": "Attach Wgpu",
-            "program": "${workspaceFolder}/wgpu"
+            "name": "Attach Dialog",
+            "program": "${workspaceFolder}/dialog_view"
         }
     ]
 }

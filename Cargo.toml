@@ -8,13 +8,14 @@ edition = "2018"
 debug = true
 
 [features]
-default = ["test-backend"]
+default = ["buffer-backend"]
 
 crossterm-backend = ["crossterm"]
-wgpu-backend = ["wgpu_glyph", "wgpu", "futures"]
-test-backend = []
+wgpu-backend = ["buffer-backend", "wgpu_glyph", "wgpu", "futures"]
+buffer-backend = []
 winit-event = ["winit"]
 crossterm-event = ["crossterm"]
+test = []
 bench = []
 
 [dependencies]

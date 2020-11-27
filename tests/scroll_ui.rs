@@ -1,3 +1,5 @@
+#![cfg(feature = "crossterm-event")]
+
 use crossterm::event::{
     Event,
     KeyCode,
