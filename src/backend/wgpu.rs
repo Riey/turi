@@ -1,11 +1,12 @@
 use super::Backend;
-use crate::vec2::Vec2;
+use crate::{
+    util::calc_term_pos,
+    vec2::Vec2,
+};
 use ansi_term::Style;
 use futures::executor::block_on;
 use wgpu_glyph::{
-    ab_glyph::{
-        FontArc,
-    },
+    ab_glyph::{Font, FontArc},
     GlyphBrush,
     GlyphBrushBuilder,
     Section,
@@ -115,8 +116,10 @@ impl WgpuBackend {
                 .expect("Request device")
         });
 
-        let letter_width = font_size; // font.units_per_em().unwrap_or(std::u16::MAX as f32);
-        let letter_height = font_size;
+        let m_glyph = font.glyph_id('M');
+        let m_bound = font.glyph_bounds(&m_glyph.with_scale(font_size));
+        let letter_width = m_bound.width();
+        let letter_height = m_bound.height();
         let letter_size = (letter_width, letter_height);
 
         Self {
@@ -130,7 +133,7 @@ impl WgpuBackend {
             }),
             glyph_brush: GlyphBrushBuilder::using_font(font).build(&device, RENDER_FORMAT),
             letter_size,
-            term_size: Self::calc_term_size(window_size, letter_size),
+            term_size: calc_term_pos(window_size, letter_size),
             color: [0.0, 0.0, 0.0, 1.0],
             bg_color: wgpu::Color::BLACK,
             ansi_style: Style::default(),
@@ -141,14 +144,8 @@ impl WgpuBackend {
         }
     }
 
-    pub fn calc_term_size(
-        window_size: (u32, u32),
-        letter_size: (f32, f32),
-    ) -> Vec2 {
-        Vec2::new(
-            (window_size.0 as f32 / letter_size.0) as u16,
-            (window_size.1 as f32 / letter_size.1) as u16,
-        )
+    pub fn letter_size(&self) -> (f32, f32) {
+        self.letter_size
     }
 
     pub fn resize(
@@ -166,7 +163,7 @@ impl WgpuBackend {
                 });
 
         self.window_size = window_size;
-        self.term_size = Self::calc_term_size(window_size, self.letter_size);
+        self.term_size = calc_term_pos(window_size, self.letter_size);
     }
 }
 

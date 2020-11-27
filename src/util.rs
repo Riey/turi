@@ -10,6 +10,8 @@ use std::mem::ManuallyDrop;
 
 use unicode_width::UnicodeWidthChar;
 
+use crate::vec2::Vec2;
+
 #[cfg(any(unix, target_os = "wasi"))]
 pub fn get_tty_file() -> File {
     File::create("/dev/tty").unwrap()
@@ -109,6 +111,16 @@ pub fn find_str_width_pos(
     (text.len(), width)
 }
 
+pub fn calc_term_pos(
+    window_pos: (u32, u32),
+    letter_size: (f32, f32),
+) -> Vec2 {
+    Vec2::new(
+        (window_pos.0 as f32 / letter_size.0) as u16,
+        (window_pos.1 as f32 / letter_size.1) as u16,
+    )
+}
+
 #[test]
 fn slice_test() {
     assert_eq!(slice_str_with_width("123456", 3), ("123", "456", 0));
@@ -118,4 +130,9 @@ fn slice_test() {
 #[test]
 fn slice_left_test() {
     assert_eq!(slice_str_with_width("가나다라", 3), ("가", "나다라", 1));
+}
+
+#[test]
+fn calc_term_pos_test() {
+    assert_eq!(calc_term_pos((100, 100), (20.0, 5.0)), Vec2::new(5, 20));
 }
