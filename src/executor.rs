@@ -15,6 +15,7 @@ pub fn simple<S: RedrawState, E, B: Backend, V: View<S, E, Message = bool>>(
     mut event_source: impl FnMut(&mut S, &mut B) -> Option<E>,
 ) {
     backend.clear();
+    backend.flush();
     state.set_need_redraw(true);
 
     loop {
