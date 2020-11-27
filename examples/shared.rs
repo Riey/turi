@@ -25,7 +25,10 @@ fn make_view<S, E: Clone + EventLike, V: View<S, E, Message = bool>>(
     view_factory: impl FnOnce() -> V
 ) -> impl View<S, E, Message = bool> {
     view_factory().or_else_first(|_view, _state, event| {
-        event.try_key().map(|ke| ke.try_ctrl_char() == Some('c'))
+        match event.try_key() {
+            Some(ke) if ke.try_ctrl_char() == Some('c') => Some(true),
+            _ => None,
+        }
     })
 }
 
