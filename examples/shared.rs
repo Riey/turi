@@ -104,7 +104,7 @@ pub fn wgpu_run<
 
     TermLogger::init(
         LevelFilter::Trace,
-        ConfigBuilder::new().build(),
+        ConfigBuilder::new().add_filter_ignore_str("gfx").build(),
         TerminalMode::Mixed,
     )
     .unwrap();
