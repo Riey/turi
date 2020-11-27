@@ -118,7 +118,6 @@ fn main() {
                             ..
                         } => {
                             backend.resize((size.width, size.height));
-                            state.set_need_redraw(true);
                         }
                         Event::WindowEvent { event, .. } => {
                             break Some(event_state.next_event(event));
@@ -150,8 +149,8 @@ fn main() {
             _ => {
                 match event_tx.send(e.to_static().unwrap()) {
                     Ok(_) => {
-                *flow = ControlFlow::Wait;
-            }
+                        *flow = ControlFlow::Wait;
+                    }
                     Err(_) => {
                         *flow = ControlFlow::Exit;
                     }
