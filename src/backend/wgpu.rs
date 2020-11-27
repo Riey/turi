@@ -4,7 +4,13 @@ use crate::{
     vec2::Vec2,
 };
 use ansi_term::Style;
-use futures::executor::block_on;
+use futures::{
+    executor::{
+        block_on,
+        LocalPool,
+    },
+    task::SpawnExt,
+};
 use wgpu_glyph::{
     ab_glyph::{
         Font,
@@ -29,6 +35,7 @@ pub struct WgpuBackend {
     ansi_style:   Style,
     color:        [f32; 4],
     bg_color:     wgpu::Color,
+    local_pool:   LocalPool,
 }
 
 fn ansi_color_to_gpu_color(c: ansi_term::Color) -> wgpu::Color {
@@ -144,6 +151,7 @@ impl WgpuBackend {
             device,
             queue,
             surface,
+            local_pool: LocalPool::new(),
         }
     }
 
@@ -266,6 +274,8 @@ impl Backend for WgpuBackend {
 
         self.staging_belt.finish();
         self.queue.submit(Some(encoder.finish()));
-        // block_on(self.staging_belt.recall());
+        let spawner = self.local_pool.spawner();
+        spawner.spawn(self.staging_belt.recall()).unwrap();
+        self.local_pool.run_until_stalled();
     }
 }

@@ -171,7 +171,7 @@ where
             let size = self.content.prev_size();
 
             let is_btn = me.filter_map_pos(|pos| {
-                if pos.x > 1 && (pos.y - 1) == size.y {
+                if pos.x > 1 && pos.y.checked_sub(1)? == size.y {
                     Some(Vec2::new(pos.x - 1, 0))
                 } else {
                     None

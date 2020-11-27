@@ -1,6 +1,6 @@
 use crossbeam::{
     atomic::AtomicCell,
-    channel::bounded,
+    channel::unbounded,
 };
 use turi::{
     backend::WgpuBackend,
@@ -50,9 +50,16 @@ impl RedrawState for MyState {
 }
 
 fn main() {
+    simplelog::TermLogger::init(
+        log::LevelFilter::Debug,
+        simplelog::Config::default(),
+        simplelog::TerminalMode::Mixed,
+    )
+    .unwrap();
+
     static WINDOW: AtomicCell<Option<Window>> = AtomicCell::new(None);
 
-    let (event_tx, event_rx) = bounded(1000);
+    let (event_tx, event_rx) = unbounded();
 
     std::thread::spawn(move || {
         let window = loop {
@@ -137,6 +144,7 @@ fn main() {
                 event: winit::event::WindowEvent::CloseRequested,
                 ..
             } => {
+                log::debug!("Exited");
                 *flow = ControlFlow::Exit;
             }
             _ => {

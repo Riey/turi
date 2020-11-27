@@ -19,6 +19,7 @@ pub fn simple<S: RedrawState, E, B: Backend, V: View<S, E, Message = bool>>(
 
     loop {
         if state.is_need_redraw() {
+            log::debug!("Redraw");
             backend.clear();
             view.layout(backend.size());
             view.render(&mut Printer::new(backend, theme));
