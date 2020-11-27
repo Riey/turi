@@ -206,7 +206,7 @@ impl<'a> Printer<'a> {
         const RIGHT_BOTTOM: &str = "┘";
 
         let start = self.bound.start();
-        let end = self.bound.end();
+        let end = self.bound.end().sub_x(1).sub_y(1);
 
         self.raw_print(start, LEFT_TOP);
         self.raw_print((end.x, start.y), RIGHT_TOP);

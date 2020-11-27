@@ -18,7 +18,7 @@ impl BufferBackend {
         let mut b = Self {
             lines: Vec::new(),
             style: Style::default(),
-            size: Vec2::new(0, 0),
+            size:  Vec2::new(0, 0),
         };
 
         b.resize(size);
@@ -26,10 +26,13 @@ impl BufferBackend {
         b
     }
 
-    pub fn resize(&mut self, size: Vec2) {
+    pub fn resize(
+        &mut self,
+        size: Vec2,
+    ) {
         self.lines = iter::repeat_with(|| " ".repeat(size.x as usize))
-                .take(size.y as usize)
-                .collect();
+            .take(size.y as usize)
+            .collect();
         self.size = size;
     }
 

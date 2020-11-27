@@ -3,7 +3,6 @@ use crate::{
     printer::Printer,
     state::RedrawState,
     style::Theme,
-    vec2::Vec2,
     view::View,
 };
 
@@ -70,7 +69,7 @@ pub fn bench<B: Backend, E, V: View<bool, E>>(
 pub fn test<E, V: View<bool, E>>(
     view: &mut V,
     events: impl IntoIterator<Item = E>,
-    size: Vec2,
+    size: crate::vec2::Vec2,
     cb: impl FnOnce(&[String]),
 ) {
     let theme = Theme::default();

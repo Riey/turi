@@ -126,7 +126,7 @@ pub fn wgpu_run<
         let surface = unsafe { instance.create_surface(&window) };
 
         let font = wgpu_glyph::ab_glyph::FontArc::try_from_slice(include_bytes!(
-            "/usr/share/fonts/adobe-source-han-sans/SourceHanSansKR-Normal.otf"
+            "/usr/share/fonts/TTF/D2Coding.ttc"
         ))
         .unwrap();
         let size = window.inner_size();
