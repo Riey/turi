@@ -11,8 +11,7 @@ use turi::{
 mod shared;
 
 fn main() {
-    self::shared::run(
-        false,
+    self::shared::run(false, || {
         LinearView::vertical()
             .focus(1)
             .child(FpsView::new().consume_event(false))
@@ -20,6 +19,6 @@ fn main() {
                 TextView::new(include_str!("lorem.txt"))
                     .consume_event(false)
                     .scrollable(Orientation::Horizontal),
-            ),
-    );
+            )
+    });
 }

@@ -4,16 +4,13 @@ version = "0.1.0"
 authors = ["Riey <creeper844@gmail.com>"]
 edition = "2018"
 
-[[example]]
-name = "wgpu"
-required-features = ["wgpu-backend", "winit-event"]
-
 [profile.release]
 debug = true
 
 [features]
-default = ["crossterm-backend", "test-backend"]
-crossterm-backend = ["crossterm", "crossterm-event"]
+default = ["test-backend"]
+
+crossterm-backend = ["crossterm"]
 wgpu-backend = ["wgpu_glyph", "wgpu", "futures"]
 test-backend = []
 winit-event = ["winit"]
@@ -54,5 +51,5 @@ optional = true
 [dev-dependencies]
 pretty_assertions = "0.6.1"
 simplelog = "0.8.0"
-crossbeam-channel = "0.5.0"
 crossbeam = "0.8.0"
+cfg-if = "1.0.0"

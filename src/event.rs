@@ -5,7 +5,10 @@ mod crossterm;
 mod winit;
 
 #[cfg(feature = "winit-event")]
-pub use self::winit::WrapWindowEventState;
+pub use self::winit::{
+    WrapWindowEvent,
+    WrapWindowEventState,
+};
 
 use crate::vec2::Vec2;
 

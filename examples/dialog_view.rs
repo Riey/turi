@@ -38,8 +38,7 @@ impl RedrawState for MyState {
 }
 
 fn main() {
-    self::shared::run(
-        MyState::new(),
+    self::shared::run(MyState::new(), || {
         DialogView::new(EditView::new().map(|v, _s, m| {
             match m {
                 EditViewMessage::Edit => {
@@ -57,6 +56,6 @@ fn main() {
             s.btn_cnt += 1;
             log::trace!("btn click count: {}", s.btn_cnt);
             false
-        }),
-    );
+        })
+    });
 }
