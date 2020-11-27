@@ -12,7 +12,7 @@ pub fn simple<S: RedrawState, E, B: Backend, V: View<S, E, Message = bool>>(
     backend: &mut B,
     theme: &Theme,
     view: &mut V,
-    mut event_source: impl FnMut(&mut S, &mut B) -> E,
+    mut event_source: impl FnMut(&mut S, &mut B) -> Option<E>,
 ) {
     backend.clear();
     state.set_need_redraw(true);
@@ -26,13 +26,18 @@ pub fn simple<S: RedrawState, E, B: Backend, V: View<S, E, Message = bool>>(
             state.set_need_redraw(false);
         }
         let e = event_source(state, backend);
-        match view.on_event(state, e) {
-            Some(exit) => {
-                if exit {
-                    break;
+
+        if let Some(e) = e {
+            match view.on_event(state, e) {
+                Some(exit) => {
+                    if exit {
+                        break;
+                    }
                 }
+                None => continue,
             }
-            None => continue,
+        } else {
+            break;
         }
     }
 }

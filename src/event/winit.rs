@@ -38,13 +38,72 @@ impl From<MouseScrollDelta> for ScrollDirection {
     }
 }
 
+pub struct WrapWindowEventState {
+    ctrl:        bool,
+    clicked:     bool,
+    mouse_pos:   Vec2,
+    letter_size: (f32, f32),
+}
+
+impl WrapWindowEventState {
+    pub fn new(letter_size: (f32, f32)) -> Self {
+        Self {
+            ctrl: false,
+            clicked: false,
+            mouse_pos: Vec2::new(0, 0),
+            letter_size,
+        }
+    }
+
+    pub fn next_event(
+        &mut self,
+        e: WindowEvent<'static>,
+    ) -> WrapWindowEvent {
+        let mut drag = false;
+
+        match e {
+            WindowEvent::CursorMoved { position, .. } => {
+                drag = self.clicked;
+                self.mouse_pos = crate::util::calc_term_pos(
+                    (position.x as _, position.y as _),
+                    self.letter_size,
+                );
+            }
+            WindowEvent::MouseInput {
+                state: ElementState::Pressed,
+                ..
+            } => {
+                self.clicked = true;
+            }
+            WindowEvent::MouseInput {
+                state: ElementState::Released,
+                ..
+            } => {
+                self.clicked = false;
+            }
+            WindowEvent::ModifiersChanged(state) => {
+                self.ctrl = state.ctrl();
+            }
+            _ => {}
+        }
+
+        WrapWindowEvent {
+            e,
+            ctrl: self.ctrl,
+            drag,
+            mouse_pos: self.mouse_pos,
+            letter_size: self.letter_size,
+        }
+    }
+}
+
 #[derive(Clone)]
 pub struct WrapWindowEvent {
     e:           WindowEvent<'static>,
     ctrl:        bool,
     drag:        bool,
     mouse_pos:   Vec2,
-    latter_size: (f32, f32),
+    letter_size: (f32, f32),
 }
 
 impl WrapWindowEvent {
@@ -53,14 +112,14 @@ impl WrapWindowEvent {
         ctrl: bool,
         drag: bool,
         mouse_pos: Vec2,
-        latter_size: (f32, f32),
+        letter_size: (f32, f32),
     ) -> Self {
         Self {
             e,
             ctrl,
             drag,
             mouse_pos,
-            latter_size,
+            letter_size,
         }
     }
 }
@@ -220,7 +279,7 @@ impl MouseEventLike for WrapWindowEvent {
             ctrl:        false,
             drag:        false,
             mouse_pos:   pos,
-            latter_size: (1.0, 1.0),
+            letter_size: (1.0, 1.0),
         }
     }
 
@@ -235,7 +294,7 @@ impl MouseEventLike for WrapWindowEvent {
             ctrl:        false,
             drag:        false,
             mouse_pos:   pos,
-            latter_size: (1.0, 1.0),
+            letter_size: (1.0, 1.0),
         }
     }
 }
@@ -279,8 +338,8 @@ impl EventLike for WrapWindowEvent {
     fn try_resize(&self) -> Option<crate::vec2::Vec2> {
         match self.e {
             WindowEvent::Resized(size) => {
-                let width = size.width as f32 / self.latter_size.0;
-                let height = size.height as f32 / self.latter_size.1;
+                let width = size.width as f32 / self.letter_size.0;
+                let height = size.height as f32 / self.letter_size.1;
                 Some(Vec2::new(width as _, height as _))
             }
             _ => None,

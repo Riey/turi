@@ -58,7 +58,7 @@ pub fn run<S: RedrawState>(
                         state.set_need_redraw(true);
                         backend.resize((x, y).into());
                     }
-                    e => break e,
+                    e => break Some(e),
                 }
             }
         },

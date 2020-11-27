@@ -4,6 +4,9 @@ mod crossterm;
 #[cfg(feature = "winit-event")]
 mod winit;
 
+#[cfg(feature = "winit-event")]
+pub use self::winit::WrapWindowEventState;
+
 use crate::vec2::Vec2;
 
 pub trait MouseEventLike: Sized {

@@ -4,6 +4,10 @@ version = "0.1.0"
 authors = ["Riey <creeper844@gmail.com>"]
 edition = "2018"
 
+[[example]]
+name = "wgpu"
+required-features = ["wgpu-backend", "winit-event"]
+
 [profile.release]
 debug = true
 
