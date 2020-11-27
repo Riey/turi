@@ -148,8 +148,14 @@ fn main() {
                 *flow = ControlFlow::Exit;
             }
             _ => {
-                event_tx.send(e.to_static().unwrap()).unwrap();
+                match event_tx.send(e.to_static().unwrap()) {
+                    Ok(_) => {
                 *flow = ControlFlow::Wait;
+            }
+                    Err(_) => {
+                        *flow = ControlFlow::Exit;
+                    }
+                }
             }
         }
     });
