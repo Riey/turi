@@ -1,8 +1,8 @@
-use super::{
-    Backend,
-    BufferBackend,
+use super::Backend;
+use crate::{
+    util::calc_term_pos,
+    vec2::Vec2,
 };
-use crate::util::calc_term_pos;
 use ansi_term::Style;
 use futures::{
     executor::{
@@ -15,6 +15,7 @@ use wgpu_glyph::{
     ab_glyph::{
         Font,
         FontArc,
+        ScaleFont,
     },
     GlyphBrush,
     GlyphBrushBuilder,
@@ -24,7 +25,6 @@ use wgpu_glyph::{
 };
 
 pub struct WgpuBackend {
-    buffer:       BufferBackend,
     device:       wgpu::Device,
     queue:        wgpu::Queue,
     surface:      wgpu::Surface,
@@ -36,6 +36,8 @@ pub struct WgpuBackend {
     color:        [f32; 4],
     bg_color:     wgpu::Color,
     local_pool:   LocalPool,
+    style:        Style,
+    term_size:    Vec2,
 }
 
 fn ansi_color_to_gpu_color(c: ansi_term::Color) -> wgpu::Color {
@@ -94,9 +96,9 @@ fn ansi_color_to_gpu_color(c: ansi_term::Color) -> wgpu::Color {
     }
 }
 
-const RENDER_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Bgra8UnormSrgb;
-
 impl WgpuBackend {
+    pub const RENDER_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Bgra8UnormSrgb;
+
     pub fn new(
         instance: wgpu::Instance,
         surface: wgpu::Surface,
@@ -126,28 +128,27 @@ impl WgpuBackend {
                 .expect("Request device")
         });
 
-        let m_glyph = font.glyph_id('M');
-        let m_bound = font.glyph_bounds(&m_glyph.with_scale(font_size));
-        let letter_width = m_bound.width();
-        let letter_height = m_bound.height();
+        let scaled_font = font.as_scaled(font_size);
+        let m_glyph = scaled_font.scaled_glyph('M');
+        let m_rect = scaled_font.glyph_bounds(&m_glyph);
+        let letter_width = m_rect.width();
+        let letter_height = m_rect.height();
         let letter_size = (letter_width, letter_height);
+        log::debug!("size: {:?}", letter_size);
 
         let term_size = calc_term_pos(window_size, letter_size);
-        let buffer = BufferBackend::new(term_size);
+        log::debug!("term_size: {:?}", term_size);
 
         Self {
-            buffer,
             staging_belt: wgpu::util::StagingBelt::new(1024),
             swap_chain: device.create_swap_chain(&surface, &wgpu::SwapChainDescriptor {
                 usage:        wgpu::TextureUsage::OUTPUT_ATTACHMENT,
-                format:       RENDER_FORMAT,
+                format:       Self::RENDER_FORMAT,
                 width:        window_size.0,
                 height:       window_size.1,
                 present_mode: wgpu::PresentMode::Mailbox,
             }),
-            glyph_brush: GlyphBrushBuilder::using_font(font)
-                .initial_cache_size(window_size)
-                .build(&device, RENDER_FORMAT),
+            glyph_brush: GlyphBrushBuilder::using_font(font).build(&device, Self::RENDER_FORMAT),
             letter_size,
             color: [1.0, 1.0, 1.0, 1.0],
             bg_color: wgpu::Color::BLACK,
@@ -156,6 +157,8 @@ impl WgpuBackend {
             queue,
             surface,
             local_pool: LocalPool::new(),
+            term_size,
+            style: Style::default(),
         }
     }
 
@@ -171,25 +174,21 @@ impl WgpuBackend {
             self.device
                 .create_swap_chain(&self.surface, &wgpu::SwapChainDescriptor {
                     usage:        wgpu::TextureUsage::OUTPUT_ATTACHMENT,
-                    format:       RENDER_FORMAT,
+                    format:       Self::RENDER_FORMAT,
                     width:        window_size.0,
                     height:       window_size.1,
                     present_mode: wgpu::PresentMode::Mailbox,
                 });
 
         self.window_size = window_size;
-        self.buffer
-            .resize(calc_term_pos(window_size, self.letter_size));
     }
 }
 
 impl Backend for WgpuBackend {
-    fn clear(&mut self) {
-        self.buffer.clear();
-    }
+    fn clear(&mut self) {}
 
-    fn size(&self) -> crate::vec2::Vec2 {
-        self.buffer.size()
+    fn size(&self) -> Vec2 {
+        self.term_size
     }
 
     fn set_style(
@@ -205,19 +204,29 @@ impl Backend for WgpuBackend {
             .map(ansi_color_to_gpu_color)
             .unwrap_or(wgpu::Color::WHITE);
         self.color = [color.r as _, color.g as _, color.b as _, color.a as _];
-        self.buffer.set_style(style);
+        self.style = style;
     }
 
     fn style(&self) -> Style {
-        self.buffer.style()
+        self.style
     }
 
     fn print_at(
         &mut self,
-        pos: crate::vec2::Vec2,
+        pos: Vec2,
         text: &str,
     ) {
-        self.buffer.print_at(pos, text);
+        self.glyph_brush.queue(Section {
+            screen_position: (
+                pos.x as f32 * self.letter_size.0,
+                pos.y as f32 * self.letter_size.1,
+            ),
+            text: vec![Text::new(text)
+                .with_color(self.color)
+                .with_scale(self.letter_size.1)],
+            layout: Layout::default_single_line(),
+            ..Default::default()
+        });
     }
 
     fn flush(&mut self) {
@@ -244,19 +253,6 @@ impl Backend for WgpuBackend {
             }],
             depth_stencil_attachment: None,
         });
-
-        let mut y = 0.0;
-        for l in self.buffer.lines().iter() {
-            self.glyph_brush.queue(Section {
-                screen_position: (0.0, y),
-                text: vec![Text::new(l)
-                    .with_color(self.color)
-                    .with_scale(self.letter_size.1)],
-                layout: Layout::default_single_line(),
-                ..Default::default()
-            });
-            y += self.letter_size.1;
-        }
 
         self.glyph_brush
             .draw_queued(

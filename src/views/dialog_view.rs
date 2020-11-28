@@ -110,12 +110,7 @@ where
         &self,
         printer: &mut Printer,
     ) {
-        printer.with_style(Style::outline(), |printer| {
-            printer.print_rect();
-        });
-        printer.with_style(Style::title(), |printer| {
-            printer.print((0, 0), &self.title);
-        });
+        printer.print_dialog(&self.title);
         printer.with_style(Style::view(), |printer| {
             printer.with_bound(printer.bound().with_margin(1), |printer| {
                 let btn_height = 1;

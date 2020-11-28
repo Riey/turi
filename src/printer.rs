@@ -11,6 +11,7 @@ use crate::{
     vec2::Vec2,
 };
 use std::mem::swap;
+use unicode_width::UnicodeWidthStr;
 
 pub struct Printer<'a> {
     bound:   Rect,
@@ -194,16 +195,40 @@ impl<'a> Printer<'a> {
         self.raw_print(start, &BLOCK_STRING[..size * "█".len()]);
     }
 
+    pub fn print_dialog(
+        &mut self,
+        title: &str,
+    ) {
+        let title_width = title.width() as u16;
+
+        self.with_style(Style::outline(), |printer| {
+            printer.print_horizontal_line_at(
+                (title_width + 1, 0),
+                (printer.bound().w() - title_width - 1) as usize,
+            );
+            printer.print_vertical_line_at((0, 1), printer.bound().h() as usize - 2);
+            printer.print_horizontal_line(printer.bound().h() - 1);
+            printer.print_vertical_line(printer.bound().w() - 1);
+
+            let start = printer.bound.start();
+            let end = printer.bound.end().sub_x(1).sub_y(1);
+
+            printer.raw_print(start, LEFT_TOP);
+            printer.raw_print((end.x, start.y), RIGHT_TOP);
+            printer.raw_print((start.x, end.y), LEFT_BOTTOM);
+            printer.raw_print(end, RIGHT_BOTTOM);
+        });
+
+        self.with_style(Style::title(), |printer| {
+            printer.print((1, 0), title);
+        });
+    }
+
     pub fn print_rect(&mut self) {
         self.print_horizontal_line(0);
-        self.print_horizontal_line(self.bound.h() - 1);
         self.print_vertical_line(0);
+        self.print_horizontal_line(self.bound.h() - 1);
         self.print_vertical_line(self.bound.w() - 1);
-
-        const LEFT_TOP: &str = "┌";
-        const RIGHT_TOP: &str = "┐";
-        const LEFT_BOTTOM: &str = "└";
-        const RIGHT_BOTTOM: &str = "┘";
 
         let start = self.bound.start();
         let end = self.bound.end().sub_x(1).sub_y(1);
@@ -214,3 +239,8 @@ impl<'a> Printer<'a> {
         self.raw_print(end, RIGHT_BOTTOM);
     }
 }
+
+const LEFT_TOP: &str = "┌";
+const RIGHT_TOP: &str = "┐";
+const LEFT_BOTTOM: &str = "└";
+const RIGHT_BOTTOM: &str = "┘";
