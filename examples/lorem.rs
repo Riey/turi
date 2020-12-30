@@ -12,7 +12,7 @@ mod shared;
 
 fn main() {
     self::shared::run(
-        false,
+        true,
         LinearView::vertical()
             .focus(1)
             .child(FpsView::new().consume_event(false))

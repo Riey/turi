@@ -35,7 +35,7 @@ fn make_view<S, E: Clone + EventLike, V: View<S, E, Message = bool>>(
 #[cfg(all(feature = "crossterm-backend", feature = "crossterm-event"))]
 #[allow(dead_code)]
 pub fn crossterm_run<S: RedrawState, V: View<S, crossterm::event::Event, Message = bool>>(
-    mut state: S,
+    state: S,
     view: V,
 ) {
     use std::io::BufWriter;
@@ -58,15 +58,16 @@ pub fn crossterm_run<S: RedrawState, V: View<S, crossterm::event::Event, Message
 
     let theme = Theme::default();
 
-    let mut view = make_view(view);
+    let view = make_view(view);
 
     let mut executor = SimpleExecutor::new(state, guard.inner(), theme, view);
+    executor.redraw();
 
     loop {
         match crossterm::event::read().unwrap() {
             crossterm::event::Event::Resize(x, y) => {
-                state.set_need_redraw(true);
-                backend.resize((x, y).into());
+                executor.backend.resize((x, y).into());
+                executor.redraw();
             }
             e => {
                 if executor.on_event(e) {
@@ -79,7 +80,10 @@ pub fn crossterm_run<S: RedrawState, V: View<S, crossterm::event::Event, Message
 
 #[cfg(all(feature = "wgpu-backend", feature = "winit-event"))]
 #[allow(dead_code)]
-pub fn wgpu_run<S: RedrawState + 'static, V: View<S, turi::event::WrapWindowEvent, Message = bool> + 'static>(
+pub fn wgpu_run<
+    S: RedrawState + 'static,
+    V: View<S, turi::event::WrapWindowEvent, Message = bool> + 'static,
+>(
     state: S,
     view: V,
 ) {
@@ -111,9 +115,9 @@ pub fn wgpu_run<S: RedrawState + 'static, V: View<S, turi::event::WrapWindowEven
     let instance = wgpu::Instance::new(wgpu::BackendBit::all());
     let surface = unsafe { instance.create_surface(&window) };
 
-    let font = wgpu_glyph::ab_glyph::FontArc::try_from_slice(include_bytes!(
-        "/usr/share/fonts/TTF/D2Coding.ttc"
-    ))
+    let font = wgpu_glyph::ab_glyph::FontArc::try_from_vec(
+        std::fs::read("/usr/share/fonts/TTF/D2Coding.ttc").unwrap(),
+    )
     .unwrap();
     let size = window.inner_size();
     let backend = WgpuBackend::new(instance, surface, font, 30.0, (size.width, size.height));
@@ -122,6 +126,7 @@ pub fn wgpu_run<S: RedrawState + 'static, V: View<S, turi::event::WrapWindowEven
 
     let mut event_state = WrapWindowEventState::new(backend.letter_size());
     let mut executor = SimpleExecutor::new(state, backend, theme, view);
+    executor.redraw();
 
     event_loop.run(move |e, _target, flow| {
         match e {
@@ -133,7 +138,7 @@ pub fn wgpu_run<S: RedrawState + 'static, V: View<S, turi::event::WrapWindowEven
                 ..
             } => {
                 executor.backend.resize((size.width, size.height));
-                executor.state.set_need_redraw(true);
+                executor.redraw();
             }
             Event::WindowEvent {
                 event: winit::event::WindowEvent::CloseRequested,

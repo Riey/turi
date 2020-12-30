@@ -10,7 +10,7 @@ mod shared;
 
 fn main() {
     self::shared::run(
-        false,
+        true,
         SelectView::with_items(vec![("123".into(), 123), ("456".into(), 456)]).map(
             |view, _state, msg| {
                 match msg {

@@ -16,9 +16,7 @@ pub struct SimpleExecutor<S: RedrawState, E, B: Backend, V: View<S, E, Message =
     _marker:     PhantomData<E>,
 }
 
-impl<S: RedrawState, E, B: Backend, V: View<S, E, Message = bool>>
-    SimpleExecutor<S, E, B, V>
-{
+impl<S: RedrawState, E, B: Backend, V: View<S, E, Message = bool>> SimpleExecutor<S, E, B, V> {
     pub fn new(
         state: S,
         backend: B,
@@ -34,17 +32,21 @@ impl<S: RedrawState, E, B: Backend, V: View<S, E, Message = bool>>
         }
     }
 
+    pub fn redraw(&mut self) {
+        self.backend.clear();
+        self.view.layout(self.backend.size());
+        self.view
+            .render(&mut Printer::new(&mut self.backend, &self.theme));
+        self.backend.flush();
+        self.state.set_need_redraw(false);
+    }
+
     pub fn on_event(
         &mut self,
         e: E,
     ) -> bool {
         if self.state.is_need_redraw() {
-            self.backend.clear();
-            self.view.layout(self.backend.size());
-            self.view
-                .render(&mut Printer::new(&mut self.backend, &self.theme));
-            self.backend.flush();
-            self.state.set_need_redraw(false);
+            self.redraw();
         }
 
         match self.view.on_event(&mut self.state, e) {

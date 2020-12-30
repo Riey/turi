@@ -5,7 +5,7 @@ authors = ["Riey <creeper844@gmail.com>"]
 edition = "2018"
 
 [features]
-default = ["buffer-backend"]
+default = []
 
 crossterm-backend = ["crossterm"]
 wgpu-backend = ["buffer-backend", "wgpu_glyph", "wgpu", "futures"]
@@ -43,7 +43,7 @@ version = "0.3.8"
 optional = true
 
 [dependencies.crossterm]
-version = "0.19.0"
+version = "0.18.2"
 optional = true
 
 [dev-dependencies]
