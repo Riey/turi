@@ -4,9 +4,6 @@ version = "0.1.0"
 authors = ["Riey <creeper844@gmail.com>"]
 edition = "2018"
 
-[profile.release]
-debug = true
-
 [features]
 default = ["buffer-backend"]
 
@@ -24,7 +21,7 @@ enum-map = "0.6.4"
 enumset = "1.0.1"
 enumset_derive = "0.5.0"
 ansi_term = "0.12.1"
-winit = { version = "0.23.0", optional = true }
+winit = { version = "0.24.0", optional = true }
 log = "0.4.11"
 
 [target.'cfg(unix)'.dependencies]
@@ -46,11 +43,10 @@ version = "0.3.8"
 optional = true
 
 [dependencies.crossterm]
-version = "0.18.2"
+version = "0.19.0"
 optional = true
 
 [dev-dependencies]
 pretty_assertions = "0.6.1"
-simplelog = "0.8.0"
-crossbeam = "0.8.0"
+simplelog = "0.9.0"
 cfg-if = "1.0.0"

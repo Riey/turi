@@ -6,39 +6,50 @@ use crate::{
     view::View,
 };
 
-pub fn simple<S: RedrawState, E, B: Backend, V: View<S, E, Message = bool>>(
-    state: &mut S,
-    backend: &mut B,
-    theme: &Theme,
-    view: &mut V,
-    mut event_source: impl FnMut(&mut S, &mut B) -> Option<E>,
-) {
-    backend.clear();
-    backend.flush();
-    state.set_need_redraw(true);
+use std::marker::PhantomData;
 
-    loop {
-        if state.is_need_redraw() {
-            log::debug!("Redraw");
-            backend.clear();
-            view.layout(backend.size());
-            view.render(&mut Printer::new(backend, theme));
-            backend.flush();
-            state.set_need_redraw(false);
+pub struct SimpleExecutor<S: RedrawState, E, B: Backend, V: View<S, E, Message = bool>> {
+    pub state:   S,
+    pub backend: B,
+    pub theme:   Theme,
+    pub view:    V,
+    _marker:     PhantomData<E>,
+}
+
+impl<S: RedrawState, E, B: Backend, V: View<S, E, Message = bool>>
+    SimpleExecutor<S, E, B, V>
+{
+    pub fn new(
+        state: S,
+        backend: B,
+        theme: Theme,
+        view: V,
+    ) -> Self {
+        Self {
+            state,
+            backend,
+            theme,
+            view,
+            _marker: PhantomData,
         }
-        let e = event_source(state, backend);
+    }
 
-        if let Some(e) = e {
-            match view.on_event(state, e) {
-                Some(exit) => {
-                    if exit {
-                        break;
-                    }
-                }
-                None => continue,
-            }
-        } else {
-            break;
+    pub fn on_event(
+        &mut self,
+        e: E,
+    ) -> bool {
+        if self.state.is_need_redraw() {
+            self.backend.clear();
+            self.view.layout(self.backend.size());
+            self.view
+                .render(&mut Printer::new(&mut self.backend, &self.theme));
+            self.backend.flush();
+            self.state.set_need_redraw(false);
+        }
+
+        match self.view.on_event(&mut self.state, e) {
+            Some(exit) => exit,
+            None => false,
         }
     }
 }
