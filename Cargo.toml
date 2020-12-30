@@ -4,27 +4,43 @@ version = "0.1.0"
 authors = ["Riey <creeper844@gmail.com>"]
 edition = "2018"
 
-[profile.release]
-debug = true
-
 [features]
-default = ["crossterm-backend", "test-backend"]
+default = []
+
 crossterm-backend = ["crossterm"]
-test-backend = []
+wgpu-backend = ["buffer-backend", "wgpu_glyph", "wgpu", "futures"]
+buffer-backend = []
+winit-event = ["winit"]
+crossterm-event = ["crossterm"]
+test = []
 bench = []
 
 [dependencies]
-unicode-width = "0.1.7"
-enum-map = "0.6.2"
+unicode-width = "0.1.8"
+enum-map = "0.6.4"
 enumset = "1.0.1"
 enumset_derive = "0.5.0"
 ansi_term = "0.12.1"
+winit = { version = "0.24.0", optional = true }
+log = "0.4.11"
 
 [target.'cfg(unix)'.dependencies]
 libc = "0.2"
 
 [target.'cfg(windows)'.dependencies]
-winapi = "0.3.8"
+winapi = "0.3.9"
+
+[dependencies.wgpu]
+version = "0.6.2"
+optional = true
+
+[dependencies.wgpu_glyph]
+version = "0.10.0"
+optional = true
+
+[dependencies.futures]
+version = "0.3.8"
+optional = true
 
 [dependencies.crossterm]
 version = "0.18.2"
@@ -32,5 +48,5 @@ optional = true
 
 [dev-dependencies]
 pretty_assertions = "0.6.1"
-log = "0.4.8"
-simplelog = "0.8.0"
+simplelog = "0.9.0"
+cfg-if = "1.0.0"

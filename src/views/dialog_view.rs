@@ -110,12 +110,7 @@ where
         &self,
         printer: &mut Printer,
     ) {
-        printer.with_style(Style::outline(), |printer| {
-            printer.print_rect();
-        });
-        printer.with_style(Style::title(), |printer| {
-            printer.print((0, 0), &self.title);
-        });
+        printer.print_dialog(&self.title);
         printer.with_style(Style::view(), |printer| {
             printer.with_bound(printer.bound().with_margin(1), |printer| {
                 let btn_height = 1;
@@ -171,7 +166,7 @@ where
             let size = self.content.prev_size();
 
             let is_btn = me.filter_map_pos(|pos| {
-                if pos.x > 1 && (pos.y - 1) == size.y {
+                if pos.x > 1 && pos.y.checked_sub(1)? == size.y {
                     Some(Vec2::new(pos.x - 1, 0))
                 } else {
                     None
@@ -182,7 +177,7 @@ where
                 let mut x = me.pos().x;
                 for (i, btn) in self.buttons.iter_mut().enumerate() {
                     if btn.width() > x {
-                        state.set_need_redraw(self.focus == DialogFocus::Button(i));
+                        state.set_need_redraw(self.focus != DialogFocus::Button(i));
                         self.focus = DialogFocus::Button(i);
                         return btn.on_event(state, event);
                     } else {
@@ -192,6 +187,9 @@ where
 
                 return None;
             }
+
+            state.set_need_redraw(self.focus != DialogFocus::Content);
+            self.focus = DialogFocus::Content;
 
             let is_content = me.filter_map_pos(|pos| {
                 let desired_size = self.content.desired_size();
@@ -203,8 +201,6 @@ where
             });
 
             if is_content {
-                state.set_need_redraw(self.focus == DialogFocus::Content);
-                self.focus = DialogFocus::Content;
                 self.content.on_event(state, event)
             } else {
                 None

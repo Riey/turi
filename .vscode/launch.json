@@ -9,6 +9,12 @@
             "request": "attach",
             "name": "Attach Lorem",
             "program": "${workspaceFolder}/lorem"
+        },
+        {
+            "type": "lldb",
+            "request": "attach",
+            "name": "Attach Dialog",
+            "program": "${workspaceFolder}/dialog_view"
         }
     ]
 }

@@ -7,21 +7,33 @@ use crate::{
 use std::iter;
 use unicode_width::UnicodeWidthStr;
 
-pub struct TestBackend {
+pub struct BufferBackend {
     lines: Vec<String>,
     style: Style,
     size:  Vec2,
 }
 
-impl TestBackend {
+impl BufferBackend {
     pub fn new(size: Vec2) -> Self {
-        Self {
-            lines: iter::repeat_with(|| " ".repeat(size.x as usize))
-                .take(size.y as usize)
-                .collect(),
+        let mut b = Self {
+            lines: Vec::new(),
             style: Style::default(),
-            size,
-        }
+            size:  Vec2::new(0, 0),
+        };
+
+        b.resize(size);
+
+        b
+    }
+
+    pub fn resize(
+        &mut self,
+        size: Vec2,
+    ) {
+        self.lines = iter::repeat_with(|| " ".repeat(size.x as usize))
+            .take(size.y as usize)
+            .collect();
+        self.size = size;
     }
 
     pub fn lines(&self) -> &[String] {
@@ -29,7 +41,7 @@ impl TestBackend {
     }
 }
 
-impl Backend for TestBackend {
+impl Backend for BufferBackend {
     #[inline]
     fn clear(&mut self) {
         for line in &mut self.lines {
@@ -90,7 +102,7 @@ impl Backend for TestBackend {
 
 #[test]
 fn test_backend_test() {
-    let mut backend = TestBackend::new(Vec2::new(10, 5));
+    let mut backend = BufferBackend::new(Vec2::new(10, 5));
     backend.print_at(Vec2::new(2, 2), "가나다");
     backend.print_at(Vec2::new(2, 1), "ABC");
     backend.print_at(Vec2::new(7, 2), "라");

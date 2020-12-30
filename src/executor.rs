@@ -3,36 +3,55 @@ use crate::{
     printer::Printer,
     state::RedrawState,
     style::Theme,
-    vec2::Vec2,
     view::View,
 };
 
-pub fn simple<S: RedrawState, E, B: Backend, V: View<S, E, Message = bool>>(
-    state: &mut S,
-    backend: &mut B,
-    theme: &Theme,
-    view: &mut V,
-    mut event_source: impl FnMut(&mut S, &mut B) -> E,
-) {
-    backend.clear();
-    state.set_need_redraw(true);
+use std::marker::PhantomData;
 
-    loop {
-        if state.is_need_redraw() {
-            backend.clear();
-            view.layout(backend.size());
-            view.render(&mut Printer::new(backend, theme));
-            backend.flush();
-            state.set_need_redraw(false);
+pub struct SimpleExecutor<S: RedrawState, E, B: Backend, V: View<S, E, Message = bool>> {
+    pub state:   S,
+    pub backend: B,
+    pub theme:   Theme,
+    pub view:    V,
+    _marker:     PhantomData<E>,
+}
+
+impl<S: RedrawState, E, B: Backend, V: View<S, E, Message = bool>> SimpleExecutor<S, E, B, V> {
+    pub fn new(
+        state: S,
+        backend: B,
+        theme: Theme,
+        view: V,
+    ) -> Self {
+        Self {
+            state,
+            backend,
+            theme,
+            view,
+            _marker: PhantomData,
         }
-        let e = event_source(state, backend);
-        match view.on_event(state, e) {
-            Some(exit) => {
-                if exit {
-                    break;
-                }
-            }
-            None => continue,
+    }
+
+    pub fn redraw(&mut self) {
+        self.backend.clear();
+        self.view.layout(self.backend.size());
+        self.view
+            .render(&mut Printer::new(&mut self.backend, &self.theme));
+        self.backend.flush();
+        self.state.set_need_redraw(false);
+    }
+
+    pub fn on_event(
+        &mut self,
+        e: E,
+    ) -> bool {
+        if self.state.is_need_redraw() {
+            self.redraw();
+        }
+
+        match self.view.on_event(&mut self.state, e) {
+            Some(exit) => exit,
+            None => false,
         }
     }
 }
@@ -59,15 +78,15 @@ pub fn bench<B: Backend, E, V: View<bool, E>>(
     }
 }
 
-#[cfg(feature = "test-backend")]
+#[cfg(feature = "test")]
 pub fn test<E, V: View<bool, E>>(
     view: &mut V,
     events: impl IntoIterator<Item = E>,
-    size: Vec2,
+    size: crate::vec2::Vec2,
     cb: impl FnOnce(&[String]),
 ) {
     let theme = Theme::default();
-    let mut backend = crate::backend::TestBackend::new(size);
+    let mut backend = crate::backend::BufferBackend::new(size);
     let mut printer = Printer::new(&mut backend, &theme);
 
     let mut state = false;

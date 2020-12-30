@@ -1,3 +1,15 @@
+#[cfg(feature = "crossterm-event")]
+mod crossterm;
+
+#[cfg(feature = "winit-event")]
+mod winit;
+
+#[cfg(feature = "winit-event")]
+pub use self::winit::{
+    WrapWindowEvent,
+    WrapWindowEventState,
+};
+
 use crate::vec2::Vec2;
 
 pub trait MouseEventLike: Sized {
@@ -22,7 +34,6 @@ pub trait MouseEventLike: Sized {
 
 pub trait KeyEventLike {
     fn try_char(&self) -> Option<char>;
-    fn try_ctrl_char(&self) -> Option<char>;
     fn try_enter(&self) -> bool;
     fn try_up(&self) -> bool;
     fn try_down(&self) -> bool;

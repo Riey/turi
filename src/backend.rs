@@ -4,9 +4,13 @@ use ansi_term::Style;
 #[cfg(feature = "crossterm-backend")]
 mod crossterm;
 
+#[cfg(feature = "wgpu-backend")]
+mod wgpu;
+
 mod dummy;
 
-mod test;
+#[cfg(feature = "buffer-backend")]
+mod buffer;
 
 mod sliced;
 
@@ -16,8 +20,11 @@ pub use self::crossterm::{
     CrosstermBackendGuard,
 };
 
-#[cfg(feature = "test-backend")]
-pub use self::test::TestBackend;
+#[cfg(feature = "wgpu-backend")]
+pub use self::wgpu::WgpuBackend;
+
+#[cfg(feature = "buffer-backend")]
+pub use self::buffer::BufferBackend;
 pub use self::{
     dummy::DummyBackend,
     sliced::SlicedBackend,

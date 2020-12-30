@@ -73,7 +73,7 @@ impl<S, E, M> LinearView<S, E, M> {
     #[inline]
     pub fn child(
         mut self,
-        v: impl View<S, E, Message = M> + 'static,
+        v: impl View<S, E, Message = M> + Send + 'static,
     ) -> Self {
         self.add_child(v);
         self
@@ -82,7 +82,7 @@ impl<S, E, M> LinearView<S, E, M> {
     #[inline]
     pub fn add_child(
         &mut self,
-        v: impl View<S, E, Message = M> + 'static,
+        v: impl View<S, E, Message = M> + Send + 'static,
     ) {
         self.children.push(SizeCacher::new(Box::new(v)));
     }
