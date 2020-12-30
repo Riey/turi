@@ -11,26 +11,11 @@ cfg_if::cfg_if! {
 }
 
 use turi::{
-    event::{
-        EventLike,
-        KeyEventLike,
-    },
     executor::SimpleExecutor,
     state::RedrawState,
     style::Theme,
     view::View,
 };
-
-fn make_view<S, E: Clone + EventLike, V: View<S, E, Message = bool>>(
-    view: V
-) -> impl View<S, E, Message = bool> {
-    view.or_else_first(|_view, _state, event| {
-        match event.try_key() {
-            Some(ke) if ke.try_ctrl_char() == Some('c') => Some(true),
-            _ => None,
-        }
-    })
-}
 
 #[cfg(all(feature = "crossterm-backend", feature = "crossterm-event"))]
 #[allow(dead_code)]
@@ -58,7 +43,16 @@ pub fn crossterm_run<S: RedrawState, V: View<S, crossterm::event::Event, Message
 
     let theme = Theme::default();
 
-    let view = make_view(view);
+    let view = view.or_else_first(|_, _, e| {
+        if e == crossterm::event::Event::Key(crossterm::event::KeyEvent {
+            code:      crossterm::event::KeyCode::Char('c'),
+            modifiers: crossterm::event::KeyModifiers::CONTROL,
+        }) {
+            Some(true)
+        } else {
+            None
+        }
+    });
 
     let mut executor = SimpleExecutor::new(state, guard.inner(), theme, view);
     executor.redraw();
@@ -122,9 +116,8 @@ pub fn wgpu_run<
     let size = window.inner_size();
     let backend = WgpuBackend::new(instance, surface, font, 30.0, (size.width, size.height));
     let theme = Theme::default();
-    let view = make_view(view);
 
-    let mut event_state = WrapWindowEventState::new(backend.letter_size());
+    let mut event_state = WrapWindowEventState::new();
     let mut executor = SimpleExecutor::new(state, backend, theme, view);
     executor.redraw();
 
@@ -147,7 +140,10 @@ pub fn wgpu_run<
                 *flow = ControlFlow::Exit;
             }
             Event::WindowEvent { event, .. } => {
-                if executor.on_event(event_state.next_event(event.to_static().unwrap())) {
+                if executor.on_event(
+                    event_state
+                        .next_event(event.to_static().unwrap(), executor.backend.letter_size()),
+                ) {
                     *flow = ControlFlow::Exit;
                 } else {
                     *flow = ControlFlow::Poll;

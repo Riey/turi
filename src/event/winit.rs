@@ -39,35 +39,32 @@ impl From<MouseScrollDelta> for ScrollDirection {
 }
 
 pub struct WrapWindowEventState {
-    ctrl:        bool,
-    clicked:     bool,
-    mouse_pos:   Vec2,
-    letter_size: (f32, f32),
+    ctrl:      bool,
+    clicked:   bool,
+    mouse_pos: Vec2,
 }
 
 impl WrapWindowEventState {
-    pub fn new(letter_size: (f32, f32)) -> Self {
+    pub fn new() -> Self {
         Self {
-            ctrl: false,
-            clicked: false,
+            ctrl:      false,
+            clicked:   false,
             mouse_pos: Vec2::new(0, 0),
-            letter_size,
         }
     }
 
     pub fn next_event(
         &mut self,
         e: WindowEvent<'static>,
+        letter_size: (f32, f32),
     ) -> WrapWindowEvent {
         let mut drag = false;
 
         match e {
             WindowEvent::CursorMoved { position, .. } => {
                 drag = self.clicked;
-                self.mouse_pos = crate::util::calc_term_pos(
-                    (position.x as _, position.y as _),
-                    self.letter_size,
-                );
+                self.mouse_pos =
+                    crate::util::calc_term_pos((position.x as _, position.y as _), letter_size);
             }
             WindowEvent::MouseInput {
                 state: ElementState::Pressed,
@@ -92,7 +89,7 @@ impl WrapWindowEventState {
             ctrl: self.ctrl,
             drag,
             mouse_pos: self.mouse_pos,
-            letter_size: self.letter_size,
+            letter_size,
         }
     }
 }
@@ -138,18 +135,6 @@ impl KeyEventLike for WrapWindowEvent {
     fn try_char(&self) -> Option<char> {
         if let WindowEvent::ReceivedCharacter(ch) = self.e {
             Some(ch)
-        } else {
-            None
-        }
-    }
-
-    fn try_ctrl_char(&self) -> Option<char> {
-        if let WindowEvent::ReceivedCharacter(ch) = self.e {
-            if self.ctrl {
-                Some(ch)
-            } else {
-                None
-            }
         } else {
             None
         }

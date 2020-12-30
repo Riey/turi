@@ -34,7 +34,6 @@ pub trait MouseEventLike: Sized {
 
 pub trait KeyEventLike {
     fn try_char(&self) -> Option<char>;
-    fn try_ctrl_char(&self) -> Option<char>;
     fn try_enter(&self) -> bool;
     fn try_up(&self) -> bool;
     fn try_down(&self) -> bool;

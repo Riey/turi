@@ -65,18 +65,6 @@ impl KeyEventLike for KeyEvent {
         }
     }
 
-    fn try_ctrl_char(&self) -> Option<char> {
-        if let KeyEvent {
-            code: KeyCode::Char(ch),
-            modifiers: KeyModifiers::CONTROL,
-        } = self
-        {
-            Some(*ch)
-        } else {
-            None
-        }
-    }
-
     fn try_enter(&self) -> bool {
         code_is!(self, Enter)
     }
